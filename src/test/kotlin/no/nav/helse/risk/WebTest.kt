@@ -12,7 +12,7 @@ class WebTest {
    @Test
    fun `reports isalive status for nais`() {
       withTestApplication({
-         riskvurderer(CollectorRegistry.defaultRegistry)
+         riskvurderer(CollectorRegistry.defaultRegistry, { true }, { true })
       }) {
          handleRequest(HttpMethod.Get, "/isalive").apply {
             assertTrue { response.status()?.isSuccess() ?: false }
@@ -24,7 +24,7 @@ class WebTest {
    @Test
    fun `reports isready status for nais`() {
       withTestApplication({
-         riskvurderer(CollectorRegistry.defaultRegistry)
+         riskvurderer(CollectorRegistry.defaultRegistry, { true }, { true })
       }) {
          handleRequest(HttpMethod.Get, "/isready").apply {
             assertTrue { response.status()?.isSuccess() ?: false }
@@ -36,7 +36,7 @@ class WebTest {
    @Test
    fun `reports metrics`() {
       withTestApplication({
-         riskvurderer(CollectorRegistry.defaultRegistry)
+         riskvurderer(CollectorRegistry.defaultRegistry, { true }, { true })
       }) {
          handleRequest(HttpMethod.Get, "/metrics").apply {
             assertTrue { response.status()?.isSuccess() ?: false }

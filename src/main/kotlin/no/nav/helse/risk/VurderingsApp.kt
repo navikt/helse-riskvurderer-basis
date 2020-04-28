@@ -6,7 +6,7 @@ import kotlinx.serialization.json.JsonObject
 import org.slf4j.*
 import java.util.concurrent.*
 
-data class Vurdering (
+data class Vurdering(
     val score: Int,
     val vekt: Int,
     val begrunnelser: List<String>
@@ -34,21 +34,31 @@ open class VurderingsApp(
         applicationContext.close()
     }
 
+    private var river: River? = null
+
     @FlowPreview
     fun start() {
         Runtime.getRuntime().addShutdownHook(Thread {
             applicationContext.close()
         })
 
+        fun isAlive(): Boolean = river?.state()?.isRunning ?: false
+
         GlobalScope.launch(applicationContext + exceptionHandler) {
-            launch { webserver(collectorRegistry) }
-            launch { River(
-                kafkaConsumerConfig = kafkaConsumerConfig,
-                topicConfig = environment,
-                interessertITypeInfotype = interessertITypeInfotype,
-                vurderer = vurderer,
-                windowTimeInSeconds = windowTimeInSeconds
-            ) }
+            launch {
+                webserver(collectorRegistry = collectorRegistry,
+                    isAlive = ::isAlive,
+                    isReady = ::isAlive)
+            }
+            launch {
+                river = River(
+                    kafkaConsumerConfig = kafkaConsumerConfig,
+                    topicConfig = environment,
+                    interessertITypeInfotype = interessertITypeInfotype,
+                    vurderer = vurderer,
+                    windowTimeInSeconds = windowTimeInSeconds
+                )
+            }
         }
 
     }

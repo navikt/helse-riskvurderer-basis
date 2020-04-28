@@ -46,7 +46,7 @@ class Environment(
         put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java)
         put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonObjectDeserializer::class.java)
         put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1000")
-        put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+        put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest")
         put("default.deserialization.exception.handler", LogAndContinueExceptionHandler::class.java)
     }
 

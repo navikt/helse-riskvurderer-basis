@@ -115,12 +115,14 @@ class RiverEnTilEnTest {
         ServiceUser("", ""), kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
+        it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "tulleconsumer"
     }
     private val testConsumerConfig = env.kafkaConsumerConfig(
         ServiceUser("", ""), kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
+        it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "testconsumer"
     }
     private val producerConfig = kafkaProducerConfig(

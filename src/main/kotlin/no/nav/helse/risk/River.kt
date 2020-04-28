@@ -100,8 +100,8 @@ class River(kafkaConsumerConfig: Properties,
 
     private fun lagVurdering(answers: List<JsonObject>, vedtaksperiodeId: String): JsonObject? {
         return try {
-            val vurdering = vurderer(answers)
             log.info("Lager vurdering for vedtaksperiodeId=$vedtaksperiodeId")
+            val vurdering = vurderer(answers)
             json.toJson(Vurderingsmelding.serializer(), Vurderingsmelding(
                 infotype = topicConfig.kafkaClientId,
                 vedtaksperiodeId = vedtaksperiodeId,

@@ -54,7 +54,7 @@ class RiverEnTilEnTest {
     }
 
     @Test
-    fun `river msgs grouped by vedtaksperiodeId and time window are aggregated and written to rapid`() {
+    fun `relevant enkelt-melding fanges opp og sendes gjennom vurdererfunksjon for aa generere vurderingsmelding`() {
         KafkaProducer<String, JsonObject>(producerConfig).use { producer ->
             producer.sendJson("""{"nummer":1, "vedtaksperiodeId":"periode1", "type": "RiskNeed", "personid":123}""")
             producer.sendJson("""{"nummer":3, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")

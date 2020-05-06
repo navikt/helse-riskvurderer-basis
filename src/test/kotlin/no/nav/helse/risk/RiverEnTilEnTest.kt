@@ -1,7 +1,9 @@
 package no.nav.helse.risk
 
+import com.nimbusds.jose.jwk.JWKSet
 import kotlinx.serialization.json.*
 import no.nav.common.*
+import no.nav.helse.crypto.lagEnJWK
 import org.apache.kafka.clients.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
@@ -25,7 +27,7 @@ class RiverEnTilEnTest {
         kafka.start()
         river = River(consumerConfig, env, listOf(
             "oppslagsresultat" to "orginfo"
-        ), this::vurderer)
+        ), this::vurderer, JWKSet(lagEnJWK()))
         await()
             .pollDelay(Duration.ofSeconds(1))
             .atMost(Duration.ofSeconds(10))

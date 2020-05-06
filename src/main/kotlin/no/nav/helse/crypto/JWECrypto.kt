@@ -1,0 +1,89 @@
+package no.nav.helse.crypto
+
+import com.nimbusds.jose.*
+import com.nimbusds.jose.crypto.AESDecrypter
+import com.nimbusds.jose.crypto.AESEncrypter
+import com.nimbusds.jose.crypto.RSADecrypter
+import com.nimbusds.jose.crypto.RSAEncrypter
+import com.nimbusds.jose.jwk.JWK
+import com.nimbusds.jose.jwk.JWKSet
+import com.nimbusds.jose.jwk.OctetSequenceKey
+import com.nimbusds.jose.jwk.RSAKey
+import com.nimbusds.jose.util.Base64
+import com.nimbusds.jose.util.Base64URL
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.json.JsonElement
+import java.net.URI
+
+private val json = Json(JsonConfiguration.Stable)
+
+fun JsonElement.Companion.decryptFromJWE(jwe: String, jwks: JWKSet) : JsonElement {
+   return json.parseJson(decryptJWE(jwe,jwks))
+}
+
+fun JsonElement.encryptAsJWE(jwk: JWK) : String {
+   return encryptAsJWE(toString().toByteArray(charset = Charsets.UTF_8), jwk)!!
+}
+
+private fun decryptJWE(jweString: String, jwkSet: JWKSet) : String {
+   val jwe = JWEObject.parse(jweString)
+   val keyId = jwe.header.keyID
+   val jwk: JWK = jwkSet.getKeyByKeyId(keyId) ?: throw RuntimeException("No decryption key found with keyId=$keyId")
+   val jweDecrypter: JWEDecrypter
+   jweDecrypter = if (jwk is OctetSequenceKey) {
+      try {
+         AESDecrypter(jwk)
+      } catch (e: KeyLengthException) {
+         throw RuntimeException(e)
+      }
+   } else if (jwk is RSAKey) {
+      try {
+         RSADecrypter((jwk).toRSAPrivateKey())
+      } catch (e: JOSEException) {
+         throw RuntimeException(e)
+      }
+   } else {
+      throw RuntimeException("Unrecognized JWK type: " + jwk.javaClass.simpleName)
+   }
+   jwe.decrypt(jweDecrypter)
+   return String(jwe.payload.toBytes(), Charsets.UTF_8)
+}
+
+private fun encryptAsJWE(content: ByteArray, jwk: JWK): String? {
+   val jweEncrypter: JWEEncrypter
+   val jweAlgorithm: JWEAlgorithm
+   if (jwk is OctetSequenceKey) {
+      try {
+         jweEncrypter = AESEncrypter(jwk)
+         jweAlgorithm = JWEAlgorithm.A256KW
+      } catch (e: KeyLengthException) {
+         throw RuntimeException(e)
+      }
+   } else if (jwk is RSAKey) {
+      try {
+         jweEncrypter = RSAEncrypter(jwk.toRSAPublicKey())
+         jweAlgorithm = JWEAlgorithm.RSA_OAEP_256
+      } catch (e: JOSEException) {
+         throw RuntimeException(e)
+      }
+   } else {
+      throw RuntimeException("Unrecognized JWK type: " + jwk.javaClass.simpleName)
+   }
+   return try {
+      val header = JWEHeader(jweAlgorithm,
+         EncryptionMethod.A256GCM,
+         null as JOSEObjectType?, null as String?, null as MutableSet<String>?, null as URI?, null as JWK?, null as URI?, null as Base64URL?, null as Base64URL?, null as MutableList<Base64>?,
+         jwk.keyID,
+         null as JWK?,
+         CompressionAlgorithm.DEF,  // Compress before encryption, because encrypted data cannot be compressed
+         null as Base64URL?, null as Base64URL?, null as Base64URL?, 0,
+         null as Base64URL?, null as Base64URL?, null as MutableMap<String, Any>?, null as Base64URL?)
+      val jwe = JWEObject(header, Payload(content))
+      jwe.encrypt(jweEncrypter)
+      val jweString = jwe.serialize()
+      jweString
+   } catch (e: JOSEException) {
+      throw RuntimeException(e)
+   }
+}

@@ -9,6 +9,7 @@ val logbackVersion = "1.2.3"
 val logstashEncoderVersion = "6.3"
 val coroutinesVersion = "0.14.0"
 val serializerVersion = "0.20.0"
+val nimbusJoseVersion = "8.16"
 
 plugins {
     val kotlinVersion = "1.3.70"
@@ -51,6 +52,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+    implementation("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
@@ -64,7 +66,7 @@ dependencies {
     testImplementation("io.confluent:kafka-schema-registry:5.4.0")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
-    testImplementation("io.mockk:mockk:1.9.3")
+    testImplementation("io.mockk:mockk:1.10.0")
 }
 
 java {

@@ -1,17 +1,19 @@
 package no.nav.helse.risk
 
+import com.nimbusds.jose.jwk.JWKSet
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.*
-import org.apache.kafka.common.utils.*
-import org.apache.kafka.streams.*
+import no.nav.helse.crypto.decryptFromJWE
+import org.apache.kafka.common.serialization.Serde
+import org.apache.kafka.common.serialization.Serdes
+import org.apache.kafka.streams.KafkaStreams
+import org.apache.kafka.streams.KeyValue
+import org.apache.kafka.streams.StreamsBuilder
+import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.kstream.*
-import org.apache.kafka.streams.processor.ProcessorContext
-import org.apache.kafka.streams.state.*
-import org.slf4j.*
-import java.time.*
+import org.apache.kafka.streams.state.Stores
+import org.slf4j.LoggerFactory
+import java.time.Duration
 import java.util.*
 
 interface TopicAndClientIdHolder {
@@ -40,7 +42,9 @@ class River(kafkaConsumerConfig: Properties,
             private val topicConfig: TopicAndClientIdHolder,
             private val interessertITypeInfotype: List<Pair<String, String?>>,
             private val vurderer: (List<JsonObject>) -> Vurdering,
-            private val windowTimeInSeconds: Long = 5) {
+            private val decryptionJWKS: JWKSet?,
+            private val windowTimeInSeconds: Long = 5
+) {
 
     private val stream: KafkaStreams
 
@@ -73,7 +77,7 @@ class River(kafkaConsumerConfig: Properties,
             val listValueSerde: Serde<List<JsonObject>> = Serdes.serdeFrom(JsonObjectListSerializer(), JsonObjectListDeserializer())
             val storeSupplier = Stores.inMemorySessionStore("riverstore", Duration.ofSeconds(windowTimeInSeconds * 2))
             val stateStore = Materialized.`as`<String, List<JsonObject>>(storeSupplier)
-            //val stateStore = Materialized.`as`<String, List<JsonObject>, SessionStore<Bytes, ByteArray>>("riverstore")
+                //val stateStore = Materialized.`as`<String, List<JsonObject>, SessionStore<Bytes, ByteArray>>("riverstore")
                 .withKeySerde(keySerde)
                 .withValueSerde(listValueSerde)
             stream = stream.groupBy({ _, value -> value[vedtaksperiodeIdKey]?.content }, Grouped.with(keySerde, valueSerde))
@@ -101,7 +105,7 @@ class River(kafkaConsumerConfig: Properties,
     private fun lagVurdering(answers: List<JsonObject>, vedtaksperiodeId: String): JsonObject? {
         return try {
             log.info("Lager vurdering for vedtaksperiodeId=$vedtaksperiodeId")
-            val vurdering = vurderer(answers)
+            val vurdering = vurderer(answers.map(::decryptIfEncrypted))
             json.toJson(Vurderingsmelding.serializer(), Vurderingsmelding(
                 infotype = topicConfig.kafkaClientId,
                 vedtaksperiodeId = vedtaksperiodeId,
@@ -109,11 +113,26 @@ class River(kafkaConsumerConfig: Properties,
                 vekt = vurdering.vekt,
                 begrunnelser = vurdering.begrunnelser
             )).jsonObject
-        } catch (ex:Exception) {
+        } catch (ex: Exception) {
             log.error("Feil under vurdering", ex)
             null
         }
+    }
 
+    private fun decryptIfEncrypted(message: JsonObject): JsonObject {
+        return try {
+            if (decryptionJWKS != null
+                && message.containsKey("data")
+                && message["data"]?.contentOrNull != null
+                && message["data"]!!.content.startsWith("ey")) {
+                val decrypted = JsonElement.decryptFromJWE(message["data"]!!.content, decryptionJWKS)
+                json {}.copy(message.content.toMutableMap().apply { this["data"] = decrypted } )
+            } else {
+                message
+            }
+        } catch (exceptionBecauseDataElementIsNotAStringAndThusNotJWE: JsonException) {
+            message
+        }
     }
 
     private fun KafkaStreams.addShutdownHook() {

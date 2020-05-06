@@ -1,5 +1,6 @@
 package no.nav.helse.risk
 
+import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonObject
@@ -21,7 +22,8 @@ open class VurderingsApp(
     val interessertITypeInfotype: List<Pair<String, String?>>,
     val vurderer: (List<JsonObject>) -> Vurdering,
     val windowTimeInSeconds: Long = 5,
-    private val environment: Environment = Environment(kafkaClientId)
+    private val environment: Environment = Environment(kafkaClientId),
+    private val decryptionJWKS: JWKSet? = null
 ) {
 
     private val collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
@@ -56,6 +58,7 @@ open class VurderingsApp(
                     topicConfig = environment,
                     interessertITypeInfotype = interessertITypeInfotype,
                     vurderer = vurderer,
+                    decryptionJWKS = decryptionJWKS,
                     windowTimeInSeconds = windowTimeInSeconds
                 )
             }

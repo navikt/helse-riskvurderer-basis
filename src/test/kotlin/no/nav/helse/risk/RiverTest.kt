@@ -1,7 +1,10 @@
 package no.nav.helse.risk
 
+import com.nimbusds.jose.jwk.JWKSet
 import kotlinx.serialization.json.*
 import no.nav.common.*
+import no.nav.helse.crypto.encryptAsJWE
+import no.nav.helse.crypto.lagEnJWK
 import org.apache.kafka.clients.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
@@ -20,13 +23,19 @@ class RiverTest {
     val env = Environment("testapp")
     private val json = Json(JsonConfiguration.Stable)
 
+    private val jwk1 = lagEnJWK("key1")
+    private val jwk2 = lagEnJWK("key2")
+    private val jwkSet = JWKSet(listOf(jwk1, jwk2))
+
     @BeforeEach
     fun setup() {
         kafka.start()
         river = River(consumerConfig, env, listOf(
             "RiskNeed" to null,
-            "oppslagsresultat" to "orginfo"
-        ), this::vurderer)
+            "oppslagsresultat" to "orginfo",
+            "oppslagsresultat" to "sensitiv1",
+            "oppslagsresultat" to "sensitiv2"
+        ), this::vurderer, jwkSet)
         await()
             .pollDelay(Duration.ofSeconds(1))
             .atMost(Duration.ofSeconds(10))
@@ -39,7 +48,7 @@ class RiverTest {
 
     fun vurderer(info: List<JsonObject>): Vurdering {
         return Vurdering(
-            score = info.map { it["nummer"]!!.primitive.int }.sum(),
+            score = info.map { it["data"]!!.jsonObject["nummer"]!!.primitive.int }.sum(),
             vekt = 2,
             begrunnelser = listOf("derfor"))
     }
@@ -53,12 +62,13 @@ class RiverTest {
     @Test
     fun `river msgs grouped by vedtaksperiodeId and time window are aggregated and written to rapid`() {
         KafkaProducer<String, JsonObject>(producerConfig).use { producer ->
-            //repeat(5) {
-            producer.sendJson("""{"nummer":1, "vedtaksperiodeId":"periode1", "type": "RiskNeed", "personid":123}""")
-            producer.sendJson("""{"nummer":3, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
-            producer.sendJson("""{"nummer":6, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
-            //}
-            //Thread.sleep(11000)
+            producer.sendJson("""{"data" : {"nummer":1}, "vedtaksperiodeId":"periode1", "type": "RiskNeed", "personid":123}""")
+            producer.sendJson("""{"data" : {"nummer":3}, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
+            producer.sendJson("""{"data" : {"nummer":6}, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
+
+            producer.sendJson("""{"data" : "${json { "nummer" to 100 }.encryptAsJWE(jwk1)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv1", "type": "oppslagsresultat", "info":"firma1"}""")
+            producer.sendJson("""{"data" : "${json { "nummer" to 1000 }.encryptAsJWE(jwk2)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv2", "type": "oppslagsresultat", "info":"firma1"}""")
+
             val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
             producer.send(ProducerRecord(env.riskRiverTopic, Json.parse(JsonObject.serializer(), payload3)))
         }
@@ -84,7 +94,7 @@ class RiverTest {
             assertNotNull(this)
             assertEquals("vurdering", this!!.type)
             assertEquals("testapp", this.infotype)
-            assertEquals(1 + 3, this.score)
+            assertEquals(1 + 3 + 100 + 1000, this.score)
             assertEquals(2, this.vekt)
             assertEquals(listOf("derfor"), this.begrunnelser)
         }

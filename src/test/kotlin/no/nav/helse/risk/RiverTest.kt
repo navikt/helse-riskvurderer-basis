@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Assertions.*
 import java.time.*
 import java.util.*
 
-@kotlinx.serialization.UnstableDefault
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RiverTest {
     val env = Environment("testapp")
@@ -54,7 +53,7 @@ class RiverTest {
     }
 
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {
-        val value = Json.parse(JsonObject.serializer(), jsonstring)
+        val value = json.parse(JsonObject.serializer(), jsonstring)
         val key = value["vedtaksperiodeId"]!!.content
         this.send(ProducerRecord(env.riskRiverTopic, key, value))
     }
@@ -70,7 +69,7 @@ class RiverTest {
             producer.sendJson("""{"data" : "${json { "nummer" to 1000 }.encryptAsJWE(jwk2)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv2", "type": "oppslagsresultat", "info":"firma1"}""")
 
             val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
-            producer.send(ProducerRecord(env.riskRiverTopic, Json.parse(JsonObject.serializer(), payload3)))
+            producer.send(ProducerRecord(env.riskRiverTopic, json.parse(JsonObject.serializer(), payload3)))
         }
 
         var vurdering: Vurderingsmelding? = null

@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Assertions.*
 import java.time.*
 import java.util.*
 
-@kotlinx.serialization.UnstableDefault
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RiverEnTilEnTest {
     val env = Environment("testapp")
@@ -60,7 +59,7 @@ class RiverEnTilEnTest {
             producer.sendJson("""{"nummer":3, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
             producer.sendJson("""{"nummer":6, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
             val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
-            producer.send(ProducerRecord(env.riskRiverTopic, Json.parse(JsonObject.serializer(), payload3)))
+            producer.send(ProducerRecord(env.riskRiverTopic, json.parse(JsonObject.serializer(), payload3)))
         }
 
         var vurdering: Vurderingsmelding? = null

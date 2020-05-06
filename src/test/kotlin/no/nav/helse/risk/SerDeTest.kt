@@ -4,7 +4,6 @@ import kotlinx.serialization.json.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 
-@kotlinx.serialization.UnstableDefault
 class SerDeTest {
 
    @Test

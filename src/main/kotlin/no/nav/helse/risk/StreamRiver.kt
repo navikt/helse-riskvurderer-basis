@@ -38,12 +38,12 @@ data class Vurderingsmelding(
     val begrunnelser: List<String>
 )
 
-class River(kafkaConsumerConfig: Properties,
-            private val topicConfig: TopicAndClientIdHolder,
-            private val interessertITypeInfotype: List<Pair<String, String?>>,
-            private val vurderer: (List<JsonObject>) -> Vurdering,
-            private val decryptionJWKS: JWKSet?,
-            private val windowTimeInSeconds: Long = 5
+class StreamRiver(kafkaConsumerConfig: Properties,
+                  private val topicConfig: TopicAndClientIdHolder,
+                  private val interessertITypeInfotype: List<Pair<String, String?>>,
+                  private val vurderer: (List<JsonObject>) -> Vurdering,
+                  private val decryptionJWKS: JWKSet?,
+                  private val windowTimeInSeconds: Long = 5
 ) {
 
     private val stream: KafkaStreams
@@ -58,7 +58,7 @@ class River(kafkaConsumerConfig: Properties,
     fun tearDown() = stream.close()
 
     companion object {
-        private val log = LoggerFactory.getLogger(River::class.java)
+        private val log = LoggerFactory.getLogger(StreamRiver::class.java)
     }
 
     private fun topology(): Topology {

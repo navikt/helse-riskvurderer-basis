@@ -36,7 +36,7 @@ open class VurderingsApp(
         applicationContext.close()
     }
 
-    private var river: River? = null
+    private var river: StreamRiver? = null
 
     @FlowPreview
     fun start() {
@@ -53,7 +53,7 @@ open class VurderingsApp(
                     isReady = ::isAlive)
             }
             launch {
-                river = River(
+                river = StreamRiver(
                     kafkaConsumerConfig = kafkaConsumerConfig,
                     topicConfig = environment,
                     interessertITypeInfotype = interessertITypeInfotype,

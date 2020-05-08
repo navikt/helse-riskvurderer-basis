@@ -24,7 +24,7 @@ class RiverEnTilEnTest {
     @BeforeEach
     fun setup() {
         kafka.start()
-        river = River(consumerConfig, env, listOf(
+        river = StreamRiver(consumerConfig, env, listOf(
             "oppslagsresultat" to "orginfo"
         ), this::vurderer, JWKSet(lagEnJWK()))
         await()
@@ -96,7 +96,7 @@ class RiverEnTilEnTest {
         kafka.tearDown()
     }
 
-    private lateinit var river: River
+    private lateinit var river: StreamRiver
     private lateinit var testConsumer: KafkaConsumer<String, JsonObject>
 
     private val kafka = KafkaEnvironment(

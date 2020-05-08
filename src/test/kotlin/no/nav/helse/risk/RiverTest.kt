@@ -29,7 +29,7 @@ class RiverTest {
     @BeforeEach
     fun setup() {
         kafka.start()
-        river = River(consumerConfig, env, listOf(
+        river = StreamRiver(consumerConfig, env, listOf(
             "RiskNeed" to null,
             "oppslagsresultat" to "orginfo",
             "oppslagsresultat" to "sensitiv1",
@@ -106,7 +106,7 @@ class RiverTest {
         kafka.tearDown()
     }
 
-    private lateinit var river: River
+    private lateinit var river: StreamRiver
     private lateinit var testConsumer: KafkaConsumer<String, JsonObject>
 
     private val kafka = KafkaEnvironment(

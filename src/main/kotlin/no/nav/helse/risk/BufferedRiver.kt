@@ -21,6 +21,7 @@ internal class BufferedRiver(private val kafkaProducer: KafkaProducer<String, Js
                              vurderer: (List<JsonObject>) -> Vurdering,
                              decryptionJWKS: JWKSet?,
                              windowTimeInSeconds: Long = 5,
+                             emitEarlyWhenAllInterestsPresent: Boolean = true,
                              private val kafkaConsumer: KafkaConsumer<String, JsonObject> = KafkaConsumer(kafkaConsumerConfig)
 ) {
 
@@ -29,9 +30,17 @@ internal class BufferedRiver(private val kafkaProducer: KafkaProducer<String, Js
         windowSizeInSeconds = windowTimeInSeconds,
         aggregateAndEmit = ::lagOgSendVurdering,
         scheduleExpiryCheck = true,
-        schedulerIntervalInSeconds = 5)
+        schedulerIntervalInSeconds = 5,
+        sessionEarlyExpireCondition = if (emitEarlyWhenAllInterestsPresent) this::isCompleteMessageSet else null)
 
-    fun tearDown() { kafkaConsumer.close() }
+
+    private fun isCompleteMessageSet(msgs: List<JsonObject>) =
+        isCompleteMessageSetAccordingToInterests(msgs, interessertITypeInfotype)
+
+    fun tearDown() {
+        kafkaConsumer.close()
+    }
+
     fun state() = KafkaStreams.State.RUNNING
 
     suspend fun start() {
@@ -58,6 +67,12 @@ internal class BufferedRiver(private val kafkaProducer: KafkaProducer<String, Js
         }
     }
 }
+
+internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Pair<String, String?>>) =
+    msgs.size == interesser.size && (
+        interesser.fold(true, { acc, interesse ->
+            acc && (null != msgs.find { it.tilfredsstillerInteresse(listOf(interesse)) })
+        }))
 
 internal fun extractUniqueVedtaksperiodeId(answers: List<JsonObject>) =
     answers.first()[vedtaksperiodeIdKey]!!.content.apply {

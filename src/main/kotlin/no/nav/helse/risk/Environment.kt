@@ -29,15 +29,14 @@ class Environment(
         password = Files.readString(vaultBasePath.resolve("password"))
     )
 
-
-    /*fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String? = null) = Properties().apply {
+    fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String? = null) = Properties().apply {
         putAll(commonKafkaConfig(serviceUser, brokers))
 
         put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
         put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonObjectSerializer::class.java)
         put(ProducerConfig.ACKS_CONFIG, "all")
         put(ProducerConfig.CLIENT_ID_CONFIG, "$kafkaClientId-producer")
-    }*/
+    }
 
     fun kafkaConsumerConfig(serviceUser: ServiceUser, brokers: String? = null) = Properties().apply {
         putAll(commonKafkaConfig(serviceUser, brokers))

@@ -7,7 +7,7 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-interface ExpiredSession<K, V> {
+internal interface ExpiredSession<K, V> {
     val key: K
     val values: List<V>
     fun delete()
@@ -103,7 +103,7 @@ internal class MySessionStore<K, V>(private val sessionEarlyExpireCondition: ((L
 
 }
 
-class WindowBufferEmitter(private val windowSizeInSeconds: Long,
+internal class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                           private val aggregateAndEmit: (List<JsonObject>) -> Unit,
                           private val clock: Clock = Clock.systemDefaultZone(),
                           scheduleExpiryCheck: Boolean = true,

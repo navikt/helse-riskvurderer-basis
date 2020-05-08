@@ -9,10 +9,10 @@ import org.slf4j.LoggerFactory
 
 private val json = Json(JsonConfiguration.Stable)
 
-const val vedtaksperiodeIdKey = "vedtaksperiodeId"
-const val typeKey = "type"
-const val vurderingType = "vurdering"
-const val infotypeKey = "infotype"
+internal const val vedtaksperiodeIdKey = "vedtaksperiodeId"
+internal const val typeKey = "type"
+internal const val vurderingType = "vurdering"
+internal const val infotypeKey = "infotype"
 
 internal interface TopicAndClientIdHolder {
     val riskRiverTopic: String

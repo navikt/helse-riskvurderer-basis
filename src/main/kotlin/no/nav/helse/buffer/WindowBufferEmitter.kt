@@ -13,9 +13,11 @@ interface ExpiredSession<K, V> {
     fun delete()
 }
 
-class MySessionStore<K, V>(private val sessionEarlyExpireCondition: ((List<V>) -> Boolean)?) {
+internal class MySessionStore<K, V>(private val sessionEarlyExpireCondition: ((List<V>) -> Boolean)?) {
 
     private val data: MutableMap<K, MutableMap<UUID, Sess<V>>> = mutableMapOf()
+
+    val activeKeys: Int get() = data.size
 
     private inner class MyExpiredSession(override val key: K, val session: Sess<V>) : ExpiredSession<K, V> {
         override val values: List<V>
@@ -111,6 +113,7 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     private var runningExpiryCheck = false
     val earlyExpiryEnabled: Boolean = sessionEarlyExpireCondition != null
+    val activeKeys: Int get() = store.activeKeys
 
     init {
         if (scheduleExpiryCheck) {

@@ -36,18 +36,26 @@ class WindowBufferEmitterTest {
         window.store("periode1", o1b, 12000)
         window.store("periode1", o1b, 18000)
 
+        assertEquals(1, window.activeKeys)
+
         window.store("periode2", o2, 7000)
         window.store("periode2", o2, 17000)
+
+        assertEquals(2, window.activeKeys)
 
         every { clock.millis() } returns 36999
         window.runExpiryCheck()
         assertEquals(0, sessions.size)
+        assertEquals(2, window.activeKeys)
 
         window.store("periode1", o1a, 38001)
+        assertEquals(2, window.activeKeys)
 
         every { clock.millis() } returns 60000
         window.runExpiryCheck()
         assertEquals(3, sessions.size)
+        assertEquals(0, window.activeKeys)
+
         sessions[0].apply {
             assertEquals(3, this.size)
             for (i in 0..2) {
@@ -74,9 +82,9 @@ class WindowBufferEmitterTest {
         val o1a = Json.parse(JsonObject.serializer(), opinion1a)
         val o1b = Json.parse(JsonObject.serializer(), opinion1b)
 
-        val sessions = mutableListOf<List<JsonObject>>()
+        val emittedSessions = mutableListOf<List<JsonObject>>()
         fun lagOgSendVurdering(msgs: List<JsonObject>) {
-            sessions += msgs
+            emittedSessions += msgs
             println("laOgSend: $msgs")
         }
 
@@ -99,33 +107,38 @@ class WindowBufferEmitterTest {
                     && (it.find { msg -> msg["infotype"]?.content == "A" } != null)
                     && (it.find { msg -> msg["infotype"]?.content == "B" } != null)
             })
+        assertEquals(0, window.activeKeys)
         window.store("periode1", o1a, 1000)
+        assertEquals(1, window.activeKeys)
         window.store("periode1", o1b, 1000)
-        assertEquals(1, sessions.size, "should have been emitted early because of earlyExpireCondition")
-        sessions[0].apply {
+        assertEquals(0, window.activeKeys)
+        assertEquals(1, emittedSessions.size, "should have been emitted early because of earlyExpireCondition")
+        emittedSessions[0].apply {
             assertEquals(2, this.size)
             assertTrue(this.contains(o1a))
             assertTrue(this.contains(o1b))
         }
-        sessions.clear()
+        emittedSessions.clear()
         every { clock.millis() } returns current + 2000
         current = clock.millis()
 
         window.runExpiryCheck()
-        assertEquals(0, sessions.size, "should not be emitted again")
+        assertEquals(0, emittedSessions.size, "should not be emitted again")
         every { clock.millis() } returns current + windowSizeInMillis + 1000
         current = clock.millis()
 
         window.runExpiryCheck()
-        assertEquals(0, sessions.size, "should not be emitted again, even after window-expiry")
+        assertEquals(0, emittedSessions.size, "should not be emitted again, even after window-expiry")
 
         window.store("periode1", o1a, clock.millis())
+        assertEquals(1, window.activeKeys)
         every { clock.millis() } returns current + windowSizeInMillis + 1000
         current = clock.millis()
 
         window.runExpiryCheck()
-        assertEquals(1, sessions.size)
-        sessions[0].apply {
+        assertEquals(0, window.activeKeys)
+        assertEquals(1, emittedSessions.size)
+        emittedSessions[0].apply {
             assertEquals(1, this.size, "should be emitted after windowExpiry, even if earlyExpiryCondition is not met")
             assertTrue(this.contains(o1a))
         }

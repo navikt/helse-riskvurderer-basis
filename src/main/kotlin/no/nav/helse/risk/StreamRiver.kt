@@ -1,9 +1,8 @@
 package no.nav.helse.risk
 
 import com.nimbusds.jose.jwk.JWKSet
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
-import no.nav.helse.crypto.decryptFromJWE
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.content
 import org.apache.kafka.common.serialization.Serde
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams
@@ -16,36 +15,16 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.*
 
-interface TopicAndClientIdHolder {
-    val riskRiverTopic: String
-    val kafkaClientId: String
-}
 
-private val json = Json(JsonConfiguration.Stable)
-
-const val vedtaksperiodeIdKey = "vedtaksperiodeId"
-const val typeKey = "type"
-const val vurderingType = "vurdering"
-const val infotypeKey = "infotype"
-
-@Serializable
-data class Vurderingsmelding(
-    val type: String = vurderingType,
-    val infotype: String,
-    val vedtaksperiodeId: String,
-    val score: Int,
-    val vekt: Int,
-    val begrunnelser: List<String>
-)
-
-class StreamRiver(kafkaConsumerConfig: Properties,
-                  private val topicConfig: TopicAndClientIdHolder,
-                  private val interessertITypeInfotype: List<Pair<String, String?>>,
-                  private val vurderer: (List<JsonObject>) -> Vurdering,
-                  private val decryptionJWKS: JWKSet?,
-                  private val windowTimeInSeconds: Long = 5
+internal class StreamRiver(kafkaConsumerConfig: Properties,
+                           private val topicConfig: TopicAndClientIdHolder,
+                           private val interessertITypeInfotype: List<Pair<String, String?>>,
+                           vurderer: (List<JsonObject>) -> Vurdering,
+                           decryptionJWKS: JWKSet?,
+                           private val windowTimeInSeconds: Long = 5
 ) {
 
+    private val vurderingProducer = VurderingProducer(topicConfig, vurderer, decryptionJWKS)
     private val stream: KafkaStreams
 
     init {
@@ -89,10 +68,10 @@ class StreamRiver(kafkaConsumerConfig: Properties,
                     stateStore
                 )
                 .toStream()
-                .map { key, value -> KeyValue(key.key(), lagVurdering(value, key.key())) }
+                .map { key, value -> KeyValue(key.key(), vurderingProducer.lagVurdering(value, key.key())) }
         } else {
             stream = stream.map { key, value ->
-                KeyValue(key, lagVurdering(listOf(value), key))
+                KeyValue(key, vurderingProducer.lagVurdering(listOf(value), key))
             }
         }
         stream
@@ -100,39 +79,6 @@ class StreamRiver(kafkaConsumerConfig: Properties,
             .to(topicConfig.riskRiverTopic, Produced.with(keySerde, valueSerde))
 
         return builder.build()
-    }
-
-    private fun lagVurdering(answers: List<JsonObject>, vedtaksperiodeId: String): JsonObject? {
-        return try {
-            log.info("Lager vurdering for vedtaksperiodeId=$vedtaksperiodeId")
-            val vurdering = vurderer(answers.map(::decryptIfEncrypted))
-            json.toJson(Vurderingsmelding.serializer(), Vurderingsmelding(
-                infotype = topicConfig.kafkaClientId,
-                vedtaksperiodeId = vedtaksperiodeId,
-                score = vurdering.score,
-                vekt = vurdering.vekt,
-                begrunnelser = vurdering.begrunnelser
-            )).jsonObject
-        } catch (ex: Exception) {
-            log.error("Feil under vurdering", ex)
-            null
-        }
-    }
-
-    private fun decryptIfEncrypted(message: JsonObject): JsonObject {
-        return try {
-            if (decryptionJWKS != null
-                && message.containsKey("data")
-                && message["data"]?.contentOrNull != null
-                && message["data"]!!.content.startsWith("ey")) {
-                val decrypted = JsonElement.decryptFromJWE(message["data"]!!.content, decryptionJWKS)
-                json {}.copy(message.content.toMutableMap().apply { this["data"] = decrypted } )
-            } else {
-                message
-            }
-        } catch (exceptionBecauseDataElementIsNotAStringAndThusNotJWE: JsonException) {
-            message
-        }
     }
 
     private fun KafkaStreams.addShutdownHook() {
@@ -147,11 +93,3 @@ class StreamRiver(kafkaConsumerConfig: Properties,
     }
 }
 
-internal fun JsonObject.tilfredsstillerInteresse(interesser: List<Pair<String, String?>>): Boolean {
-    interesser.forEach {
-        if (it.first == this[typeKey]?.content &&
-            (it.second == null || (it.second == this[infotypeKey]?.content)))
-            return true
-    }
-    return false
-}

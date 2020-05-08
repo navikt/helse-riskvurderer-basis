@@ -1,6 +1,8 @@
 package no.nav.helse.risk
 
 import com.nimbusds.jose.jwk.JWKSet
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
 import no.nav.common.*
 import no.nav.helse.crypto.lagEnJWK
@@ -16,24 +18,40 @@ import org.junit.jupiter.api.Assertions.*
 import java.time.*
 import java.util.*
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class RiverEnTilEnTest {
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
+internal class RiverEnTilEnTest {
     val env = Environment("testapp")
     private val json = Json(JsonConfiguration.Stable)
 
     @BeforeEach
     fun setup() {
         kafka.start()
-        river = StreamRiver(consumerConfig, env, listOf(
-            "oppslagsresultat" to "orginfo"
-        ), this::vurderer, JWKSet(lagEnJWK()))
+        testConsumer = KafkaConsumer<String, JsonObject>(testConsumerConfig).also {
+            it.subscribe(listOf(env.riskRiverTopic))
+        }
+    }
+
+    private var streamRiver: StreamRiver? = null
+    private var bufferedRiver: BufferedRiver? = null
+    private val jwkSet = JWKSet(lagEnJWK())
+
+    private val interesser = listOf(
+        "oppslagsresultat" to "orginfo"
+    )
+
+    private fun initStreamRiver() {
+        streamRiver = StreamRiver(consumerConfig, env, interesser, this::vurderer, jwkSet)
         await()
             .pollDelay(Duration.ofSeconds(1))
             .atMost(Duration.ofSeconds(10))
-            .until { river.state() == RUNNING }
+            .until { streamRiver!!.state() == RUNNING }
+    }
 
-        testConsumer = KafkaConsumer<String, JsonObject>(testConsumerConfig).also {
-            it.subscribe(listOf(env.riskRiverTopic))
+    private fun initBufferedRiver() {
+        bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
+            consumerConfig, env, interesser, this::vurderer, jwkSet)
+        GlobalScope.launch {
+            bufferedRiver!!.start()
         }
     }
 
@@ -53,6 +71,17 @@ class RiverEnTilEnTest {
     }
 
     @Test
+    fun `stream based river`() {
+        initStreamRiver()
+        `relevant enkelt-melding fanges opp og sendes gjennom vurdererfunksjon for aa generere vurderingsmelding`()
+    }
+
+    @Test
+    fun `buffered river`() {
+        initBufferedRiver()
+        `relevant enkelt-melding fanges opp og sendes gjennom vurdererfunksjon for aa generere vurderingsmelding`()
+    }
+
     fun `relevant enkelt-melding fanges opp og sendes gjennom vurdererfunksjon for aa generere vurderingsmelding`() {
         KafkaProducer<String, JsonObject>(producerConfig).use { producer ->
             producer.sendJson("""{"nummer":1, "vedtaksperiodeId":"periode1", "type": "RiskNeed", "personid":123}""")
@@ -92,11 +121,13 @@ class RiverEnTilEnTest {
     @AfterEach
     fun tearDown() {
         testConsumer.close()
-        river.tearDown()
+        streamRiver?.tearDown()
+        streamRiver = null
+        bufferedRiver?.tearDown()
+        bufferedRiver = null
         kafka.tearDown()
     }
 
-    private lateinit var river: StreamRiver
     private lateinit var testConsumer: KafkaConsumer<String, JsonObject>
 
     private val kafka = KafkaEnvironment(

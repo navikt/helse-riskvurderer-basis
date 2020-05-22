@@ -1,6 +1,5 @@
 package no.nav.helse.risk
 
-import com.nimbusds.jose.jwk.JWKSet
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -13,21 +12,28 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import java.time.Duration
 import java.util.*
 
-internal class BufferedRiver(private val kafkaProducer: KafkaProducer<String, JsonObject>,
-                             private val kafkaConsumerConfig: Properties,
-                             private val topicConfig: TopicAndClientIdHolder,
-                             private val interessertITypeInfotype: List<Pair<String, String?>>,
-                             vurderer: (List<JsonObject>) -> Vurdering,
-                             decryptionJWKS: JWKSet?,
-                             windowTimeInSeconds: Long = 5,
-                             emitEarlyWhenAllInterestsPresent: Boolean = true,
-                             private val kafkaConsumer: KafkaConsumer<String, JsonObject> = KafkaConsumer(kafkaConsumerConfig)
+internal fun JsonObject.tilfredsstillerInteresse(interesser: List<Pair<String, String?>>): Boolean {
+    interesser.forEach {
+        if (it.first == this[typeKey]?.content &&
+            (it.second == null || (it.second == this[infotypeKey]?.content)))
+            return true
+    }
+    return false
+}
+
+internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<String, JsonObject>,
+                                  private val kafkaConsumerConfig: Properties,
+                                  private val topicConfig: TopicAndClientIdHolder,
+                                  private val interessertITypeInfotype: List<Pair<String, String?>>,
+                                  private val answerer: (List<JsonObject>, String) -> JsonObject?,
+                                  windowTimeInSeconds: Long = 5,
+                                  emitEarlyWhenAllInterestsPresent: Boolean = true,
+                                  private val kafkaConsumer: KafkaConsumer<String, JsonObject> = KafkaConsumer(kafkaConsumerConfig)
 ) {
 
-    private val vurderingProducer = VurderingProducer(topicConfig, vurderer, decryptionJWKS)
     private val aggregator = WindowBufferEmitter(
         windowSizeInSeconds = windowTimeInSeconds,
-        aggregateAndEmit = ::lagOgSendVurdering,
+        aggregateAndEmit = ::lagOgSendSvar,
         scheduleExpiryCheck = true,
         schedulerIntervalInSeconds = 5,
         sessionEarlyExpireCondition = if (emitEarlyWhenAllInterestsPresent) this::isCompleteMessageSet else null)
@@ -54,24 +60,18 @@ internal class BufferedRiver(private val kafkaProducer: KafkaProducer<String, Js
                 if (mangeTilEn) {
                     aggregator.store(value["vedtaksperiodeId"]!!.content, value, timestamp)
                 } else {
-                    lagOgSendVurdering(listOf(value))
+                    lagOgSendSvar(listOf(value))
                 }
             }
     }
 
-    private fun lagOgSendVurdering(answers: List<JsonObject>): Unit {
+    private fun lagOgSendSvar(answers: List<JsonObject>) {
         val vedtaksperiodeId = extractUniqueVedtaksperiodeId(answers)
-        vurderingProducer.lagVurdering(answers, vedtaksperiodeId)?.also { svar ->
+        answerer(answers, vedtaksperiodeId)?.also { svar ->
             kafkaProducer.send(ProducerRecord(topicConfig.riskRiverTopic, vedtaksperiodeId, svar))
         }
     }
 }
-
-internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Pair<String, String?>>) =
-    msgs.size == interesser.size && (
-        interesser.fold(true, { acc, interesse ->
-            acc && (null != msgs.find { it.tilfredsstillerInteresse(listOf(interesse)) })
-        }))
 
 internal fun extractUniqueVedtaksperiodeId(answers: List<JsonObject>) =
     answers.first()[vedtaksperiodeIdKey]!!.content.apply {
@@ -80,6 +80,13 @@ internal fun extractUniqueVedtaksperiodeId(answers: List<JsonObject>) =
             if (neste != this) throw IllegalArgumentException("ulik id: $neste != $this")
         }
     }
+
+internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Pair<String, String?>>) =
+    msgs.size == interesser.size && (
+        interesser.fold(true, { acc, interesse ->
+            acc && (null != msgs.find { it.tilfredsstillerInteresse(listOf(interesse)) })
+        }))
+
 
 @FlowPreview
 private fun <K, V> KafkaConsumer<K, V>.asFlow(): Flow<Triple<K, V, Long>> = flow { while (true) emit(poll(Duration.ZERO)) }

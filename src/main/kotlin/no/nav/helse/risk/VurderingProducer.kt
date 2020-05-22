@@ -29,15 +29,6 @@ internal data class Vurderingsmelding(
     val begrunnelser: List<String>
 )
 
-internal fun JsonObject.tilfredsstillerInteresse(interesser: List<Pair<String, String?>>): Boolean {
-    interesser.forEach {
-        if (it.first == this[typeKey]?.content &&
-            (it.second == null || (it.second == this[infotypeKey]?.content)))
-            return true
-    }
-    return false
-}
-
 internal class VurderingProducer(
     private val topicConfig: TopicAndClientIdHolder,
     private val vurderer: (List<JsonObject>) -> Vurdering,

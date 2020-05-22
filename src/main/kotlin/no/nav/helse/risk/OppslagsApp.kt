@@ -1,26 +1,24 @@
 package no.nav.helse.risk
 
+import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.JWKSet
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
-data class Vurdering(
-    val score: Int,
-    val vekt: Int,
-    val begrunnelser: List<String>
-)
-
-open class VurderingsApp(
+open class OppslagsApp(
     kafkaClientId: String,
+    infotype: String = kafkaClientId,
     interessertITypeInfotype: List<Pair<String, String?>>,
-    vurderer: (List<JsonObject>) -> Vurdering,
+    oppslagstjeneste: (List<JsonObject>) -> JsonElement,
     windowTimeInSeconds: Long = 5,
     environment: Environment = Environment(kafkaClientId),
     decryptionJWKS: JWKSet? = null,
+    encryptionJWK: JWK? = null,
     emitEarlyWhenAllInterestsPresent: Boolean = true
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertITypeInfotype = interessertITypeInfotype,
-    answerer = VurderingProducer(environment, vurderer, decryptionJWKS)::lagVurdering,
+    answerer = OppslagsProducer(infotype, oppslagstjeneste, decryptionJWKS, encryptionJWK)::lagSvar,
     windowTimeInSeconds = windowTimeInSeconds,
     environment = environment,
     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent

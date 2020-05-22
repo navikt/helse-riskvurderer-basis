@@ -3,19 +3,28 @@ package no.nav.helse.risk
 import com.nimbusds.jose.jwk.JWKSet
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.*
-import no.nav.common.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.content
+import no.nav.common.KafkaEnvironment
 import no.nav.helse.crypto.lagEnJWK
-import org.apache.kafka.clients.*
-import org.apache.kafka.clients.consumer.*
-import org.apache.kafka.clients.producer.*
-import org.apache.kafka.common.config.*
+import org.apache.kafka.clients.CommonClientConfigs
+import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.serialization.StringSerializer
-import org.apache.kafka.streams.KafkaStreams.State.*
-import org.awaitility.Awaitility.*
-import org.junit.jupiter.api.*
+import org.awaitility.Awaitility.await
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
-import java.time.*
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import java.time.Duration
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
@@ -31,21 +40,12 @@ internal class RiverEnTilEnTest {
         }
     }
 
-    private var streamRiver: StreamRiver? = null
     private var bufferedRiver: BufferedRiver? = null
     private val jwkSet = JWKSet(lagEnJWK())
 
     private val interesser = listOf(
         "oppslagsresultat" to "orginfo"
     )
-
-    private fun initStreamRiver() {
-        streamRiver = StreamRiver(consumerConfig, env, interesser, this::vurderer, jwkSet)
-        await()
-            .pollDelay(Duration.ofSeconds(1))
-            .atMost(Duration.ofSeconds(10))
-            .until { streamRiver!!.state() == RUNNING }
-    }
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
@@ -68,12 +68,6 @@ internal class RiverEnTilEnTest {
         val value = Json.parse(JsonObject.serializer(), jsonstring)
         val key = value["vedtaksperiodeId"]!!.content
         this.send(ProducerRecord(env.riskRiverTopic, key, value))
-    }
-
-    @Test
-    fun `stream based river`() {
-        initStreamRiver()
-        `relevant enkelt-melding fanges opp og sendes gjennom vurdererfunksjon for aa generere vurderingsmelding`()
     }
 
     @Test
@@ -121,8 +115,6 @@ internal class RiverEnTilEnTest {
     @AfterEach
     fun tearDown() {
         testConsumer.close()
-        streamRiver?.tearDown()
-        streamRiver = null
         bufferedRiver?.tearDown()
         bufferedRiver = null
         kafka.tearDown()

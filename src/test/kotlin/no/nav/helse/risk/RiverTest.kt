@@ -12,7 +12,6 @@ import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.config.*
 import org.apache.kafka.common.serialization.StringSerializer
-import org.apache.kafka.streams.KafkaStreams.State.*
 import org.awaitility.Awaitility.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
@@ -28,7 +27,6 @@ internal class RiverTest {
     private val jwk2 = lagEnJWK("key2")
     private val jwkSet = JWKSet(listOf(jwk1, jwk2))
 
-    private var streamRiver: StreamRiver? = null
     private var bufferedRiver: BufferedRiver? = null
 
     private val interesser = listOf(
@@ -37,14 +35,6 @@ internal class RiverTest {
         "oppslagsresultat" to "sensitiv1",
         "oppslagsresultat" to "sensitiv2"
     )
-
-    private fun initStreamRiver() {
-        streamRiver = StreamRiver(consumerConfig, env, interesser, this::vurderer, jwkSet)
-        await()
-            .pollDelay(Duration.ofSeconds(1))
-            .atMost(Duration.ofSeconds(10))
-            .until { streamRiver!!.state() == RUNNING }
-    }
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
@@ -73,12 +63,6 @@ internal class RiverTest {
         val value = json.parse(JsonObject.serializer(), jsonstring)
         val key = value["vedtaksperiodeId"]!!.content
         this.send(ProducerRecord(env.riskRiverTopic, key, value))
-    }
-
-    @Test
-    fun `stream based river`() {
-        initStreamRiver()
-        `relevante meldinger aggregeres og sendes gjennom vurderer-funksjon for aa generere en vurdering`()
     }
 
     @Test
@@ -130,8 +114,6 @@ internal class RiverTest {
     @AfterEach
     fun tearDown() {
         testConsumer.close()
-        streamRiver?.tearDown()
-        streamRiver = null
         bufferedRiver?.tearDown()
         bufferedRiver = null
         kafka.tearDown()

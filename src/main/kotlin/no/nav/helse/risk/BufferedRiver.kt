@@ -10,7 +10,6 @@ import no.nav.helse.buffer.WindowBufferEmitter
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.streams.KafkaStreams
 import java.time.Duration
 import java.util.*
 
@@ -41,7 +40,7 @@ internal class BufferedRiver(private val kafkaProducer: KafkaProducer<String, Js
         kafkaConsumer.close()
     }
 
-    fun state() = KafkaStreams.State.RUNNING
+    fun isRunning() = true
 
     suspend fun start() {
         val mangeTilEn: Boolean = interessertITypeInfotype.size > 1

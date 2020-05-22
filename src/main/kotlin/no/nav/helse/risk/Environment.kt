@@ -5,7 +5,6 @@ import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
 import org.apache.kafka.common.config.*
 import org.apache.kafka.common.serialization.*
-import org.apache.kafka.streams.errors.*
 import java.nio.file.*
 import java.util.*
 
@@ -46,7 +45,7 @@ class Environment(
         put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonObjectDeserializer::class.java)
         put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1000")
         put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest")
-        put("default.deserialization.exception.handler", LogAndContinueExceptionHandler::class.java)
+        //put("default.deserialization.exception.handler", LogAndContinueExceptionHandler::class.java)
     }
 
     internal fun commonKafkaConfig(serviceUser: ServiceUser, brokers: String?) = Properties().apply {

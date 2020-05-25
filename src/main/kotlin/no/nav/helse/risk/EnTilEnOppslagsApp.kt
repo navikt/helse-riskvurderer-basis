@@ -2,6 +2,7 @@ package no.nav.helse.risk
 
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.JWKSet
+import io.prometheus.client.CollectorRegistry
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -25,7 +26,8 @@ class EnTilEnOppslagsApp(kafkaClientId: String,
                          oppslagstjeneste: (RiskNeed) -> JsonElement,
                          environment: Environment = Environment(kafkaClientId),
                          encryptionJWK: JWK? = null,
-                         decryptionJWKS: JWKSet? = null) : OppslagsApp(
+                         decryptionJWKS: JWKSet? = null,
+                         collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry) : OppslagsApp(
     kafkaClientId = kafkaClientId,
     infotype = infotype,
     interessertITypeInfotype = listOf("RiskNeed" to null),
@@ -36,5 +38,6 @@ class EnTilEnOppslagsApp(kafkaClientId: String,
     windowTimeInSeconds = 0,
     environment = environment,
     decryptionJWKS = decryptionJWKS,
-    encryptionJWK = encryptionJWK
+    encryptionJWK = encryptionJWK,
+    collectorRegistry = collectorRegistry
 )

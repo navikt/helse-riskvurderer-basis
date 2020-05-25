@@ -1,6 +1,7 @@
 package no.nav.helse.risk
 
 import com.nimbusds.jose.jwk.JWKSet
+import io.prometheus.client.CollectorRegistry
 import kotlinx.serialization.json.JsonObject
 
 data class Vurdering(
@@ -16,12 +17,14 @@ open class VurderingsApp(
     windowTimeInSeconds: Long = 5,
     environment: Environment = Environment(kafkaClientId),
     decryptionJWKS: JWKSet? = null,
-    emitEarlyWhenAllInterestsPresent: Boolean = true
+    emitEarlyWhenAllInterestsPresent: Boolean = true,
+    collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertITypeInfotype = interessertITypeInfotype,
     answerer = VurderingProducer(environment, vurderer, decryptionJWKS)::lagVurdering,
     windowTimeInSeconds = windowTimeInSeconds,
     environment = environment,
-    emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent
+    emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
+    collectorRegistry = collectorRegistry
 )

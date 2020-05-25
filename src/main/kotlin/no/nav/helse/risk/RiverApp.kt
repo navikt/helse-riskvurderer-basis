@@ -4,6 +4,7 @@ import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonObject
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.common.KafkaException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
@@ -22,11 +23,17 @@ open class RiverApp internal constructor(
     private val kafkaConsumerConfig = environment.kafkaConsumerConfig(kafkaUser)
     private val kafkaProducerConfig = environment.kafkaProducerConfig(kafkaUser)
     private val applicationContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
-    private val exceptionHandler = CoroutineExceptionHandler { context, ex ->
+    private var healthy = true
+    fun isHealthy(): Boolean = healthy
+    val exceptionHandler = CoroutineExceptionHandler { _, ex ->
         log.error("Feil boblet helt til topps", ex)
-        context.cancel(CancellationException("Feil som (kanskje) burde vært catchet av noen andre", ex))
-        applicationContext.close()
+        if (shouldCauseRestart(ex)) {
+            log.error("Setting status to UN-healthy")
+            healthy = false
+        }
     }
+    private fun shouldCauseRestart(ex: Throwable): Boolean =
+        (ex is KafkaException)
 
     private var bufferedRiver: BufferedRiver? = null
 
@@ -36,13 +43,11 @@ open class RiverApp internal constructor(
             applicationContext.close()
         })
 
-        fun isAlive(): Boolean = bufferedRiver?.isRunning() ?: false
-
         GlobalScope.launch(applicationContext + exceptionHandler) {
             launch {
                 webserver(collectorRegistry = collectorRegistry,
-                    isAlive = ::isAlive,
-                    isReady = ::isAlive)
+                    isAlive = ::isHealthy,
+                    isReady = ::isHealthy)
             }
             launch {
                 bufferedRiver = BufferedRiver(

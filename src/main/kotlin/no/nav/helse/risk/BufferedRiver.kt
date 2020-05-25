@@ -40,8 +40,6 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
         kafkaConsumer.close()
     }
 
-    fun isRunning() = true
-
     suspend fun start() {
         val mangeTilEn: Boolean = interessertI.size > 1
         kafkaConsumer

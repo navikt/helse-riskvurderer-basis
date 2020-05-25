@@ -26,7 +26,7 @@ class CompletenessTest {
             }
         )
 
-        assertFalse(isCompleteMessageSetAccordingToInterests(incomplete, interesser))
+        assertFalse(isCompleteMessageSetAccordingToInterests(incomplete, interesser.tilInteresser()))
 
         val complete = listOf(
             json {
@@ -46,7 +46,7 @@ class CompletenessTest {
             }
         )
 
-        assertTrue(isCompleteMessageSetAccordingToInterests(complete, interesser))
+        assertTrue(isCompleteMessageSetAccordingToInterests(complete, interesser.tilInteresser()))
     }
 
 }

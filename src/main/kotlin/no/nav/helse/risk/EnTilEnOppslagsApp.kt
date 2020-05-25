@@ -29,7 +29,7 @@ class EnTilEnOppslagsApp(kafkaClientId: String,
                          collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry) : OppslagsApp(
     kafkaClientId = kafkaClientId,
     infotype = infotype,
-    interessertITypeInfotype = listOf("RiskNeed" to null),
+    interessertI = listOf(Interesse.riskNeed(1)),
     oppslagstjeneste = { meldinger ->
         require(meldinger.size == 1)
         oppslagstjeneste(jsonFlexible.fromJson(RiskNeed.serializer(), meldinger.first()))

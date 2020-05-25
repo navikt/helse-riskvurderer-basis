@@ -34,7 +34,7 @@ internal class RiverTest {
         "oppslagsresultat" to "orginfo",
         "oppslagsresultat" to "sensitiv1",
         "oppslagsresultat" to "sensitiv2"
-    )
+    ).tilInteresser()
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),

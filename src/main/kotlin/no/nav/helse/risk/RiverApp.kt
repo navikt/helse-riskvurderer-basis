@@ -10,7 +10,7 @@ import java.util.concurrent.Executors
 
 open class RiverApp internal constructor(
     val kafkaClientId: String,
-    val interessertITypeInfotype: List<Pair<String, String?>>,
+    val interessertI: List<Interesse>,
     private val answerer: (List<JsonObject>, String) -> JsonObject?,
     val windowTimeInSeconds: Long = 5,
     private val emitEarlyWhenAllInterestsPresent: Boolean = true,
@@ -48,7 +48,7 @@ open class RiverApp internal constructor(
                 bufferedRiver = BufferedRiver(
                     kafkaProducer = KafkaProducer(kafkaProducerConfig),
                     kafkaConsumerConfig = kafkaConsumerConfig,
-                    interessertITypeInfotype = interessertITypeInfotype,
+                    interessertI = interessertI,
                     answerer = answerer,
                     windowTimeInSeconds = windowTimeInSeconds,
                     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent

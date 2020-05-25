@@ -45,7 +45,7 @@ internal class RiverEnTilEnTest {
 
     private val interesser = listOf(
         "oppslagsresultat" to "orginfo"
-    )
+    ).tilInteresser()
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),

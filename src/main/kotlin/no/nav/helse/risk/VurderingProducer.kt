@@ -13,6 +13,7 @@ internal const val vedtaksperiodeIdKey = "vedtaksperiodeId"
 internal const val typeKey = "type"
 internal const val vurderingType = "vurdering"
 internal const val infotypeKey = "infotype"
+internal const val iterasjonKey = "iterasjon"
 
 @Serializable
 internal data class Vurderingsmelding(

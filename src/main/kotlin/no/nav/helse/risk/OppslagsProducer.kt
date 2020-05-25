@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 
 @Serializable
 internal data class Oppslagsmelding(
-    val type: String = "oppslagsresultat",
+    val type: String = typeOppslagsresultat,
     val infotype: String,
     val vedtaksperiodeId: String,
     val data: JsonElement
@@ -18,7 +18,7 @@ internal data class Oppslagsmelding(
 
 @Serializable
 internal data class OppslagsmeldingKryptert(
-    val type: String = "oppslagsresultat",
+    val type: String = typeOppslagsresultat,
     val infotype: String,
     val vedtaksperiodeId: String,
     val data: String

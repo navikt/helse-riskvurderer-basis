@@ -5,12 +5,12 @@ import io.prometheus.client.CollectorRegistry
 import kotlinx.serialization.json.JsonObject
 
 class EnTilEnVurderingsApp(kafkaClientId: String,
-                           interessertITypeInfotype: Pair<String, String?>,
+                           interessertI: Interesse,
                            vurderer: (JsonObject) -> Vurdering,
                            decryptionJWKS: JWKSet? = null,
                            collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry) : VurderingsApp(
     kafkaClientId = kafkaClientId,
-    interessertITypeInfotype = listOf((interessertITypeInfotype)),
+    interessertI = listOf(interessertI),
     vurderer = { info ->
         require(info.size == 1)
         vurderer(info.first())

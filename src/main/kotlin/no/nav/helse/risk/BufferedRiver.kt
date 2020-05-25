@@ -5,6 +5,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
+import kotlinx.serialization.json.intOrNull
 import no.nav.helse.buffer.WindowBufferEmitter
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -12,20 +13,12 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import java.time.Duration
 import java.util.*
 
-internal fun JsonObject.tilfredsstillerInteresse(interesser: List<Pair<String, String?>>): Boolean {
-    interesser.forEach {
-        if (it.first == this[typeKey]?.content &&
-            (it.second == null || (it.second == this[infotypeKey]?.content)))
-            return true
-    }
-    return false
-}
 
 val riskRiverTopic = "helse-risk-river-v1"
 
 internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<String, JsonObject>,
                                   private val kafkaConsumerConfig: Properties,
-                                  private val interessertITypeInfotype: List<Pair<String, String?>>,
+                                  private val interessertI: List<Interesse>,
                                   private val answerer: (List<JsonObject>, String) -> JsonObject?,
                                   windowTimeInSeconds: Long = 5,
                                   emitEarlyWhenAllInterestsPresent: Boolean = true,
@@ -41,7 +34,7 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
 
 
     private fun isCompleteMessageSet(msgs: List<JsonObject>) =
-        isCompleteMessageSetAccordingToInterests(msgs, interessertITypeInfotype)
+        isCompleteMessageSetAccordingToInterests(msgs, interessertI)
 
     fun tearDown() {
         kafkaConsumer.close()
@@ -50,12 +43,12 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
     fun isRunning() = true
 
     suspend fun start() {
-        val mangeTilEn: Boolean = interessertITypeInfotype.size > 1
+        val mangeTilEn: Boolean = interessertI.size > 1
         kafkaConsumer
             .apply { subscribe(listOf(riskRiverTopic)) }
             .asFlow()
             .filterNotNull()
-            .filter { (_, value, _) -> value.tilfredsstillerInteresse(interessertITypeInfotype) }
+            .filter { (_, value, _) -> value.tilfredsstillerInteresser(interessertI) }
             .filterNotNull()
             .collect { (key, value, timestamp) ->
                 if (mangeTilEn) {
@@ -82,10 +75,10 @@ internal fun extractUniqueVedtaksperiodeId(answers: List<JsonObject>) =
         }
     }
 
-internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Pair<String, String?>>) =
+internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Interesse>) =
     msgs.size == interesser.size && (
         interesser.fold(true, { acc, interesse ->
-            acc && (null != msgs.find { it.tilfredsstillerInteresse(listOf(interesse)) })
+            acc && (null != msgs.find { it.tilfredsstillerInteresser(listOf(interesse)) })
         }))
 
 

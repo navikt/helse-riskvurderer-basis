@@ -7,24 +7,56 @@ import kotlin.test.assertTrue
 
 class InteresseTest {
 
-    val interesser: List<Pair<String, String?>> = listOf(
-        "RiskNeed" to null,
-        "oppslagsresultat" to "orginfo-open",
-        "oppslagsresultat" to "roller"
+    val interesserSomObjekter = listOf(
+        Interesse(type = "RiskNeed"),
+        Interesse(type = "TulleNeed", iterasjon = 2),
+        Interesse(type = "oppslagsresultat", infotype = "orginfo-open"),
+        Interesse.oppslagsresultat("roller")
     )
 
     @Test
     fun testUinteressant() {
         assertFalse(json {
             "type" to "vurdering"
-        }.tilfredsstillerInteresse(interesser))
+        }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
     fun testInteressantUtenInfotype() {
         assertTrue(json {
             "type" to "RiskNeed"
-        }.tilfredsstillerInteresse(interesser))
+        }.tilfredsstillerInteresser(interesserSomObjekter))
+    }
+
+    @Test
+    fun testInteressantMedIterasjonSomIgnoreres() {
+        assertTrue(json {
+            "type" to "RiskNeed"
+            "iterasjon" to 1
+        }.tilfredsstillerInteresser(interesserSomObjekter))
+    }
+
+    @Test
+    fun testInteressantTypeMedManglendeIterasjon() {
+        assertFalse(json {
+            "type" to "TulleNeed"
+        }.tilfredsstillerInteresser(interesserSomObjekter))
+    }
+
+    @Test
+    fun testInteressantTypeMedFeilIterasjon() {
+        assertFalse(json {
+            "type" to "TulleNeed"
+            "iterasjon" to 1
+        }.tilfredsstillerInteresser(interesserSomObjekter))
+    }
+
+    @Test
+    fun testInteressantTypeMedRiktigIterasjon() {
+        assertTrue(json {
+            "type" to "TulleNeed"
+            "iterasjon" to 2
+        }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
@@ -32,7 +64,7 @@ class InteresseTest {
         assertTrue(json {
             "type" to "oppslagsresultat"
             "infotype" to "orginfo-open"
-        }.tilfredsstillerInteresse(interesser))
+        }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
@@ -40,7 +72,7 @@ class InteresseTest {
         assertFalse(json {
             "type" to "oppslagsresultat"
             "infotype" to "nokogreior"
-        }.tilfredsstillerInteresse(interesser))
+        }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
 }

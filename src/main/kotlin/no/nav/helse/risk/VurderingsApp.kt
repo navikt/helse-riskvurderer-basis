@@ -12,7 +12,7 @@ data class Vurdering(
 
 open class VurderingsApp(
     kafkaClientId: String,
-    interessertITypeInfotype: List<Pair<String, String?>>,
+    interessertI: List<Interesse>,
     vurderer: (List<JsonObject>) -> Vurdering,
     windowTimeInSeconds: Long = 5,
     decryptionJWKS: JWKSet? = null,
@@ -20,7 +20,7 @@ open class VurderingsApp(
     collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
-    interessertITypeInfotype = interessertITypeInfotype,
+    interessertI = interessertI,
     answerer = VurderingProducer(
         infotype = kafkaClientId,
         vurderer = vurderer,

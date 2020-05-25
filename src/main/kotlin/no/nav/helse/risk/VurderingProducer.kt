@@ -14,11 +14,6 @@ internal const val typeKey = "type"
 internal const val vurderingType = "vurdering"
 internal const val infotypeKey = "infotype"
 
-internal interface TopicAndClientIdHolder {
-    val riskRiverTopic: String
-    val kafkaClientId: String
-}
-
 @Serializable
 internal data class Vurderingsmelding(
     val type: String = vurderingType,
@@ -30,7 +25,7 @@ internal data class Vurderingsmelding(
 )
 
 internal class VurderingProducer(
-    private val topicConfig: TopicAndClientIdHolder,
+    private val infotype: String,
     private val vurderer: (List<JsonObject>) -> Vurdering,
     private val decryptionJWKS: JWKSet?
 ) {
@@ -44,7 +39,7 @@ internal class VurderingProducer(
             log.info("Lager vurdering for vedtaksperiodeId=$vedtaksperiodeId")
             val vurdering = vurderer(answers.map(::decryptIfEncrypted))
             json.toJson(Vurderingsmelding.serializer(), Vurderingsmelding(
-                infotype = topicConfig.kafkaClientId,
+                infotype = infotype,
                 vedtaksperiodeId = vedtaksperiodeId,
                 score = vurdering.score,
                 vekt = vurdering.vekt,

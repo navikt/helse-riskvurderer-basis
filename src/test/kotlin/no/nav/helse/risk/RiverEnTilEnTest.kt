@@ -29,14 +29,14 @@ import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 internal class RiverEnTilEnTest {
-    val env = Environment("testapp")
+    val env = RiverEnvironment("testapp")
     private val json = Json(JsonConfiguration.Stable)
 
     @BeforeEach
     fun setup() {
         kafka.start()
         testConsumer = KafkaConsumer<String, JsonObject>(testConsumerConfig).also {
-            it.subscribe(listOf(env.riskRiverTopic))
+            it.subscribe(listOf(riskRiverTopic))
         }
     }
 
@@ -49,7 +49,7 @@ internal class RiverEnTilEnTest {
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
-            consumerConfig, env, interesser, VurderingProducer(env, this::vurderer, jwkSet)::lagVurdering)
+            consumerConfig, interesser, VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering)
         GlobalScope.launch {
             bufferedRiver!!.start()
         }
@@ -67,7 +67,7 @@ internal class RiverEnTilEnTest {
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {
         val value = Json.parse(JsonObject.serializer(), jsonstring)
         val key = value["vedtaksperiodeId"]!!.content
-        this.send(ProducerRecord(env.riskRiverTopic, key, value))
+        this.send(ProducerRecord(riskRiverTopic, key, value))
     }
 
     @Test
@@ -82,7 +82,7 @@ internal class RiverEnTilEnTest {
             producer.sendJson("""{"nummer":3, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
             producer.sendJson("""{"nummer":6, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
             val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
-            producer.send(ProducerRecord(env.riskRiverTopic, json.parse(JsonObject.serializer(), payload3)))
+            producer.send(ProducerRecord(riskRiverTopic, json.parse(JsonObject.serializer(), payload3)))
         }
 
         var vurdering: Vurderingsmelding? = null
@@ -125,8 +125,8 @@ internal class RiverEnTilEnTest {
     private val kafka = KafkaEnvironment(
         autoStart = false,
         noOfBrokers = 1,
-        topicNames = listOf(env.riskRiverTopic),
-        topicInfos = listOf(KafkaEnvironment.TopicInfo(env.riskRiverTopic)),
+        topicNames = listOf(riskRiverTopic),
+        topicInfos = listOf(KafkaEnvironment.TopicInfo(riskRiverTopic)),
         withSchemaRegistry = false,
         withSecurity = false
     )

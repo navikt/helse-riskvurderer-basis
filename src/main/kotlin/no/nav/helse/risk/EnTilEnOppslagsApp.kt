@@ -24,7 +24,6 @@ private val jsonFlexible = Json(JsonConfiguration.Stable.copy(
 class EnTilEnOppslagsApp(kafkaClientId: String,
                          infotype: String = kafkaClientId,
                          oppslagstjeneste: (RiskNeed) -> JsonElement,
-                         environment: Environment = Environment(kafkaClientId),
                          encryptionJWK: JWK? = null,
                          decryptionJWKS: JWKSet? = null,
                          collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry) : OppslagsApp(
@@ -36,7 +35,6 @@ class EnTilEnOppslagsApp(kafkaClientId: String,
         oppslagstjeneste(jsonFlexible.fromJson(RiskNeed.serializer(), meldinger.first()))
     },
     windowTimeInSeconds = 0,
-    environment = environment,
     decryptionJWKS = decryptionJWKS,
     encryptionJWK = encryptionJWK,
     collectorRegistry = collectorRegistry

@@ -20,7 +20,7 @@ import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 internal class RiverTest {
-    val env = Environment("testapp")
+    val env = RiverEnvironment("testapp")
     private val json = Json(JsonConfiguration.Stable)
 
     private val jwk1 = lagEnJWK("key1")
@@ -38,7 +38,7 @@ internal class RiverTest {
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
-            consumerConfig, env, interesser, VurderingProducer(env, this::vurderer, jwkSet)::lagVurdering)
+            consumerConfig, interesser, VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering)
         GlobalScope.launch {
             bufferedRiver!!.start()
         }
@@ -48,7 +48,7 @@ internal class RiverTest {
     fun setup() {
         kafka.start()
         testConsumer = KafkaConsumer<String, JsonObject>(testConsumerConfig).also {
-            it.subscribe(listOf(env.riskRiverTopic))
+            it.subscribe(listOf(riskRiverTopic))
         }
     }
 
@@ -62,7 +62,7 @@ internal class RiverTest {
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {
         val value = json.parse(JsonObject.serializer(), jsonstring)
         val key = value["vedtaksperiodeId"]!!.content
-        this.send(ProducerRecord(env.riskRiverTopic, key, value))
+        this.send(ProducerRecord(riskRiverTopic, key, value))
     }
 
     @Test
@@ -81,7 +81,7 @@ internal class RiverTest {
             producer.sendJson("""{"data" : "${json { "nummer" to 1000 }.encryptAsJWE(jwk2)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv2", "type": "oppslagsresultat", "info":"firma1"}""")
 
             val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
-            producer.send(ProducerRecord(env.riskRiverTopic, json.parse(JsonObject.serializer(), payload3)))
+            producer.send(ProducerRecord(riskRiverTopic, json.parse(JsonObject.serializer(), payload3)))
         }
 
         var vurdering: Vurderingsmelding? = null
@@ -124,8 +124,8 @@ internal class RiverTest {
     private val kafka = KafkaEnvironment(
         autoStart = false,
         noOfBrokers = 1,
-        topicNames = listOf(env.riskRiverTopic),
-        topicInfos = listOf(KafkaEnvironment.TopicInfo(env.riskRiverTopic)),
+        topicNames = listOf(riskRiverTopic),
+        topicInfos = listOf(KafkaEnvironment.TopicInfo(riskRiverTopic)),
         withSchemaRegistry = false,
         withSecurity = false
     )

@@ -13,10 +13,10 @@ open class RiverApp internal constructor(
     val interessertITypeInfotype: List<Pair<String, String?>>,
     private val answerer: (List<JsonObject>, String) -> JsonObject?,
     val windowTimeInSeconds: Long = 5,
-    private val environment: Environment = Environment(kafkaClientId),
     private val emitEarlyWhenAllInterestsPresent: Boolean = true,
     private val collectorRegistry: CollectorRegistry
 ) {
+    private val environment: RiverEnvironment = RiverEnvironment(kafkaClientId)
     private val log: Logger = LoggerFactory.getLogger(VurderingsApp::class.java)
     private val kafkaUser = environment.readServiceUserCredentials()
     private val kafkaConsumerConfig = environment.kafkaConsumerConfig(kafkaUser)
@@ -48,7 +48,6 @@ open class RiverApp internal constructor(
                 bufferedRiver = BufferedRiver(
                     kafkaProducer = KafkaProducer(kafkaProducerConfig),
                     kafkaConsumerConfig = kafkaConsumerConfig,
-                    topicConfig = environment,
                     interessertITypeInfotype = interessertITypeInfotype,
                     answerer = answerer,
                     windowTimeInSeconds = windowTimeInSeconds,

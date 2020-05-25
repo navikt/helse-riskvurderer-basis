@@ -21,9 +21,10 @@ internal fun JsonObject.tilfredsstillerInteresse(interesser: List<Pair<String, S
     return false
 }
 
+val riskRiverTopic = "helse-risk-river-v1"
+
 internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<String, JsonObject>,
                                   private val kafkaConsumerConfig: Properties,
-                                  private val topicConfig: TopicAndClientIdHolder,
                                   private val interessertITypeInfotype: List<Pair<String, String?>>,
                                   private val answerer: (List<JsonObject>, String) -> JsonObject?,
                                   windowTimeInSeconds: Long = 5,
@@ -51,7 +52,7 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
     suspend fun start() {
         val mangeTilEn: Boolean = interessertITypeInfotype.size > 1
         kafkaConsumer
-            .apply { subscribe(listOf(topicConfig.riskRiverTopic)) }
+            .apply { subscribe(listOf(riskRiverTopic)) }
             .asFlow()
             .filterNotNull()
             .filter { (_, value, _) -> value.tilfredsstillerInteresse(interessertITypeInfotype) }
@@ -68,7 +69,7 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
     private fun lagOgSendSvar(answers: List<JsonObject>) {
         val vedtaksperiodeId = extractUniqueVedtaksperiodeId(answers)
         answerer(answers, vedtaksperiodeId)?.also { svar ->
-            kafkaProducer.send(ProducerRecord(topicConfig.riskRiverTopic, vedtaksperiodeId, svar))
+            kafkaProducer.send(ProducerRecord(riskRiverTopic, vedtaksperiodeId, svar))
         }
     }
 }

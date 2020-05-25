@@ -15,16 +15,17 @@ open class VurderingsApp(
     interessertITypeInfotype: List<Pair<String, String?>>,
     vurderer: (List<JsonObject>) -> Vurdering,
     windowTimeInSeconds: Long = 5,
-    environment: Environment = Environment(kafkaClientId),
     decryptionJWKS: JWKSet? = null,
     emitEarlyWhenAllInterestsPresent: Boolean = true,
     collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertITypeInfotype = interessertITypeInfotype,
-    answerer = VurderingProducer(environment, vurderer, decryptionJWKS)::lagVurdering,
+    answerer = VurderingProducer(
+        infotype = kafkaClientId,
+        vurderer = vurderer,
+        decryptionJWKS = decryptionJWKS)::lagVurdering,
     windowTimeInSeconds = windowTimeInSeconds,
-    environment = environment,
     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
     collectorRegistry = collectorRegistry
 )

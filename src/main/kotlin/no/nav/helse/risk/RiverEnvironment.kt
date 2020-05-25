@@ -15,13 +15,13 @@ data class ServiceUser(
     override fun toString() = "ServiceUser:$username"
 }
 
-class Environment(
-    override val kafkaClientId: String
-) : TopicAndClientIdHolder {
+internal class RiverEnvironment(
+    private val kafkaClientId: String
+) {
     val vaultBase = "/var/run/secrets/nais.io/kafkauser"
     val vaultBasePath: Path = Paths.get(vaultBase)
 
-    override val riskRiverTopic = "helse-risk-river-v1"
+
 
     fun readServiceUserCredentials() = ServiceUser(
         username = Files.readString(vaultBasePath.resolve("username")),

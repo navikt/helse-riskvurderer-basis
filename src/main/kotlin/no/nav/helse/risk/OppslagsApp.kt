@@ -8,11 +8,10 @@ import kotlinx.serialization.json.JsonObject
 
 open class OppslagsApp(
     kafkaClientId: String,
-    infotype: String = kafkaClientId,
+    infotype: String,
     interessertITypeInfotype: List<Pair<String, String?>>,
     oppslagstjeneste: (List<JsonObject>) -> JsonElement,
     windowTimeInSeconds: Long = 5,
-    environment: Environment = Environment(kafkaClientId),
     decryptionJWKS: JWKSet? = null,
     encryptionJWK: JWK? = null,
     emitEarlyWhenAllInterestsPresent: Boolean = true,
@@ -22,7 +21,6 @@ open class OppslagsApp(
     interessertITypeInfotype = interessertITypeInfotype,
     answerer = OppslagsProducer(infotype, oppslagstjeneste, decryptionJWKS, encryptionJWK)::lagSvar,
     windowTimeInSeconds = windowTimeInSeconds,
-    environment = environment,
     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
     collectorRegistry = collectorRegistry
 )

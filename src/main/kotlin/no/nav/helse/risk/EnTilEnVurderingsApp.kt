@@ -7,7 +7,6 @@ import kotlinx.serialization.json.JsonObject
 class EnTilEnVurderingsApp(kafkaClientId: String,
                            interessertITypeInfotype: Pair<String, String?>,
                            vurderer: (JsonObject) -> Vurdering,
-                           environment: Environment = Environment(kafkaClientId),
                            decryptionJWKS: JWKSet? = null,
                            collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry) : VurderingsApp(
     kafkaClientId = kafkaClientId,
@@ -17,7 +16,6 @@ class EnTilEnVurderingsApp(kafkaClientId: String,
         vurderer(info.first())
     },
     windowTimeInSeconds = 0,
-    environment = environment,
     decryptionJWKS = decryptionJWKS,
     collectorRegistry = collectorRegistry
 )

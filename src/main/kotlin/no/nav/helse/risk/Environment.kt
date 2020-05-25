@@ -18,7 +18,7 @@ data class ServiceUser(
 class Environment(
     override val kafkaClientId: String
 ) : TopicAndClientIdHolder {
-    val vaultBase = "/var/run/secrets/nais.io/serviceuser"
+    val vaultBase = "/var/run/secrets/nais.io/kafkauser"
     val vaultBasePath: Path = Paths.get(vaultBase)
 
     override val riskRiverTopic = "helse-risk-river-v1"

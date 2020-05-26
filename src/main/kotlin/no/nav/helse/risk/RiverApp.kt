@@ -3,11 +3,17 @@ package no.nav.helse.risk
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonObject
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.KafkaException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
+
+data class KafkaRiverEnvironment(
+    val kafkaConsumer: KafkaConsumer<String, JsonObject>,
+    val kafkaProducer: KafkaProducer<String, JsonObject>
+)
 
 open class RiverApp internal constructor(
     val kafkaClientId: String,
@@ -19,9 +25,19 @@ open class RiverApp internal constructor(
 ) {
     private val environment: RiverEnvironment = RiverEnvironment(kafkaClientId)
     private val log: Logger = LoggerFactory.getLogger(VurderingsApp::class.java)
-    private val kafkaUser = environment.readServiceUserCredentials()
-    private val kafkaConsumerConfig = environment.kafkaConsumerConfig(kafkaUser)
-    private val kafkaProducerConfig = environment.kafkaProducerConfig(kafkaUser)
+
+    private var overriddenKafkaEnvironment: KafkaRiverEnvironment? = null
+    private fun createKafkaEnvironment() : KafkaRiverEnvironment {
+        return overriddenKafkaEnvironment?:environment.readServiceUserCredentials().let { kafkaUser ->
+            val kafkaConsumerConfig = environment.kafkaConsumerConfig(kafkaUser)
+            val kafkaProducerConfig = environment.kafkaProducerConfig(kafkaUser)
+            KafkaRiverEnvironment(
+                kafkaProducer = KafkaProducer<String,JsonObject>(kafkaProducerConfig),
+                kafkaConsumer = KafkaConsumer<String,JsonObject>(kafkaConsumerConfig)
+            )
+        }
+    }
+
     private val applicationContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
     private var healthy = true
     fun isHealthy(): Boolean = healthy
@@ -37,11 +53,18 @@ open class RiverApp internal constructor(
 
     private var bufferedRiver: BufferedRiver? = null
 
+    fun ovverrideKafkaEnvironment(kafkaEnvironment: KafkaRiverEnvironment) : RiverApp {
+        overriddenKafkaEnvironment = kafkaEnvironment
+        return this
+    }
+
     @FlowPreview
     fun start() {
         Runtime.getRuntime().addShutdownHook(Thread {
             applicationContext.close()
         })
+
+        val kafka = createKafkaEnvironment()
 
         GlobalScope.launch(applicationContext + exceptionHandler) {
             launch {
@@ -51,8 +74,8 @@ open class RiverApp internal constructor(
             }
             launch {
                 bufferedRiver = BufferedRiver(
-                    kafkaProducer = KafkaProducer(kafkaProducerConfig),
-                    kafkaConsumerConfig = kafkaConsumerConfig,
+                    kafkaProducer = kafka.kafkaProducer,
+                    kafkaConsumer = kafka.kafkaConsumer,
                     interessertI = interessertI,
                     answerer = answerer,
                     windowTimeInSeconds = windowTimeInSeconds,

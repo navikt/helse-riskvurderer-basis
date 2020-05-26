@@ -5,24 +5,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
-import kotlinx.serialization.json.intOrNull
 import no.nav.helse.buffer.WindowBufferEmitter
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import java.time.Duration
-import java.util.*
-
 
 val riskRiverTopic = "helse-risk-river-v1"
 
 internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<String, JsonObject>,
-                                  private val kafkaConsumerConfig: Properties,
+                                  private val kafkaConsumer: KafkaConsumer<String, JsonObject>,
                                   private val interessertI: List<Interesse>,
                                   private val answerer: (List<JsonObject>, String) -> JsonObject?,
                                   windowTimeInSeconds: Long = 5,
-                                  emitEarlyWhenAllInterestsPresent: Boolean = true,
-                                  private val kafkaConsumer: KafkaConsumer<String, JsonObject> = KafkaConsumer(kafkaConsumerConfig)
+                                  emitEarlyWhenAllInterestsPresent: Boolean = true
 ) {
 
     private val aggregator = WindowBufferEmitter(

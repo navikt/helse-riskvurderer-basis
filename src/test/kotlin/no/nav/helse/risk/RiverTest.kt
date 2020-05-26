@@ -38,7 +38,7 @@ internal class RiverTest {
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
-            consumerConfig, interesser, VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering)
+            KafkaConsumer<String, JsonObject>(consumerConfig), interesser, VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering)
         GlobalScope.launch {
             bufferedRiver!!.start()
         }

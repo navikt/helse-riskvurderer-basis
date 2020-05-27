@@ -32,10 +32,12 @@ fun JsonObject.tilRiskNeed(): RiskNeed =
 fun List<JsonObject>.finnRiskNeed(): RiskNeed? =
     this.find { it[typeKey]?.content == typeRiskNeed }?.tilRiskNeed()
 
-fun List<JsonObject>.finnOppslagsresultat(infotype: String): JsonElement? =
-    this.find {
-        it[typeKey]?.content == typeOppslagsresultat && it[infotypeKey]?.content == infotype
-    }?.jsonObject!![dataKey]
+fun List<JsonObject>.finnOppslagsresultat(infotype: String): JsonElement? {
+    val kandidat = this.find {
+        it[typeKey]?.contentOrNull == typeOppslagsresultat && it[infotypeKey]?.contentOrNull == infotype
+    }
+    return if (kandidat == null) null else kandidat.jsonObject[dataKey]
+}
 
 fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
     this.let { meldinger ->

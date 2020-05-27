@@ -60,9 +60,8 @@ class VurderingsAppTest {
             })
 
         fun vurderer(meldinger: List<JsonObject>): Vurdering {
-            val riskNeed = json.fromJson(RiskNeed.serializer(), meldinger.find { it["type"]!!.content == "RiskNeed" }!!)
-            val oppslag = meldinger.find { it["type"]!!.content == "oppslagsresultat" && it["infotype"]!!.content == "testdata" }!!
-            val data = oppslag["data"]!!.jsonObject
+            val riskNeed = meldinger.finnRiskNeed()!!
+            val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
             return Vurdering(
                 score = 6,
                 vekt = 5,

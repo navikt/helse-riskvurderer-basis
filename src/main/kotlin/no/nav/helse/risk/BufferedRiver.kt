@@ -54,20 +54,12 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
     }
 
     private fun lagOgSendSvar(answers: List<JsonObject>) {
-        val vedtaksperiodeId = extractUniqueVedtaksperiodeId(answers)
+        val vedtaksperiodeId = answers.finnUnikVedtaksperiodeId()
         answerer(answers, vedtaksperiodeId)?.also { svar ->
             kafkaProducer.send(ProducerRecord(riskRiverTopic, vedtaksperiodeId, svar))
         }
     }
 }
-
-internal fun extractUniqueVedtaksperiodeId(answers: List<JsonObject>) =
-    answers.first()[vedtaksperiodeIdKey]!!.content.apply {
-        answers.forEach {
-            val neste = it[vedtaksperiodeIdKey]!!.content
-            if (neste != this) throw IllegalArgumentException("ulik id: $neste != $this")
-        }
-    }
 
 internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Interesse>) =
     msgs.size == interesser.size && (

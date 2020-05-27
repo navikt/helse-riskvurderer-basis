@@ -2,7 +2,7 @@ package no.nav.helse.risk
 
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.*
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.KafkaException

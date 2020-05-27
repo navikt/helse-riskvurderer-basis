@@ -9,15 +9,9 @@ import org.slf4j.LoggerFactory
 
 private val json = Json(JsonConfiguration.Stable)
 
-internal const val vedtaksperiodeIdKey = "vedtaksperiodeId"
-internal const val typeKey = "type"
-internal const val vurderingType = "vurdering"
-internal const val infotypeKey = "infotype"
-internal const val iterasjonKey = "iterasjon"
-
 @Serializable
 internal data class Vurderingsmelding(
-    val type: String = vurderingType,
+    val type: String = typeVurdering,
     val infotype: String,
     val vedtaksperiodeId: String,
     val score: Int,
@@ -55,11 +49,11 @@ internal class VurderingProducer(
     private fun decryptIfEncrypted(message: JsonObject): JsonObject {
         return try {
             if (decryptionJWKS != null
-                && message.containsKey("data")
-                && message["data"]?.contentOrNull != null
-                && message["data"]!!.content.startsWith("ey")) {
-                val decrypted = JsonElement.decryptFromJWE(message["data"]!!.content, decryptionJWKS)
-                json {}.copy(message.content.toMutableMap().apply { this["data"] = decrypted } )
+                && message.containsKey(dataKey)
+                && message[dataKey]?.contentOrNull != null
+                && message[dataKey]!!.content.startsWith("ey")) {
+                val decrypted = JsonElement.decryptFromJWE(message[dataKey]!!.content, decryptionJWKS)
+                json {}.copy(message.content.toMutableMap().apply { this[dataKey] = decrypted } )
             } else {
                 message
             }

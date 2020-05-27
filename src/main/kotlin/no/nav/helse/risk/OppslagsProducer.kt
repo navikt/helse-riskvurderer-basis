@@ -65,11 +65,11 @@ internal class OppslagsProducer(
     private fun decryptIfEncrypted(message: JsonObject): JsonObject {
         return try {
             if (decryptionJWKS != null
-                && message.containsKey("data")
-                && message["data"]?.contentOrNull != null
-                && message["data"]!!.content.startsWith("ey")) {
-                val decrypted = JsonElement.decryptFromJWE(message["data"]!!.content, decryptionJWKS)
-                json {}.copy(message.content.toMutableMap().apply { this["data"] = decrypted })
+                && message.containsKey(dataKey)
+                && message[dataKey]?.contentOrNull != null
+                && message[dataKey]!!.content.startsWith("ey")) {
+                val decrypted = JsonElement.decryptFromJWE(message[dataKey]!!.content, decryptionJWKS)
+                json {}.copy(message.content.toMutableMap().apply { this[dataKey] = decrypted })
             } else {
                 message
             }

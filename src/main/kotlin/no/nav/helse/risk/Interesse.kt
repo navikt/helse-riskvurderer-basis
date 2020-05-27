@@ -4,9 +4,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
 import kotlinx.serialization.json.intOrNull
 
-val typeOppslagsresultat = "oppslagsresultat"
-val typeRiskNeed = "RiskNeed"
-
 data class Interesse(
     val type: String,
     val infotype: String? = null,

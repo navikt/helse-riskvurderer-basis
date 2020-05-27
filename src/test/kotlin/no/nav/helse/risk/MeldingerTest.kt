@@ -18,6 +18,10 @@ class MeldingerTest {
         "fnr" to "01010100000"
         "behovOpprettet" to  LocalDateTime.now().toString()
         "iterasjon" to 1
+        "foersteFravaersdag" to "2020-01-01"
+        "sykepengegrunnlag" to 50000.0
+        "periodeFom" to "2020-02-01"
+        "periodeTom" to "2020-02-28"
     }
     val testoppslag = json {
         "type" to "oppslagsresultat"

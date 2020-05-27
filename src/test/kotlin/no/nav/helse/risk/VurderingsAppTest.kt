@@ -46,6 +46,10 @@ class VurderingsAppTest {
                 "organisasjonsnummer" to orgnr
                 "vedtaksperiodeId" to vedtaksperiodeid
                 "behovOpprettet" to behovOpprettet.toString()
+                "foersteFravaersdag" to "2020-01-01"
+                "sykepengegrunnlag" to 50000.0
+                "periodeFom" to "2020-02-01"
+                "periodeTom" to "2020-02-28"
             })
         val rec2 = ConsumerRecord(riskRiverTopic, partition, 1,
             "envedtaksperiodeid",

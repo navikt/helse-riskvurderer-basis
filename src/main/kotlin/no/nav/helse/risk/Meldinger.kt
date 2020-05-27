@@ -23,6 +23,10 @@ data class RiskNeed(
     val fnr: String,
     val behovOpprettet: String,
     val iterasjon: Int,
+    val foersteFravaersdag: String,
+    val sykepengegrunnlag: Double,
+    val periodeFom: String,
+    val periodeTom: String,
     val type: String = "RiskNeed"
 )
 

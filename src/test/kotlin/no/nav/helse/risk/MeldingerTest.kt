@@ -11,6 +11,9 @@ import kotlin.test.assertNull
 class MeldingerTest {
 
     private val json = Json(JsonConfiguration.Stable)
+    private val jsonFlexible = Json(JsonConfiguration.Stable.copy(
+        ignoreUnknownKeys = true
+    ))
     val riskNeed = json {
         "type" to "RiskNeed"
         "vedtaksperiodeId" to "1"
@@ -44,7 +47,7 @@ class MeldingerTest {
     }
     @Test
     fun finnRiskNeed() {
-        assertEquals(json.fromJson(RiskNeed.serializer(), riskNeed), meldinger.finnRiskNeed())
+        assertEquals(jsonFlexible.fromJson(RiskNeed.serializer(), riskNeed), meldinger.finnRiskNeed())
     }
     @Test
     fun `finnOppslagsresultat gir NULL hvis ikke finnes`() {

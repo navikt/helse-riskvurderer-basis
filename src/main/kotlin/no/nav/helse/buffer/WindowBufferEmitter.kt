@@ -103,7 +103,7 @@ internal class MySessionStore<K, V>(private val sessionEarlyExpireCondition: ((L
 
 }
 
-internal class WindowBufferEmitter(private val windowSizeInSeconds: Long,
+class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                           private val aggregateAndEmit: (List<JsonObject>) -> Unit,
                           private val clock: Clock = Clock.systemDefaultZone(),
                           scheduleExpiryCheck: Boolean = true,

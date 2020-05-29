@@ -17,6 +17,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class VurderingsAppTest {
@@ -27,14 +28,63 @@ class VurderingsAppTest {
 
     class Done : RuntimeException()
 
+    val fnr = "01017000000"
+    val vedtaksperiodeid = "33745ddf-1362-443d-8c9f-7667325e8dc6"
+    val orgnr = "123456789"
+
     @Test
     fun `VurderingsApp gjør vurdering basert på to meldinger`() {
+        testMedVurdererOgAssertions(
+            vurderer = { meldinger ->
+                val riskNeed = meldinger.finnRiskNeed()!!
+                val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
+                Vurdering(
+                    score = 6,
+                    vekt = 5,
+                    begrunnelser = listOf("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.content}"))
+            },
+            assertOnProducedMessages = { producedMessages ->
+                assertEquals(1, producedMessages.size)
+                val vurdering = json.fromJson(Vurderingsmelding.serializer(), producedMessages.first())
+                assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
+                assertEquals(1, vurdering.begrunnelser.size)
+                assertEquals("$orgnr/verdi-1", vurdering.begrunnelser.first())
+                assertNull(vurdering.begrunnelserSomAleneKreverManuellBehandling)
+            }
+        )
+    }
+
+    @Test
+    fun `showstopper-flagg blir med i vurderingen`() {
+        testMedVurdererOgAssertions(
+            vurderer = { meldinger ->
+                val riskNeed = meldinger.finnRiskNeed()!!
+                val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
+                Vurdering(
+                    score = 10,
+                    vekt = 10,
+                    begrunnelser = listOf("showstopper"),
+                    begrunnelserSomAleneKreverManuellBehandling = listOf("showstopper")
+                )
+            },
+            assertOnProducedMessages = { producedMessages ->
+                assertEquals(1, producedMessages.size)
+                val vurdering = json.fromJson(Vurderingsmelding.serializer(), producedMessages.first())
+                assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
+                assertEquals(1, vurdering.begrunnelser.size)
+                assertEquals("showstopper", vurdering.begrunnelser.first())
+                assertEquals(1, vurdering.begrunnelserSomAleneKreverManuellBehandling!!.size)
+                assertEquals("showstopper", vurdering.begrunnelserSomAleneKreverManuellBehandling!!.first())
+            }
+        )
+    }
+
+    fun testMedVurdererOgAssertions(
+        vurderer: (List<JsonObject>) -> Vurdering,
+        assertOnProducedMessages: (List<JsonObject>) -> Unit
+    ) {
         val producer = mockk<KafkaProducer<String, JsonObject>>()
         val consumer = mockk<KafkaConsumer<String, JsonObject>>()
-
-        val fnr = "01017000000"
-        val vedtaksperiodeid = "33745ddf-1362-443d-8c9f-7667325e8dc6"
-        val orgnr = "123456789"
 
         val behovOpprettet = LocalDateTime.now()
         val rec1 = ConsumerRecord(riskRiverTopic, partition, 1,
@@ -63,18 +113,9 @@ class VurderingsAppTest {
                 }
             })
 
-        fun vurderer(meldinger: List<JsonObject>): Vurdering {
-            val riskNeed = meldinger.finnRiskNeed()!!
-            val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
-            return Vurdering(
-                score = 6,
-                vekt = 5,
-                begrunnelser = listOf("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.content}"))
-        }
-
         val app = VurderingsApp(
             kafkaClientId = "testvurderer",
-            vurderer = ::vurderer,
+            vurderer = vurderer,
             interessertI = listOf(
                 Interesse.riskNeed(1),
                 Interesse.oppslagsresultat("testdata"))
@@ -104,12 +145,7 @@ class VurderingsAppTest {
                 println(producedMessages.toString())
 
             }
-        assertEquals(1, producedMessages.size)
-        val vurdering = json.fromJson(Vurderingsmelding.serializer(), producedMessages.first().value())
-        assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
-        assertEquals(1, vurdering.begrunnelser.size)
-        assertEquals("$orgnr/verdi-1", vurdering.begrunnelser.first())
-
+        assertOnProducedMessages(producedMessages.map { it.value() })
     }
 
 

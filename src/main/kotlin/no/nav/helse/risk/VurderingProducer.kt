@@ -1,23 +1,12 @@
 package no.nav.helse.risk
 
 import com.nimbusds.jose.jwk.JWKSet
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import no.nav.helse.crypto.decryptFromJWE
 import org.slf4j.LoggerFactory
 
 
 private val json = Json(JsonConfiguration.Stable)
-
-@Serializable
-internal data class Vurderingsmelding(
-    val type: String = typeVurdering,
-    val infotype: String,
-    val vedtaksperiodeId: String,
-    val score: Int,
-    val vekt: Int,
-    val begrunnelser: List<String>
-)
 
 internal class VurderingProducer(
     private val infotype: String,
@@ -38,7 +27,8 @@ internal class VurderingProducer(
                 vedtaksperiodeId = vedtaksperiodeId,
                 score = vurdering.score,
                 vekt = vurdering.vekt,
-                begrunnelser = vurdering.begrunnelser
+                begrunnelser = vurdering.begrunnelser,
+                begrunnelserSomAleneKreverManuellBehandling = vurdering.begrunnelserSomAleneKreverManuellBehandling
             )).jsonObject
         } catch (ex: Exception) {
             log.error("Feil under vurdering", ex)

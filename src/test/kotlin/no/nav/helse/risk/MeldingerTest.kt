@@ -3,8 +3,10 @@ package no.nav.helse.risk
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.json
+import kotlinx.serialization.json.jsonArray
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
@@ -52,5 +54,42 @@ class MeldingerTest {
     @Test
     fun `finnOppslagsresultat gir NULL hvis ikke finnes`() {
         assertNull(meldinger.finnOppslagsresultat("noeAnnet"))
+    }
+
+    @Test
+    fun vurderingsmeldingDeserialiseres() {
+        val melding = json {
+            "type" to typeVurdering
+            "infotype" to "whatever"
+            "vedtaksperiodeId" to UUID.randomUUID().toString()
+            "score" to 6
+            "vekt" to 7
+            "begrunnelser" to jsonArray { +"something"; +"showstopper" }
+            "begrunnelserSomAleneKreverManuellBehandling" to jsonArray { +"showstopper" }
+        }
+        val vurderingsmelding = melding.tilVurderingsmelding()
+        vurderingsmelding.apply {
+            assertEquals("whatever", this.infotype)
+            assertEquals(listOf("something", "showstopper"), this.begrunnelser)
+            assertEquals(listOf("showstopper"), this.begrunnelserSomAleneKreverManuellBehandling)
+        }
+    }
+
+    @Test
+    fun `vurderingsmelding kan deSerialiseres uten begrunnelserSomAleneKreverManuellBehandling`() {
+        val melding = json {
+            "type" to typeVurdering
+            "infotype" to "whatever"
+            "vedtaksperiodeId" to UUID.randomUUID().toString()
+            "score" to 6
+            "vekt" to 7
+            "begrunnelser" to jsonArray { +"something"; +"showstopper" }
+        }
+        val vurderingsmelding = melding.tilVurderingsmelding()
+        vurderingsmelding.apply {
+            assertEquals("whatever", this.infotype)
+            assertEquals(listOf("something", "showstopper"), this.begrunnelser)
+            assertNull(this.begrunnelserSomAleneKreverManuellBehandling)
+        }
     }
 }

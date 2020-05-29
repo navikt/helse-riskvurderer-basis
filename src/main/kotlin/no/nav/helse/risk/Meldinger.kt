@@ -52,3 +52,18 @@ fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
             }
         }
     }
+
+
+@Serializable
+data class Vurderingsmelding(
+    val type: String = typeVurdering,
+    val infotype: String,
+    val vedtaksperiodeId: String,
+    val score: Int,
+    val vekt: Int,
+    val begrunnelser: List<String>,
+    val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null
+)
+
+fun JsonObject.tilVurderingsmelding(): Vurderingsmelding =
+    jsonFlexible.fromJson(Vurderingsmelding.serializer(), this)

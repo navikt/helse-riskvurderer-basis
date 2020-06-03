@@ -106,14 +106,15 @@ internal class MySessionStore<K, V>(private val sessionEarlyExpireCondition: ((L
 class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                           private val aggregateAndEmit: (List<JsonObject>) -> Unit,
                           private val clock: Clock = Clock.systemDefaultZone(),
-                          scheduleExpiryCheck: Boolean = true,
-                          schedulerIntervalInSeconds: Long = windowSizeInSeconds,
+                          private val scheduleExpiryCheck: Boolean = true,
+                          private val schedulerIntervalInSeconds: Long = windowSizeInSeconds,
                           sessionEarlyExpireCondition: ((List<JsonObject>) -> Boolean)? = null) {
 
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     private var runningExpiryCheck = false
     val earlyExpiryEnabled: Boolean = sessionEarlyExpireCondition != null
     val activeKeys: Int get() = store.activeKeys
+    private var lastExpiryCheckTimestamp:Long = System.currentTimeMillis()
 
     init {
         if (scheduleExpiryCheck) {
@@ -123,9 +124,21 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
         }
     }
 
+    fun isHealty() : Boolean {
+        if (scheduleExpiryCheck) {
+            val msSinceLast = System.currentTimeMillis() - lastExpiryCheckTimestamp
+            val msInterval = schedulerIntervalInSeconds * 1000
+            if (msSinceLast > (msInterval * 10)) {
+                return false
+            }
+        }
+        return true
+    }
+
     internal fun runExpiryCheck() {
         try {
             if (!runningExpiryCheck) {
+                lastExpiryCheckTimestamp = System.currentTimeMillis()
                 runningExpiryCheck = true
                 store.allExpiredSessions(
                     currentTime = clock.millis(),

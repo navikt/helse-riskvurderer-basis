@@ -9,6 +9,8 @@ import no.nav.helse.buffer.WindowBufferEmitter
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.time.Duration
 
 val riskRiverTopic = "helse-risk-river-v1"
@@ -20,6 +22,7 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
                                   windowTimeInSeconds: Long = 5,
                                   emitEarlyWhenAllInterestsPresent: Boolean = true
 ) {
+    private val log: Logger = LoggerFactory.getLogger(BufferedRiver::class.java)
 
     private val aggregator = WindowBufferEmitter(
         windowSizeInSeconds = windowTimeInSeconds,
@@ -34,6 +37,10 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
 
     fun tearDown() {
         kafkaConsumer.close()
+    }
+
+    fun isHealthy() = aggregator.isHealty().also {
+        if (!it) log.error("WindowBufferEmitter is not healthy!")
     }
 
     suspend fun start() {

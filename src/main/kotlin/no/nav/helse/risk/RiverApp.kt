@@ -40,7 +40,7 @@ open class RiverApp internal constructor(
 
     private val applicationContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
     private var healthy = true
-    fun isHealthy(): Boolean = healthy
+    fun isHealthy(): Boolean = healthy && (bufferedRiver?.isHealthy() ?: true)
     val exceptionHandler = CoroutineExceptionHandler { _, ex ->
         log.error("Feil boblet helt til topps", ex)
         if (shouldCauseRestart(ex)) {

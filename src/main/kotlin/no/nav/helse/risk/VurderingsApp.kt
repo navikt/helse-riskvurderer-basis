@@ -9,12 +9,14 @@ data class Vurdering(
     val score: Int,
     val vekt: Int,
     val begrunnelser: List<String>,
-    val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null
+    val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,
+    val passerteSjekker: List<String>? = null // TODO: nullable inntil alle tjenester er migrert
 )
 
-class VurderingBuilder() {
+class VurderingBuilder {
     private var score: Int = 0
     private val begrunnelser = mutableListOf<String>()
+    private val passerteSjekker = mutableListOf<String>()
     private val begrunnelserSomAleneKreverManuellBehandling = mutableListOf<String>()
     fun begrunnelse(begrunnelse: String, scoreTillegg: Int) {
         begrunnelser += begrunnelse
@@ -27,7 +29,11 @@ class VurderingBuilder() {
         score += 10
     }
 
-    fun build(vekt: Int) : Vurdering {
+    fun passerteSjekk(beskrivelse: String) {
+        passerteSjekker += beskrivelse
+    }
+
+    fun build(vekt: Int): Vurdering {
         if (vekt > 10) throw IllegalArgumentException("Vekt kan ikke være over 10")
         return Vurdering(
             score = minOf(10, score),
@@ -36,7 +42,8 @@ class VurderingBuilder() {
             begrunnelserSomAleneKreverManuellBehandling =
             if (begrunnelserSomAleneKreverManuellBehandling.isEmpty())
                 null
-            else begrunnelserSomAleneKreverManuellBehandling)
+            else begrunnelserSomAleneKreverManuellBehandling,
+            passerteSjekker = passerteSjekker)
     }
 }
 

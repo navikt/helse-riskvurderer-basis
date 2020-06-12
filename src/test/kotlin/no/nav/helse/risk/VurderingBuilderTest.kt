@@ -15,7 +15,22 @@ class VurderingBuilderTest {
         vurdering.build(5).apply {
             assertEquals(listOf("noeErFeil", "endaMerErFeil"), this.begrunnelser)
             assertNull(this.begrunnelserSomAleneKreverManuellBehandling)
+            assertEquals(emptyList(), passerteSjekker)
             assertEquals(7, this.score)
+            assertEquals(5, this.vekt)
+        }
+    }
+
+    @Test
+    fun passerteSjekker() {
+        val vurdering = VurderingBuilder()
+        vurdering.passerteSjekk("ser greit ut")
+        vurdering.passerteSjekk("np")
+        vurdering.build(5).apply {
+            assertEquals(emptyList(), this.begrunnelser)
+            assertNull(this.begrunnelserSomAleneKreverManuellBehandling)
+            assertEquals(listOf("ser greit ut", "np"), this.passerteSjekker)
+            assertEquals(0, this.score)
             assertEquals(5, this.vekt)
         }
     }

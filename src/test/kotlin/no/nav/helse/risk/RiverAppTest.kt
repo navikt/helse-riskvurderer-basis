@@ -21,6 +21,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.TestInstance
 import java.time.Duration
 import java.time.LocalDateTime
@@ -29,6 +30,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
+@Disabled
 class RiverAppTest {
 
     private val partition = 0

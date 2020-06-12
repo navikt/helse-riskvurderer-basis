@@ -19,15 +19,13 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.serialization.StringSerializer
 import org.awaitility.Awaitility.await
-import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import java.time.Duration
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
+@Disabled
 internal class RiverEnTilEnTest {
     val env = RiverEnvironment("testapp")
     private val json = Json(JsonConfiguration.Stable)

@@ -30,7 +30,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
-@Disabled
 class RiverAppTest {
 
     private val partition = 0
@@ -61,11 +60,12 @@ class RiverAppTest {
             }
         )
         assertEquals("NOT THIS", myValue)
-        GlobalScope.launch {
+        val job = GlobalScope.launch {
             app.start()
         }
         Thread.sleep(1000)
         assertEquals("BUT THIS", myValue)
+        job.cancel()
     }
 
     val producedMessages = mutableListOf<ProducerRecord<String, JsonObject>>()

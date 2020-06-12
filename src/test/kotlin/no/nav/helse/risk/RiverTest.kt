@@ -19,6 +19,7 @@ import java.time.*
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
+@Disabled
 internal class RiverTest {
     val env = RiverEnvironment("testapp")
     private val json = Json(JsonConfiguration.Stable)

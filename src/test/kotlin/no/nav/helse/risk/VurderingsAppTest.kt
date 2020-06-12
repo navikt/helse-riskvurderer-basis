@@ -119,7 +119,7 @@ class VurderingsAppTest {
             interessertI = listOf(
                 Interesse.riskNeed(1),
                 Interesse.oppslagsresultat("testdata"))
-        ).ovverrideKafkaEnvironment(KafkaRiverEnvironment(
+        ).overrideKafkaEnvironment(KafkaRiverEnvironment(
             kafkaConsumer = consumer,
             kafkaProducer = producer
         ))

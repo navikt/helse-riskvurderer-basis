@@ -21,26 +21,31 @@ open class RiverApp internal constructor(
     private val answerer: (List<JsonObject>, String) -> JsonObject?,
     val windowTimeInSeconds: Long = 5,
     private val emitEarlyWhenAllInterestsPresent: Boolean = true,
-    private val collectorRegistry: CollectorRegistry
+    private val collectorRegistry: CollectorRegistry,
+    private val launchAlso: List<suspend CoroutineScope.() -> Unit>,
+    private val additionalHealthCheck: (() -> Boolean)?
 ) {
     private val environment: RiverEnvironment = RiverEnvironment(kafkaClientId)
     private val log: Logger = LoggerFactory.getLogger(VurderingsApp::class.java)
 
     private var overriddenKafkaEnvironment: KafkaRiverEnvironment? = null
-    private fun createKafkaEnvironment() : KafkaRiverEnvironment {
-        return overriddenKafkaEnvironment?:environment.readServiceUserCredentials().let { kafkaUser ->
+    private fun createKafkaEnvironment(): KafkaRiverEnvironment {
+        return overriddenKafkaEnvironment ?: environment.readServiceUserCredentials().let { kafkaUser ->
             val kafkaConsumerConfig = environment.kafkaConsumerConfig(kafkaUser)
             val kafkaProducerConfig = environment.kafkaProducerConfig(kafkaUser)
             KafkaRiverEnvironment(
-                kafkaProducer = KafkaProducer<String,JsonObject>(kafkaProducerConfig),
-                kafkaConsumer = KafkaConsumer<String,JsonObject>(kafkaConsumerConfig)
+                kafkaProducer = KafkaProducer<String, JsonObject>(kafkaProducerConfig),
+                kafkaConsumer = KafkaConsumer<String, JsonObject>(kafkaConsumerConfig)
             )
         }
     }
 
     private val applicationContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
     private var healthy = true
-    fun isHealthy(): Boolean = healthy && (bufferedRiver?.isHealthy() ?: true)
+    fun isHealthy(): Boolean = healthy
+        && (bufferedRiver?.isHealthy() ?: true)
+        && (additionalHealthCheck?.invoke() ?: true)
+
     val exceptionHandler = CoroutineExceptionHandler { _, ex ->
         log.error("Feil boblet helt til topps", ex)
         if (shouldCauseRestart(ex)) {
@@ -48,12 +53,13 @@ open class RiverApp internal constructor(
             healthy = false
         }
     }
+
     private fun shouldCauseRestart(ex: Throwable): Boolean =
         (ex is KafkaException)
 
     private var bufferedRiver: BufferedRiver? = null
 
-    fun ovverrideKafkaEnvironment(kafkaEnvironment: KafkaRiverEnvironment) : RiverApp {
+    fun overrideKafkaEnvironment(kafkaEnvironment: KafkaRiverEnvironment): RiverApp {
         overriddenKafkaEnvironment = kafkaEnvironment
         return this
     }
@@ -81,6 +87,9 @@ open class RiverApp internal constructor(
                     windowTimeInSeconds = windowTimeInSeconds,
                     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent
                 ).apply { this.start() }
+            }
+            launchAlso.forEach {
+                launch(block = it)
             }
         }
     }

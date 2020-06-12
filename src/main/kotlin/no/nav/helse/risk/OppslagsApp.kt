@@ -3,6 +3,7 @@ package no.nav.helse.risk
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
@@ -15,12 +16,16 @@ open class OppslagsApp(
     decryptionJWKS: JWKSet? = null,
     encryptionJWK: JWK? = null,
     emitEarlyWhenAllInterestsPresent: Boolean = true,
-    collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
+    collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
+    launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
+    additionalHealthCheck: (() -> Boolean)? = null
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertI = interessertI,
     answerer = OppslagsProducer(infotype, oppslagstjeneste, decryptionJWKS, encryptionJWK)::lagSvar,
     windowTimeInSeconds = windowTimeInSeconds,
     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
-    collectorRegistry = collectorRegistry
+    collectorRegistry = collectorRegistry,
+    launchAlso = launchAlso,
+    additionalHealthCheck = additionalHealthCheck
 )

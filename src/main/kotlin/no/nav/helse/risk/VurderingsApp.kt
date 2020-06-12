@@ -2,6 +2,7 @@ package no.nav.helse.risk
 
 import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonObject
 
 data class Vurdering(
@@ -46,7 +47,9 @@ open class VurderingsApp(
     windowTimeInSeconds: Long = 5,
     decryptionJWKS: JWKSet? = null,
     emitEarlyWhenAllInterestsPresent: Boolean = true,
-    collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
+    collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
+    launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
+    additionalHealthCheck: (() -> Boolean)? = null
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertI = interessertI,
@@ -56,5 +59,7 @@ open class VurderingsApp(
         decryptionJWKS = decryptionJWKS)::lagVurdering,
     windowTimeInSeconds = windowTimeInSeconds,
     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
-    collectorRegistry = collectorRegistry
+    collectorRegistry = collectorRegistry,
+    launchAlso = launchAlso,
+    additionalHealthCheck = additionalHealthCheck
 )

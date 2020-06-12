@@ -7,6 +7,7 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 
 @io.ktor.util.KtorExperimentalAPI
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class WebTest {
 
    @Test

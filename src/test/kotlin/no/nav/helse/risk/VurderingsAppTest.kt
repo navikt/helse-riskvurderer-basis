@@ -13,6 +13,7 @@ import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.TopicPartition
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.Future
@@ -20,6 +21,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class VurderingsAppTest {
 
     private val partition = 0

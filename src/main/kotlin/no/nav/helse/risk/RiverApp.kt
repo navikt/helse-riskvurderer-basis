@@ -23,7 +23,8 @@ open class RiverApp internal constructor(
     private val emitEarlyWhenAllInterestsPresent: Boolean = true,
     private val collectorRegistry: CollectorRegistry,
     private val launchAlso: List<suspend CoroutineScope.() -> Unit>,
-    private val additionalHealthCheck: (() -> Boolean)?
+    private val additionalHealthCheck: (() -> Boolean)?,
+    private val skipMessagesOlderThanSeconds: Long = -1
 ) {
     private val environment: RiverEnvironment = RiverEnvironment(kafkaClientId)
     private val log: Logger = LoggerFactory.getLogger(VurderingsApp::class.java)
@@ -85,7 +86,8 @@ open class RiverApp internal constructor(
                     interessertI = interessertI,
                     answerer = answerer,
                     windowTimeInSeconds = windowTimeInSeconds,
-                    emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent
+                    emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
+                    skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds
                 ).apply { this.start() }
             }
             launchAlso.forEach {

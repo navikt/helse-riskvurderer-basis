@@ -18,7 +18,8 @@ open class OppslagsApp(
     emitEarlyWhenAllInterestsPresent: Boolean = true,
     collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
     launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
-    additionalHealthCheck: (() -> Boolean)? = null
+    additionalHealthCheck: (() -> Boolean)? = null,
+    skipMessagesOlderThanSeconds: Long = -1
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertI = interessertI,
@@ -27,5 +28,6 @@ open class OppslagsApp(
     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
     collectorRegistry = collectorRegistry,
     launchAlso = launchAlso,
-    additionalHealthCheck = additionalHealthCheck
+    additionalHealthCheck = additionalHealthCheck,
+    skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds
 )

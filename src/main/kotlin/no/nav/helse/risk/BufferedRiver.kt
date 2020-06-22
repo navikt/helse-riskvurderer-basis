@@ -20,7 +20,8 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
                                   private val interessertI: List<Interesse>,
                                   private val answerer: (List<JsonObject>, String) -> JsonObject?,
                                   windowTimeInSeconds: Long = 5,
-                                  emitEarlyWhenAllInterestsPresent: Boolean = true
+                                  emitEarlyWhenAllInterestsPresent: Boolean = true,
+                                  private val skipMessagesOlderThanSeconds: Long = -1
 ) {
     private val log: Logger = LoggerFactory.getLogger(BufferedRiver::class.java)
 
@@ -52,13 +53,22 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
             .filter { (_, value, _) -> value.tilfredsstillerInteresser(interessertI) }
             .filterNotNull()
             .collect { (key, value, timestamp) ->
-                if (mangeTilEn) {
-                    aggregator.store(value["vedtaksperiodeId"]!!.content, value, timestamp)
+                if (messageIsDated(timestamp)) {
+                    log.info("Skipping incoming message because it is older than {} seconds (timestamp={} while currentTimeMillis={}",
+                        skipMessagesOlderThanSeconds, timestamp, System.currentTimeMillis())
                 } else {
-                    lagOgSendSvar(listOf(value))
+                    if (mangeTilEn) {
+                        aggregator.store(value["vedtaksperiodeId"]!!.content, value, timestamp)
+                    } else {
+                        lagOgSendSvar(listOf(value))
+                    }
                 }
             }
     }
+
+    private fun messageIsDated(timestamp: Long) =
+        (skipMessagesOlderThanSeconds > 0) && // NB / TODO: Will we need to consider Zone here?
+            (timestamp + (skipMessagesOlderThanSeconds * 1000) < System.currentTimeMillis())
 
     private fun lagOgSendSvar(answers: List<JsonObject>) {
         val vedtaksperiodeId = answers.finnUnikVedtaksperiodeId()

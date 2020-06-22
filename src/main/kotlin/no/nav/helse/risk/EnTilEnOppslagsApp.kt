@@ -13,7 +13,8 @@ class EnTilEnOppslagsApp(kafkaClientId: String,
                          decryptionJWKS: JWKSet? = null,
                          collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
                          launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
-                         additionalHealthCheck: (() -> Boolean)? = null) : OppslagsApp(
+                         additionalHealthCheck: (() -> Boolean)? = null,
+                         skipMessagesOlderThanSeconds: Long = -1) : OppslagsApp(
     kafkaClientId = kafkaClientId,
     infotype = infotype,
     interessertI = listOf(Interesse.riskNeed(1)),
@@ -26,5 +27,6 @@ class EnTilEnOppslagsApp(kafkaClientId: String,
     encryptionJWK = encryptionJWK,
     collectorRegistry = collectorRegistry,
     launchAlso = launchAlso,
-    additionalHealthCheck = additionalHealthCheck
+    additionalHealthCheck = additionalHealthCheck,
+    skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds
 )

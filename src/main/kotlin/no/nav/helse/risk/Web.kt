@@ -45,12 +45,18 @@ fun Application.riskvurderer(collectorRegistry: CollectorRegistry,
 
     routing {
         get("/isalive") {
-            val status = if (isAlive()) "ALIVE" else "NOT ALIVE"
-            call.respondText(status, ContentType.Text.Plain)
+            if (isAlive()) {
+                call.respondText("ALIVE", ContentType.Text.Plain)
+            } else {
+                call.respond(HttpStatusCode.InternalServerError, "NOT_ALIVE")
+            }
         }
         get("/isready") {
-            val status = if (isReady()) "READY" else "NOT READY"
-            call.respondText(status, ContentType.Text.Plain)
+            if (isReady()) {
+                call.respondText("READY", ContentType.Text.Plain)
+            } else {
+                call.respond(HttpStatusCode.ServiceUnavailable, "READY")
+            }
         }
         get("/metrics") {
             val names = call.request.queryParameters.getAll("name[]")?.toSet() ?: emptySet()

@@ -31,7 +31,29 @@ class WebTest {
             assertTrue { response.status()?.isSuccess() ?: false }
          }
       }
+   }
 
+   @Test
+   fun `reports negative isalive status for nais`() {
+      withTestApplication({
+         riskvurderer(CollectorRegistry.defaultRegistry, isReady = { true }, isAlive = { false })
+      }) {
+         handleRequest(HttpMethod.Get, "/isalive").apply {
+            assertEquals(false, response.status()?.isSuccess())
+         }
+      }
+
+   }
+
+   @Test
+   fun `reports negative isready status for nais`() {
+      withTestApplication({
+         riskvurderer(CollectorRegistry.defaultRegistry, isReady = { false }, isAlive = { true })
+      }) {
+         handleRequest(HttpMethod.Get, "/isready").apply {
+            assertEquals(false, response.status()?.isSuccess())
+         }
+      }
    }
 
    @Test

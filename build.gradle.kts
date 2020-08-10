@@ -9,7 +9,7 @@ val logbackVersion = "1.2.3"
 val logstashEncoderVersion = "6.3"
 val coroutinesVersion = "0.14.0"
 val serializerVersion = "0.20.0"
-val nimbusJoseVersion = "8.16"
+val nimbusJoseVersion = "8.19"
 
 plugins {
     val kotlinVersion = "1.3.70"

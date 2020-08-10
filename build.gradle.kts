@@ -18,7 +18,6 @@ plugins {
     id("maven-publish")
 }
 
-
 apply(plugin = "org.jetbrains.kotlin.jvm")
 
 group = "no.nav.helse.risk"

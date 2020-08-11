@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.*
 
 val junitJupiterVersion = "5.6.0"
-val ktorVersion = "1.3.0"
+val ktorVersion = "1.3.1"
 val micrometerVersion = "1.3.3"
 val kafkaVersion = "2.4.0"
 val slf4jVersion = "1.7.30"
@@ -10,6 +10,10 @@ val logstashEncoderVersion = "6.3"
 val coroutinesVersion = "0.14.0"
 val serializerVersion = "0.20.0"
 val nimbusJoseVersion = "8.19"
+
+val snykImplementationDependencyOverrides = arrayOf(
+    "io.netty:netty-codec-http2:4.1.46.Final"
+)
 
 plugins {
     val kotlinVersion = "1.3.70"
@@ -24,8 +28,6 @@ apply(plugin = "org.jetbrains.kotlin.jvm")
 group = "no.nav.helse.risk"
 version = properties["version"].let { if (it == null || it == "unspecified") "local-build" else it }
 
-//setBuildDir("$projectDir/target")
-
 repositories {
     jcenter()
     mavenCentral()
@@ -34,11 +36,11 @@ repositories {
 
 dependencies {
     api(kotlin("stdlib-jdk8"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
-    //implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    //implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+
+    snykImplementationDependencyOverrides.forEach { dependencyNotation ->
+        implementation(dependencyNotation)
+    }
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serializerVersion")
 
@@ -53,6 +55,7 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
     api("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")
 
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
     testImplementation("org.awaitility:awaitility:4.0.1")
@@ -61,8 +64,10 @@ dependencies {
         exclude(group = "junit")
     }
 
-    testImplementation("no.nav:kafka-embedded-env:$kafkaVersion")
-    testImplementation("io.confluent:kafka-schema-registry:5.4.0")
+    testImplementation("no.nav:kafka-embedded-env:$kafkaVersion") {
+        // Dont need schema-registry and it drags in a lot of vulnerable dependencies:
+        exclude(group = "io.confluent", module = "kafka-schema-registry")
+    }
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("io.mockk:mockk:1.10.0")

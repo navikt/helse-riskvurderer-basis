@@ -23,10 +23,7 @@ data class RiskNeed(
     val fnr: String,
     val behovOpprettet: String,
     val iterasjon: Int,
-    //val foersteFravaersdag: String,
-    val sykepengegrunnlag: Double,
-    val periodeFom: String,
-    val periodeTom: String,
+    val originalBehov: JsonObject? = null,
     val type: String = "RiskNeed"
 )
 
@@ -62,7 +59,8 @@ data class Vurderingsmelding(
     val score: Int,
     val vekt: Int,
     val begrunnelser: List<String>,
-    val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null
+    val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,
+    val passerteSjekker: List<String>? = null // TODO: nullable inntil alle tjenester er migrert
 )
 
 fun JsonObject.tilVurderingsmelding(): Vurderingsmelding =

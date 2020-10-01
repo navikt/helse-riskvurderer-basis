@@ -1,5 +1,6 @@
 package no.nav.helse.buffer
 
+import io.prometheus.client.CollectorRegistry
 import kotlinx.serialization.json.JsonObject
 import java.time.Clock
 import java.time.Duration
@@ -105,11 +106,13 @@ internal class MySessionStore<K, V>(private val sessionEarlyExpireCondition: ((L
 
 class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                           private val aggregateAndEmit: (List<JsonObject>) -> Unit,
+                          collectorRegistry: CollectorRegistry,
                           private val clock: Clock = Clock.systemDefaultZone(),
                           private val scheduleExpiryCheck: Boolean = true,
                           private val schedulerIntervalInSeconds: Long = windowSizeInSeconds,
                           sessionEarlyExpireCondition: ((List<JsonObject>) -> Boolean)? = null) {
 
+    private val metrics = WindowBufferEmitterMetrics(collectorRegistry)
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     private var runningExpiryCheck = false
     val earlyExpiryEnabled: Boolean = sessionEarlyExpireCondition != null

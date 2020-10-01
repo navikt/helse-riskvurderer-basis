@@ -87,7 +87,8 @@ open class RiverApp internal constructor(
                     answerer = answerer,
                     windowTimeInSeconds = windowTimeInSeconds,
                     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
-                    skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds
+                    skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds,
+                    collectorRegistry = collectorRegistry
                 ).apply { this.start() }
             }
             launchAlso.forEach {

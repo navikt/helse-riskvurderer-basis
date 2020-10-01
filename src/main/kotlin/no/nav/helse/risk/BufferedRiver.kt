@@ -1,5 +1,6 @@
 package no.nav.helse.risk
 
+import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -19,6 +20,7 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
                                   private val kafkaConsumer: KafkaConsumer<String, JsonObject>,
                                   private val interessertI: List<Interesse>,
                                   private val answerer: (List<JsonObject>, String) -> JsonObject?,
+                                  collectorRegistry: CollectorRegistry,
                                   windowTimeInSeconds: Long = 5,
                                   emitEarlyWhenAllInterestsPresent: Boolean = true,
                                   private val skipMessagesOlderThanSeconds: Long = -1
@@ -30,7 +32,8 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
         aggregateAndEmit = ::lagOgSendSvar,
         scheduleExpiryCheck = true,
         schedulerIntervalInSeconds = 5,
-        sessionEarlyExpireCondition = if (emitEarlyWhenAllInterestsPresent) this::isCompleteMessageSet else null)
+        sessionEarlyExpireCondition = if (emitEarlyWhenAllInterestsPresent) this::isCompleteMessageSet else null,
+        collectorRegistry = collectorRegistry)
 
 
     private fun isCompleteMessageSet(msgs: List<JsonObject>) =

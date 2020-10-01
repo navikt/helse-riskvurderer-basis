@@ -1,6 +1,7 @@
 package no.nav.helse.risk
 
 import com.nimbusds.jose.jwk.JWKSet
+import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
@@ -19,7 +20,6 @@ import java.time.*
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
-@Disabled
 internal class RiverTest {
     val env = RiverEnvironment("testapp")
     private val json = Json(JsonConfiguration.Stable)
@@ -39,7 +39,9 @@ internal class RiverTest {
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
-            KafkaConsumer<String, JsonObject>(consumerConfig), interesser, VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering)
+            KafkaConsumer<String, JsonObject>(consumerConfig), interesser,
+            VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering,
+            CollectorRegistry.defaultRegistry)
         GlobalScope.launch {
             bufferedRiver!!.start()
         }

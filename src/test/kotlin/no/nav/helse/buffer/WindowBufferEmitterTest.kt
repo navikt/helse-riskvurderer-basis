@@ -2,6 +2,7 @@ package no.nav.helse.buffer
 
 import io.mockk.every
 import io.mockk.mockk
+import io.prometheus.client.CollectorRegistry
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
@@ -31,7 +32,7 @@ class WindowBufferEmitterTest {
 
         every { clock.millis() } returns 10000
 
-        val window = WindowBufferEmitter(20, ::lagOgSendVurdering, clock, false)
+        val window = WindowBufferEmitter(20, ::lagOgSendVurdering, CollectorRegistry.defaultRegistry, clock, false)
         window.store("periode1", o1a, 1000)
         window.store("periode1", o1b, 12000)
         window.store("periode1", o1b, 18000)
@@ -99,6 +100,7 @@ class WindowBufferEmitterTest {
         val window = WindowBufferEmitter(
             windowSizeInSeconds = windowSizeInSecs,
             aggregateAndEmit = ::lagOgSendVurdering,
+            collectorRegistry = CollectorRegistry.defaultRegistry,
             clock = clock,
             scheduleExpiryCheck = false,
             schedulerIntervalInSeconds = -1,

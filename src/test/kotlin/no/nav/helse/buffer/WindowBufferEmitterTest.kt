@@ -3,15 +3,26 @@ package no.nav.helse.buffer
 import io.mockk.every
 import io.mockk.mockk
 import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.exporter.common.TextFormat
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import java.io.StringWriter
 import java.time.Clock
 import kotlin.test.assertEquals
 
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class WindowBufferEmitterTest {
+
+    @BeforeEach
+    fun clearStuff() {
+        CollectorRegistry.defaultRegistry.clear()
+    }
 
     @Test
     fun `split in sessions based on windowGap`() {
@@ -73,6 +84,10 @@ class WindowBufferEmitterTest {
                 assertEquals("periode2", this[i]["vedtaksperiodeId"]?.content)
             }
         }
+
+        val metrics = metricsString()
+        println(metrics)
+        assertTrue(metrics.contains("buffered_session_emitted{state=\"unconditional\",} 3.0"))
     }
 
 
@@ -110,9 +125,9 @@ class WindowBufferEmitterTest {
                     && (it.find { msg -> msg["infotype"]?.content == "B" } != null)
             })
         assertEquals(0, window.activeKeys)
-        window.store("periode1", o1a, 1000)
+        window.store("periode1", o1a, 3000)
         assertEquals(1, window.activeKeys)
-        window.store("periode1", o1b, 1000)
+        window.store("periode1", o1b, 10000)
         assertEquals(0, window.activeKeys)
         assertEquals(1, emittedSessions.size, "should have been emitted early because of earlyExpireCondition")
         emittedSessions[0].apply {
@@ -145,7 +160,19 @@ class WindowBufferEmitterTest {
             assertTrue(this.contains(o1a))
         }
 
+        val metrics = metricsString()
+        println(metrics)
+        assertTrue(metrics.contains("buffered_session_emitted{state=\"incomplete\",} 1.0"))
+        assertTrue(metrics.contains("buffered_session_emitted{state=\"complete\",} 1.0"))
+        assertTrue(metrics.contains("buffered_session_emitted_after_secs_summary_count 1.0"))
+        assertTrue(metrics.contains("buffered_session_emitted_after_secs_summary_sum 7.0")) // 10000 - 3000
+        assertTrue(metrics.contains("buffered_session_emitted_time_left_secs_summary_count 1.0"))
+        assertTrue(metrics.contains("buffered_session_emitted_time_left_secs_summary_sum 13.0")) // 20 - 7
     }
 
-
+    private fun metricsString() : String {
+        val writer = StringWriter()
+        TextFormat.write004(writer, CollectorRegistry.defaultRegistry.filteredMetricFamilySamples((emptySet())))
+        return writer.toString()
+    }
 }

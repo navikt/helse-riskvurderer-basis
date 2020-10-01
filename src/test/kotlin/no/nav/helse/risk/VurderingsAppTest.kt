@@ -1,6 +1,7 @@
 package no.nav.helse.risk
 
 import io.mockk.*
+import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
@@ -12,6 +13,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.TopicPartition
 import org.awaitility.Awaitility.await
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.Duration
@@ -33,6 +35,11 @@ class VurderingsAppTest {
     val fnr = "01017000000"
     val vedtaksperiodeid = "33745ddf-1362-443d-8c9f-7667325e8dc6"
     val orgnr = "123456789"
+
+    @BeforeEach
+    fun clearStuff() {
+        CollectorRegistry.defaultRegistry.clear()
+    }
 
     @Test
     fun `VurderingsApp gjør vurdering basert på to meldinger`() {

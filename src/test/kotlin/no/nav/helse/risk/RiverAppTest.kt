@@ -21,6 +21,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.TestInstance
 import java.time.Duration
@@ -36,6 +37,11 @@ class RiverAppTest {
     private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)
 
     class Done : RuntimeException()
+
+    @BeforeEach
+    fun clearStuff() {
+        CollectorRegistry.defaultRegistry.clear()
+    }
 
     @Test
     fun `app is healthy by default`() {

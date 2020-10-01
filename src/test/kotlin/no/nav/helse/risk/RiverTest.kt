@@ -37,6 +37,11 @@ internal class RiverTest {
         "oppslagsresultat" to "sensitiv2"
     ).tilInteresser()
 
+    @BeforeEach
+    fun clearStuff() {
+        CollectorRegistry.defaultRegistry.clear()
+    }
+
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
             KafkaConsumer<String, JsonObject>(consumerConfig), interesser,

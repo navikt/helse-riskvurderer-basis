@@ -31,6 +31,11 @@ internal class RiverEnTilEnTest {
     private val json = Json(JsonConfiguration.Stable)
 
     @BeforeEach
+    fun clearStuff() {
+        CollectorRegistry.defaultRegistry.clear()
+    }
+
+    @BeforeEach
     fun setup() {
         kafka.start()
         testConsumer = KafkaConsumer<String, JsonObject>(testConsumerConfig).also {

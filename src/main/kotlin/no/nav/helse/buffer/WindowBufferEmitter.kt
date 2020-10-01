@@ -14,7 +14,9 @@ internal interface ExpiredSession<K, V> {
     fun delete()
 }
 
-internal class MySessionStore<K, V>(private val sessionEarlyExpireCondition: ((List<V>) -> Boolean)?) {
+internal class MySessionStore<K, V>(
+    private val metrics: WindowBufferEmitterMetrics,
+    private val sessionEarlyExpireCondition: ((List<V>) -> Boolean)?) {
 
     private val data: MutableMap<K, MutableMap<UUID, Sess<V>>> = mutableMapOf()
 
@@ -63,6 +65,9 @@ internal class MySessionStore<K, V>(private val sessionEarlyExpireCondition: ((L
         this.recs += value
         if (sessionEarlyExpireCondition?.let { it(recs) } ?: false) {
             this.expiredEarlyByCondition = true
+            val sessionLifetimeMS = timestamp - this.intialTimestamp
+            metrics.emittedByConditionAfterMS(sessionLifetimeMS)
+            metrics.emittedByConditionWhenTimeLeftMS(sessionGapMs - sessionLifetimeMS)
         }
         this.lastActiveTimestamp = timestamp
     }
@@ -148,6 +153,11 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                     // We don't want to emit result both here in scheduler and in "earlyEmitter":
                     ignoreEarlyExpiredSessions = earlyExpiryEnabled
                 ).forEach {
+                    if (earlyExpiryEnabled) {
+                        metrics.emittedSessionIncomplete()
+                    } else {
+                        metrics.emittedSessionUnconditional()
+                    }
                     aggregateAndEmit(it.values)
                     it.delete()
                 }
@@ -157,7 +167,7 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
         }
     }
 
-    private val store = MySessionStore<String, JsonObject>(sessionEarlyExpireCondition).apply {
+    private val store = MySessionStore<String, JsonObject>(metrics, sessionEarlyExpireCondition).apply {
         sessionGapMs = windowSizeInSeconds * 1000
     }
 
@@ -165,6 +175,7 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
         if (earlyExpiryEnabled) {
             val earlyExpiredSession = store.setAndReturnSessionOnEarlyExpiry(key, value, timestamp)
             if (earlyExpiredSession != null) {
+                metrics.emittedSessionComplete()
                 aggregateAndEmit(earlyExpiredSession.values)
                 earlyExpiredSession.delete()
             }

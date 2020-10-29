@@ -24,7 +24,9 @@ data class RiskNeed(
     val behovOpprettet: String,
     val iterasjon: Int,
     val originalBehov: JsonObject? = null,
-    val type: String = "RiskNeed"
+    val type: String = "RiskNeed",
+    val isRetry: Boolean? = null,
+    val retryCount: Int? = null
 )
 
 fun JsonObject.tilRiskNeed(): RiskNeed =

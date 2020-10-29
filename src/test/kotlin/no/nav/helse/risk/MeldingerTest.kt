@@ -9,10 +9,10 @@ import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class MeldingerTest {
 
-    private val json = Json(JsonConfiguration.Stable)
     private val jsonFlexible = Json(JsonConfiguration.Stable.copy(
         ignoreUnknownKeys = true
     ))
@@ -90,6 +90,76 @@ class MeldingerTest {
             assertEquals("whatever", this.infotype)
             assertEquals(listOf("something", "showstopper"), this.begrunnelser)
             assertNull(this.begrunnelserSomAleneKreverManuellBehandling)
+        }
+    }
+
+    @Test
+    fun `skal kunne deSerialisere RiskNeed med og uten optional verdier`() {
+        json {
+            "type" to "RiskNeed"
+            "vedtaksperiodeId" to "1"
+            "organisasjonsnummer" to "123456789"
+            "fnr" to "01010100000"
+            "behovOpprettet" to  LocalDateTime.now().toString()
+            "iterasjon" to 1
+            "foersteFravaersdag" to "2020-01-01"
+            "sykepengegrunnlag" to 50000.0
+            "periodeFom" to "2020-02-01"
+            "periodeTom" to "2020-02-28"
+            "fjlksdfdaslkfj" to "sdfdskfdsj"
+        }.jsonObject.tilRiskNeed().apply {
+            assertEquals("1", this.vedtaksperiodeId)
+            assertNull(this.originalBehov)
+            assertNull(this.retryCount)
+            assertNull(this.isRetry)
+        }
+
+        json {
+            "type" to "RiskNeed"
+            "vedtaksperiodeId" to "1"
+            "organisasjonsnummer" to "123456789"
+            "fnr" to "01010100000"
+            "behovOpprettet" to  LocalDateTime.now().toString()
+            "iterasjon" to 1
+            "isRetry" to true
+        }.jsonObject.tilRiskNeed().apply {
+            assertEquals("1", this.vedtaksperiodeId)
+            assertTrue(this.isRetry ?: false)
+            assertNull(this.retryCount)
+        }
+
+        json {
+            "type" to "RiskNeed"
+            "vedtaksperiodeId" to "1"
+            "organisasjonsnummer" to "123456789"
+            "fnr" to "01010100000"
+            "behovOpprettet" to  LocalDateTime.now().toString()
+            "iterasjon" to 1
+            "isRetry" to true
+            "retryCount" to 2
+        }.jsonObject.tilRiskNeed().apply {
+            assertEquals("1", this.vedtaksperiodeId)
+            assertTrue(this.isRetry ?: false)
+            assertEquals(2, this.retryCount)
+        }
+
+        json {
+            "type" to "RiskNeed"
+            "vedtaksperiodeId" to "1"
+            "organisasjonsnummer" to "123456789"
+            "fnr" to "01010100000"
+            "behovOpprettet" to  LocalDateTime.now().toString()
+            "iterasjon" to 1
+            "isRetry" to true
+            "retryCount" to 2
+            "originalBehov" to json {
+                "felt1" to "verdi1"
+            }
+        }.jsonObject.tilRiskNeed().apply {
+            assertEquals("1", this.vedtaksperiodeId)
+            assertEquals(json {
+                "felt1" to "verdi1"
+            }, this.originalBehov)
         }
     }
 }

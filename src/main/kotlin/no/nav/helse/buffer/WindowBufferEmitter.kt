@@ -119,10 +119,11 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
 
     private val metrics = WindowBufferEmitterMetrics(collectorRegistry)
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
-    private var runningExpiryCheck = false
+    @Volatile private var runningExpiryCheck = false
     val earlyExpiryEnabled: Boolean = sessionEarlyExpireCondition != null
     val activeKeys: Int get() = store.activeKeys
-    private var lastExpiryCheckTimestamp:Long = System.currentTimeMillis()
+
+    @Volatile private var lastExpiryCheckTimestamp:Long = System.currentTimeMillis()
 
     init {
         if (scheduleExpiryCheck) {

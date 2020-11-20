@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonElement
 class EnTilEnOppslagsApp(kafkaClientId: String,
                          infotype: String = kafkaClientId,
                          oppslagstjeneste: (RiskNeed) -> JsonElement,
+                         interesse: Interesse = Interesse.riskNeed,
                          encryptionJWK: JWK? = null,
                          decryptionJWKS: JWKSet? = null,
                          collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
@@ -17,7 +18,7 @@ class EnTilEnOppslagsApp(kafkaClientId: String,
                          skipMessagesOlderThanSeconds: Long = -1) : OppslagsApp(
     kafkaClientId = kafkaClientId,
     infotype = infotype,
-    interessertI = listOf(Interesse.riskNeed(1)),
+    interessertI = listOf(interesse),
     oppslagstjeneste = { meldinger ->
         require(meldinger.size == 1)
         oppslagstjeneste(meldinger.first().tilRiskNeed())

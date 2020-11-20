@@ -2,6 +2,7 @@ package no.nav.helse.buffer
 
 import io.prometheus.client.CollectorRegistry
 import kotlinx.serialization.json.JsonObject
+import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.Duration
 import java.util.*
@@ -109,6 +110,9 @@ internal class MySessionStore<K, V>(
 
 }
 
+
+private val log = LoggerFactory.getLogger(WindowBufferEmitter::class.java)
+
 class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                           private val aggregateAndEmit: (List<JsonObject>) -> Unit,
                           collectorRegistry: CollectorRegistry,
@@ -135,9 +139,11 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
 
     fun isHealty() : Boolean {
         if (scheduleExpiryCheck) {
-            val msSinceLast = System.currentTimeMillis() - lastExpiryCheckTimestamp
+            val now = System.currentTimeMillis()
+            val msSinceLast = now - lastExpiryCheckTimestamp
             val msInterval = schedulerIntervalInSeconds * 1000
             if (msSinceLast > (msInterval * 10)) {
+                log.error("lastExpiryCheckTimestamp = $lastExpiryCheckTimestamp/${Date(lastExpiryCheckTimestamp)}, now = $now/${Date(now)}, msSinceLast=$msSinceLast -> Unhealthy" )
                 return false
             }
         }
@@ -163,6 +169,8 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                     it.delete()
                 }
             }
+        } catch (ex:Exception) {
+            log.error("Error during expiry-check", ex)
         } finally {
             runningExpiryCheck = false
         }

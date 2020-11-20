@@ -165,7 +165,11 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                     } else {
                         metrics.emittedSessionUnconditional()
                     }
-                    aggregateAndEmit(it.values)
+                    try {
+                        aggregateAndEmit(it.values)
+                    } catch (ex:Exception) {
+                        log.error("Error emitting messages for key=${it.key}, removing, ignoring and continuing...!", ex)
+                    }
                     it.delete()
                 }
             }

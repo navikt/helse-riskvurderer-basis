@@ -19,6 +19,7 @@ val riskRiverTopic = "helse-risk-river-v1"
 internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<String, JsonObject>,
                                   private val kafkaConsumer: KafkaConsumer<String, JsonObject>,
                                   private val interessertI: List<Interesse>,
+                                  private val skipEmitIfNotPresent: List<Interesse>,
                                   private val answerer: (List<JsonObject>, String) -> JsonObject?,
                                   collectorRegistry: CollectorRegistry,
                                   windowTimeInSeconds: Long = 5,
@@ -75,8 +76,16 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
 
     private fun lagOgSendSvar(answers: List<JsonObject>) {
         val vedtaksperiodeId = answers.finnUnikVedtaksperiodeId()
-        answerer(answers, vedtaksperiodeId)?.also { svar ->
-            kafkaProducer.send(ProducerRecord(riskRiverTopic, vedtaksperiodeId, svar))
+
+        val ikkeTilfredsstilt:Interesse? = skipEmitIfNotPresent.find { paakrevdInteresse ->
+            null == answers.find { answer -> answer.tilfredsstillerInteresser(listOf(paakrevdInteresse)) }
+        }
+        if (ikkeTilfredsstilt != null) {
+            log.debug("Mangler Interesse=$ikkeTilfredsstilt for vedtaksperiodeId=$vedtaksperiodeId. Ignorerer sesjon.")
+        } else {
+            answerer(answers, vedtaksperiodeId)?.also { svar ->
+                kafkaProducer.send(ProducerRecord(riskRiverTopic, vedtaksperiodeId, svar))
+            }
         }
     }
 }

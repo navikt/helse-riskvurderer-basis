@@ -11,6 +11,7 @@ open class OppslagsApp(
     kafkaClientId: String,
     infotype: String,
     interessertI: List<Interesse>,
+    ignoreIfNotPresent: List<Interesse> = interessertI.filter { it.type == typeRiskNeed },
     oppslagstjeneste: (List<JsonObject>) -> JsonElement,
     windowTimeInSeconds: Long = 5,
     decryptionJWKS: JWKSet? = null,
@@ -23,6 +24,7 @@ open class OppslagsApp(
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertI = interessertI,
+    skipEmitIfNotPresent = ignoreIfNotPresent,
     answerer = OppslagsProducer(infotype, oppslagstjeneste, decryptionJWKS, encryptionJWK)::lagSvar,
     windowTimeInSeconds = windowTimeInSeconds,
     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,

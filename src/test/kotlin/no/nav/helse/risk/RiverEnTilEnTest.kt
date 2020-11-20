@@ -52,7 +52,7 @@ internal class RiverEnTilEnTest {
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
-            KafkaConsumer<String, JsonObject>(consumerConfig), interesser,
+            KafkaConsumer<String, JsonObject>(consumerConfig), interesser, emptyList(),
             VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering,
             CollectorRegistry.defaultRegistry)
         GlobalScope.launch {

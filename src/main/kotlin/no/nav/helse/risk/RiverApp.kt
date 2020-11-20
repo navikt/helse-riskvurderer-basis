@@ -18,6 +18,7 @@ data class KafkaRiverEnvironment(
 open class RiverApp internal constructor(
     val kafkaClientId: String,
     val interessertI: List<Interesse>,
+    val skipEmitIfNotPresent: List<Interesse>,
     private val answerer: (List<JsonObject>, String) -> JsonObject?,
     val windowTimeInSeconds: Long = 5,
     private val emitEarlyWhenAllInterestsPresent: Boolean = true,
@@ -84,6 +85,7 @@ open class RiverApp internal constructor(
                     kafkaProducer = kafka.kafkaProducer,
                     kafkaConsumer = kafka.kafkaConsumer,
                     interessertI = interessertI,
+                    skipEmitIfNotPresent = skipEmitIfNotPresent,
                     answerer = answerer,
                     windowTimeInSeconds = windowTimeInSeconds,
                     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,

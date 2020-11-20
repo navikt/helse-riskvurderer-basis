@@ -46,7 +46,7 @@ class EnTilEnOppslagsAppTest {
 
     @Test
     fun `EnTilEnOppslagsApp med default svarer paa RiskNeed(iter=1)`() {
-        startApp(
+        startOppslagsApp(
             innkommendeMeldinger = listOf(
                 json {
                     "type" to "RiskNeed"
@@ -76,7 +76,7 @@ class EnTilEnOppslagsAppTest {
 
     @Test
     fun `EnTilEnOppslagsApp med default svarer paa RiskNeed(iter=2)`() {
-        startApp(
+        startOppslagsApp(
             innkommendeMeldinger = listOf(
                 json {
                     "type" to "RiskNeed"
@@ -106,7 +106,7 @@ class EnTilEnOppslagsAppTest {
 
     @Test
     fun `EnTilEnOppslagsApp med minimum iterasjon=2 svarer ikke paa RiskNeed(iter=1)`() {
-        startApp(
+        startOppslagsApp(
             innkommendeMeldinger = listOf(
                 json {
                     "type" to "RiskNeed"
@@ -154,8 +154,7 @@ class EnTilEnOppslagsAppTest {
             }
     }
 
-
-    private fun startApp(innkommendeMeldinger: List<JsonObject>, app:OppslagsApp) {
+    private fun startOppslagsApp(innkommendeMeldinger: List<JsonObject>, app:OppslagsApp) {
         val riskConsumer = mockk<KafkaConsumer<String, JsonObject>>()
         val riskProducer = mockk<KafkaProducer<String, JsonObject>>()
         every { riskConsumer.subscribe(listOf(riskRiverTopic)) } just Runs
@@ -167,7 +166,7 @@ class EnTilEnOppslagsAppTest {
                 "envedtaksperiodeid", it)
         }
         every { riskConsumer.poll(Duration.ZERO) } returns ConsumerRecords(mapOf(riverTopicPartition to records
-        )) andThenThrows Done()//ConsumerRecords(mapOf(riverTopicPartition to emptyList()))
+        )) andThenThrows EnTilEnOppslagsAppTest.Done()//ConsumerRecords(mapOf(riverTopicPartition to emptyList()))
         every { riskProducer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>() andThenThrows IllegalStateException("no more please!")
 
         app.overrideKafkaEnvironment(

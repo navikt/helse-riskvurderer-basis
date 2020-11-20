@@ -91,6 +91,7 @@ class RiverAppTest {
             interessertI = listOf(
                 Interesse.riskNeed(1),
                 Interesse.oppslagsresultat("testdata")),
+            skipEmitIfNotPresent = emptyList(),
             answerer = ::lagSvar,
             collectorRegistry = CollectorRegistry.defaultRegistry,
             additionalHealthCheck = additionalHealthCheck,

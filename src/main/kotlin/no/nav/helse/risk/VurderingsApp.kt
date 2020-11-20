@@ -50,6 +50,7 @@ class VurderingBuilder {
 open class VurderingsApp(
     kafkaClientId: String,
     interessertI: List<Interesse>,
+    ignoreIfNotPresent: List<Interesse> = emptyList(),
     vurderer: (List<JsonObject>) -> Vurdering,
     windowTimeInSeconds: Long = 5,
     decryptionJWKS: JWKSet? = null,
@@ -60,6 +61,7 @@ open class VurderingsApp(
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertI = interessertI,
+    skipEmitIfNotPresent = ignoreIfNotPresent,
     answerer = VurderingProducer(
         infotype = kafkaClientId,
         vurderer = vurderer,

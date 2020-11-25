@@ -63,10 +63,10 @@ internal class RiverEnTilEnTest {
     fun vurderer(infoListe: List<JsonObject>): Vurdering {
         require(infoListe.size == 1)
         val info = infoListe.first()
-        return Vurdering(
-            score = info["nummer"]!!.primitive.int,
-            vekt = 2,
-            begrunnelser = listOf("derfor"))
+        return VurderingBuilder()
+            .leggVedMetadata("hei", "sann")
+            .begrunnelse("derfor", info["nummer"]!!.primitive.int)
+            .build(2)
     }
 
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {
@@ -114,6 +114,7 @@ internal class RiverEnTilEnTest {
             assertEquals(3, this.score)
             assertEquals(2, this.vekt)
             assertEquals(listOf("derfor"), this.begrunnelser)
+            assertEquals("sann", this.metadata!!["hei"])
         }
     }
 

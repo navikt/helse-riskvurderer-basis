@@ -47,18 +47,21 @@ class VurderingsAppTest {
             vurderer = { meldinger ->
                 val riskNeed = meldinger.finnRiskNeed()!!
                 val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
-                Vurdering(
-                    score = 6,
-                    vekt = 5,
-                    begrunnelser = listOf("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.content}"))
+                VurderingBuilder()
+                    .begrunnelse("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.content}", 6)
+                    .leggVedMetadata("ekstraGreier", "12345")
+                    .build(5)
             },
             assertOnProducedMessages = { producedMessages ->
                 assertEquals(1, producedMessages.size)
                 val vurdering = json.fromJson(Vurderingsmelding.serializer(), producedMessages.first())
+                assertEquals(6, vurdering.score)
+                assertEquals(5, vurdering.vekt)
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
                 assertEquals(1, vurdering.begrunnelser.size)
                 assertEquals("$orgnr/verdi-1", vurdering.begrunnelser.first())
-                assertNull(vurdering.begrunnelserSomAleneKreverManuellBehandling)
+                assertTrue(vurdering.begrunnelserSomAleneKreverManuellBehandling!!.isEmpty())
+                assertEquals("12345", vurdering.metadata!!["ekstraGreier"])
             }
         )
     }
@@ -69,21 +72,22 @@ class VurderingsAppTest {
             vurderer = { meldinger ->
                 val riskNeed = meldinger.finnRiskNeed()!!
                 val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
-                Vurdering(
-                    score = 10,
-                    vekt = 10,
-                    begrunnelser = listOf("showstopper"),
-                    begrunnelserSomAleneKreverManuellBehandling = listOf("showstopper")
-                )
+                VurderingBuilder()
+                    .begrunnelseSomKreverManuellBehandling("showstopper")
+                    .build(10)
+
             },
             assertOnProducedMessages = { producedMessages ->
                 assertEquals(1, producedMessages.size)
                 val vurdering = json.fromJson(Vurderingsmelding.serializer(), producedMessages.first())
+                assertEquals(10, vurdering.score)
+                assertEquals(10, vurdering.vekt)
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
                 assertEquals(1, vurdering.begrunnelser.size)
                 assertEquals("showstopper", vurdering.begrunnelser.first())
                 assertEquals(1, vurdering.begrunnelserSomAleneKreverManuellBehandling!!.size)
                 assertEquals("showstopper", vurdering.begrunnelserSomAleneKreverManuellBehandling!!.first())
+                assertTrue(vurdering.metadata!!.isEmpty())
             }
         )
     }

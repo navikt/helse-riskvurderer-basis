@@ -28,7 +28,8 @@ internal class VurderingProducer(
                 score = vurdering.score,
                 vekt = vurdering.vekt,
                 begrunnelser = vurdering.begrunnelser,
-                begrunnelserSomAleneKreverManuellBehandling = vurdering.begrunnelserSomAleneKreverManuellBehandling
+                begrunnelserSomAleneKreverManuellBehandling = vurdering.begrunnelserSomAleneKreverManuellBehandling,
+                metadata = vurdering.metadata
             )).jsonObject
         } catch (ex: Exception) {
             log.error("Feil under vurdering", ex)

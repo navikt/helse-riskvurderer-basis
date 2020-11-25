@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class VurderingBuilderTest {
 
@@ -14,7 +15,7 @@ class VurderingBuilderTest {
         vurdering.begrunnelse("endaMerErFeil", 5)
         vurdering.build(5).apply {
             assertEquals(listOf("noeErFeil", "endaMerErFeil"), this.begrunnelser)
-            assertNull(this.begrunnelserSomAleneKreverManuellBehandling)
+            assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
             assertEquals(emptyList(), passerteSjekker)
             assertEquals(7, this.score)
             assertEquals(5, this.vekt)
@@ -28,7 +29,7 @@ class VurderingBuilderTest {
         vurdering.passerteSjekk("np")
         vurdering.build(5).apply {
             assertEquals(emptyList(), this.begrunnelser)
-            assertNull(this.begrunnelserSomAleneKreverManuellBehandling)
+            assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
             assertEquals(listOf("ser greit ut", "np"), this.passerteSjekker)
             assertEquals(0, this.score)
             assertEquals(5, this.vekt)
@@ -42,7 +43,7 @@ class VurderingBuilderTest {
         vurdering.begrunnelse("endaMerErFeil", 9)
         vurdering.build(7).apply {
             assertEquals(listOf("noeErFeil", "endaMerErFeil"), this.begrunnelser)
-            assertNull(this.begrunnelserSomAleneKreverManuellBehandling)
+            assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
             assertEquals(10, this.score)
             assertEquals(7, this.vekt)
         }

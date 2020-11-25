@@ -62,7 +62,8 @@ data class Vurderingsmelding(
     val vekt: Int,
     val begrunnelser: List<String>,
     val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,
-    val passerteSjekker: List<String>? = null // TODO: nullable inntil alle tjenester er migrert
+    val passerteSjekker: List<String>? = null, // TODO: nullable inntil alle tjenester er migrert
+    val metadata: Map<String,String>? = null
 )
 
 fun JsonObject.tilVurderingsmelding(): Vurderingsmelding =

@@ -61,10 +61,9 @@ internal class RiverTest {
     }
 
     fun vurderer(info: List<JsonObject>): Vurdering {
-        return Vurdering(
-            score = info.map { it["data"]!!.jsonObject["nummer"]!!.primitive.int }.sum(),
-            vekt = 2,
-            begrunnelser = listOf("derfor"))
+        return VurderingBuilder()
+            .begrunnelse("derfor", info.map { it["data"]!!.jsonObject["nummer"]!!.primitive.int }.sum())
+            .build(2)
     }
 
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {
@@ -82,11 +81,11 @@ internal class RiverTest {
     private fun `relevante meldinger aggregeres og sendes gjennom vurderer-funksjon for aa generere en vurdering`() {
         KafkaProducer<String, JsonObject>(producerConfig).use { producer ->
             producer.sendJson("""{"data" : {"nummer":1}, "vedtaksperiodeId":"periode1", "type": "RiskNeed", "personid":123}""")
-            producer.sendJson("""{"data" : {"nummer":3}, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
+            producer.sendJson("""{"data" : {"nummer":2}, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
             producer.sendJson("""{"data" : {"nummer":6}, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
 
-            producer.sendJson("""{"data" : "${json { "nummer" to 100 }.encryptAsJWE(jwk1)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv1", "type": "oppslagsresultat", "info":"firma1"}""")
-            producer.sendJson("""{"data" : "${json { "nummer" to 1000 }.encryptAsJWE(jwk2)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv2", "type": "oppslagsresultat", "info":"firma1"}""")
+            producer.sendJson("""{"data" : "${json { "nummer" to 3 }.encryptAsJWE(jwk1)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv1", "type": "oppslagsresultat", "info":"firma1"}""")
+            producer.sendJson("""{"data" : "${json { "nummer" to 1 }.encryptAsJWE(jwk2)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv2", "type": "oppslagsresultat", "info":"firma1"}""")
 
             val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
             producer.send(ProducerRecord(riskRiverTopic, json.parse(JsonObject.serializer(), payload3)))
@@ -113,7 +112,7 @@ internal class RiverTest {
             assertNotNull(this)
             assertEquals("vurdering", this!!.type)
             assertEquals("testapp", this.infotype)
-            assertEquals(1 + 3 + 100 + 1000, this.score)
+            assertEquals(1 + 2 + 3 + 1, this.score)
             assertEquals(2, this.vekt)
             assertEquals(listOf("derfor"), this.begrunnelser)
         }

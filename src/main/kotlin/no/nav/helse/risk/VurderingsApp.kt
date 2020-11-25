@@ -9,8 +9,9 @@ data class Vurdering(
     val score: Int,
     val vekt: Int,
     val begrunnelser: List<String>,
-    val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,
-    val passerteSjekker: List<String>? = null // TODO: nullable inntil alle tjenester er migrert
+    val begrunnelserSomAleneKreverManuellBehandling: List<String>,
+    val passerteSjekker: List<String>,
+    val metadata: Map<String, String>
 )
 
 class VurderingBuilder {
@@ -18,19 +19,28 @@ class VurderingBuilder {
     private val begrunnelser = mutableListOf<String>()
     private val passerteSjekker = mutableListOf<String>()
     private val begrunnelserSomAleneKreverManuellBehandling = mutableListOf<String>()
-    fun begrunnelse(begrunnelse: String, scoreTillegg: Int) {
+    private val metadata = mutableMapOf<String, String>()
+    fun begrunnelse(begrunnelse: String, scoreTillegg: Int) : VurderingBuilder {
         begrunnelser += begrunnelse
         score += scoreTillegg
+        return this
     }
 
-    fun begrunnelseSomKreverManuellBehandling(begrunnelse: String) {
+    fun begrunnelseSomKreverManuellBehandling(begrunnelse: String) : VurderingBuilder {
         begrunnelser += begrunnelse
         begrunnelserSomAleneKreverManuellBehandling += begrunnelse
         score += 10
+        return this
     }
 
-    fun passerteSjekk(beskrivelse: String) {
+    fun passerteSjekk(beskrivelse: String) : VurderingBuilder {
         passerteSjekker += beskrivelse
+        return this
+    }
+
+    fun leggVedMetadata(key: String, value: String) : VurderingBuilder {
+        metadata[key] = value
+        return this
     }
 
     fun build(vekt: Int): Vurdering {
@@ -39,11 +49,10 @@ class VurderingBuilder {
             score = minOf(10, score),
             vekt = vekt,
             begrunnelser = begrunnelser,
-            begrunnelserSomAleneKreverManuellBehandling =
-            if (begrunnelserSomAleneKreverManuellBehandling.isEmpty())
-                null
-            else begrunnelserSomAleneKreverManuellBehandling,
-            passerteSjekker = passerteSjekker)
+            begrunnelserSomAleneKreverManuellBehandling = begrunnelserSomAleneKreverManuellBehandling,
+            passerteSjekker = passerteSjekker,
+            metadata = metadata
+        )
     }
 }
 

@@ -40,7 +40,6 @@ fun main() {
    println("!NB!TODO: You might want to include _old_ JWKS-keys also, in the new JWKS, and update JWKS _before_ JWK")
    println("Force Update JWK:")
    println("$createJWKCommand --dry-run -o yaml | kubectl apply -f -")
-
    val naisYamlSend = """   filesFrom:
       - secret: $base-send"""
    val naisYamlReceive = """   filesFrom:
@@ -49,12 +48,12 @@ fun main() {
    println("NAIS spec:")
    println(naisYamlSend)
    println("""Kotlin-App:
-      decryptionJWKS = JWKSetHolder.fromSecret("${base}_jwks")
+      encryptionJWK = JWKHolder.fromSecret("${base}_jwk")
    """.trimMargin())
    println("Receiver: ")
    println("NAIS spec:")
    println(naisYamlReceive)
    println("""Kotlin-App:
-      encryptionJWK = JWKHolder.fromSecret("${base}_jwk")
+      decryptionJWKS = JWKSetHolder.fromSecret("${base}_jwks")
    """.trimMargin())
 }

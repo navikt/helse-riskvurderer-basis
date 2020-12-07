@@ -4,11 +4,12 @@ import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonObject
+import no.nav.helse.crypto.JWKSetHolder
 
 class EnTilEnVurderingsApp(kafkaClientId: String,
                            interessertI: Interesse,
                            vurderer: (JsonObject) -> Vurdering,
-                           decryptionJWKS: JWKSet? = null,
+                           decryptionJWKS: JWKSetHolder? = null,
                            collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
                            launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
                            additionalHealthCheck: (() -> Boolean)? = null) : VurderingsApp(

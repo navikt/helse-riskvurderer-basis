@@ -5,13 +5,15 @@ import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonElement
+import no.nav.helse.crypto.JWKHolder
+import no.nav.helse.crypto.JWKSetHolder
 
 class EnTilEnOppslagsApp(kafkaClientId: String,
                          infotype: String = kafkaClientId,
                          oppslagstjeneste: (RiskNeed) -> JsonElement,
                          interesse: Interesse = Interesse.riskNeed,
-                         encryptionJWK: JWK? = null,
-                         decryptionJWKS: JWKSet? = null,
+                         encryptionJWK: JWKHolder? = null,
+                         decryptionJWKS: JWKSetHolder? = null,
                          collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
                          launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
                          additionalHealthCheck: (() -> Boolean)? = null,

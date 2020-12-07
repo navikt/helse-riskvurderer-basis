@@ -18,12 +18,12 @@ import java.net.URI
 
 private val json = Json(JsonConfiguration.Stable)
 
-fun JsonElement.Companion.decryptFromJWE(jwe: String, jwks: JWKSet): JsonElement {
-   return json.parseJson(decryptJWE(jwe, jwks))
+fun JsonElement.Companion.decryptFromJWE(jwe: String, jwks: JWKSetHolder): JsonElement {
+   return json.parseJson(decryptJWE(jwe, jwks.jwkSet()))
 }
 
-fun JsonElement.encryptAsJWE(jwk: JWK): String {
-   return encryptAsJWE(toString().toByteArray(charset = Charsets.UTF_8), jwk)!!
+fun JsonElement.encryptAsJWE(jwk: JWKHolder): String {
+   return encryptAsJWE(toString().toByteArray(charset = Charsets.UTF_8), jwk.jwk())!!
 }
 
 private fun decryptJWE(jweString: String, jwkSet: JWKSet): String {

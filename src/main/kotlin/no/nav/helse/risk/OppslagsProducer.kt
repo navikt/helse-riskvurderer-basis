@@ -4,6 +4,8 @@ import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.JWKSet
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import no.nav.helse.crypto.JWKHolder
+import no.nav.helse.crypto.JWKSetHolder
 import no.nav.helse.crypto.decryptFromJWE
 import no.nav.helse.crypto.encryptAsJWE
 import org.slf4j.LoggerFactory
@@ -27,8 +29,8 @@ internal data class OppslagsmeldingKryptert(
 internal class OppslagsProducer(
     private val infotype: String,
     private val oppslagstjeneste: (List<JsonObject>) -> JsonElement,
-    private val decryptionJWKS: JWKSet?,
-    private val encryptionJWK: JWK?
+    private val decryptionJWKS: JWKSetHolder?,
+    private val encryptionJWK: JWKHolder?
 ) {
 
     private val json = Json(JsonConfiguration.Stable)

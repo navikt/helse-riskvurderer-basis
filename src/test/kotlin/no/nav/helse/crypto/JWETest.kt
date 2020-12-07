@@ -13,43 +13,44 @@ import javax.crypto.KeyGenerator
 
 class JWETest {
 
-   @Test
-   fun `JsonObject encryption and decryption with AES-256`() {
-      val someJson = json {
-         "hei" to "duder"
-         "data" to json {
-            "liste" to jsonArray { +"heisann"; +"hoppsann"}
-         }
-      }
+    @Test
+    fun `JsonObject encryption and decryption with AES-256`() {
+        val someJson = json {
+            "hei" to "duder"
+            "data" to json {
+                "liste" to jsonArray { +"heisann"; +"hoppsann" }
+            }
+        }
 
-      val keygen = KeyGenerator.getInstance("AES")
-      keygen.init(256)
-      val key = keygen.generateKey()
-      val keyBase64 = Base64URL.encode(key.encoded).toString()
+        val keygen = KeyGenerator.getInstance("AES")
+        keygen.init(256)
+        val key = keygen.generateKey()
+        val keyBase64 = Base64URL.encode(key.encoded).toString()
 
-      val jwkString = """
+        val jwkString = """
          {"kty":"oct",
           "kid":"smoppslag",
           "alg":"A256KW",
           "k":"$keyBase64"}
       """.trimIndent()
 
-      val jwkSetString = """
+        val jwkSetString = """
          {"keys":[$jwkString]}
       """.trimIndent()
 
-      val jwk = JWK.parse(jwkString)
-      val jwkSet = JWKSet.parse(jwkSetString)
-      println(jwk)
+        val jwk = JWK.parse(jwkString)
+        val jwkSet = JWKSet.parse(jwkSetString)
+        println("JWKSet:")
+        println(jwkSet.toJSONObject(false))
 
-      assertEquals(jwk, jwkSet.keys.first())
+        assertEquals(jwk, jwkSet.keys.first())
 
-      val jwe = someJson.encryptAsJWE(jwk)
-      assertTrue(jwe.startsWith("ey"))
+        val jwe = someJson.encryptAsJWE(jwk.toJWKHolder())
+        assertTrue(jwe.startsWith("ey"))
 
-      val decryptedJson = JsonElement.decryptFromJWE(jwe, jwkSet).jsonObject
-      assertEquals(someJson, decryptedJson)
-      println(decryptedJson.toString())
-   }
+        val decryptedJson = JsonElement.decryptFromJWE(jwe, jwkSet.toJWKSetHolder()).jsonObject
+        assertEquals(someJson, decryptedJson)
+        println(decryptedJson.toString())
+    }
 }
 

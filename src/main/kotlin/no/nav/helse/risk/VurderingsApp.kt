@@ -4,6 +4,7 @@ import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonObject
+import no.nav.helse.crypto.JWKSetHolder
 
 data class Vurdering(
     val score: Int,
@@ -62,7 +63,7 @@ open class VurderingsApp(
     ignoreIfNotPresent: List<Interesse> = emptyList(),
     vurderer: (List<JsonObject>) -> Vurdering,
     windowTimeInSeconds: Long = 5,
-    decryptionJWKS: JWKSet? = null,
+    decryptionJWKS: JWKSetHolder? = null,
     emitEarlyWhenAllInterestsPresent: Boolean = true,
     collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
     launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),

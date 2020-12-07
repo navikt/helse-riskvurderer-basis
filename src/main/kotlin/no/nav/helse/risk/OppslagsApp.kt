@@ -6,6 +6,8 @@ import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import no.nav.helse.crypto.JWKHolder
+import no.nav.helse.crypto.JWKSetHolder
 
 open class OppslagsApp(
     kafkaClientId: String,
@@ -14,8 +16,8 @@ open class OppslagsApp(
     ignoreIfNotPresent: List<Interesse> = interessertI.filter { it.type == typeRiskNeed },
     oppslagstjeneste: (List<JsonObject>) -> JsonElement,
     windowTimeInSeconds: Long = 5,
-    decryptionJWKS: JWKSet? = null,
-    encryptionJWK: JWK? = null,
+    decryptionJWKS: JWKSetHolder? = null,
+    encryptionJWK: JWKHolder? = null,
     emitEarlyWhenAllInterestsPresent: Boolean = true,
     collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
     launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),

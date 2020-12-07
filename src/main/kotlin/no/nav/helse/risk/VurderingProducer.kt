@@ -2,6 +2,7 @@ package no.nav.helse.risk
 
 import com.nimbusds.jose.jwk.JWKSet
 import kotlinx.serialization.json.*
+import no.nav.helse.crypto.JWKSetHolder
 import no.nav.helse.crypto.decryptFromJWE
 import org.slf4j.LoggerFactory
 
@@ -11,7 +12,7 @@ private val json = Json(JsonConfiguration.Stable)
 internal class VurderingProducer(
     private val infotype: String,
     private val vurderer: (List<JsonObject>) -> Vurdering,
-    private val decryptionJWKS: JWKSet?
+    private val decryptionJWKS: JWKSetHolder?
 ) {
 
     companion object {

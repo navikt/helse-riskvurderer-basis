@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
 import no.nav.common.KafkaEnvironment
 import no.nav.helse.crypto.lagEnJWK
+import no.nav.helse.crypto.toJWKSetHolder
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -44,7 +45,7 @@ internal class RiverEnTilEnTest {
     }
 
     private var bufferedRiver: BufferedRiver? = null
-    private val jwkSet = JWKSet(lagEnJWK())
+    private val jwkSet = JWKSet(lagEnJWK()).toJWKSetHolder()
 
     private val interesser = listOf(
         "oppslagsresultat" to "orginfo"

@@ -8,6 +8,8 @@ import kotlinx.serialization.json.*
 import no.nav.common.*
 import no.nav.helse.crypto.encryptAsJWE
 import no.nav.helse.crypto.lagEnJWK
+import no.nav.helse.crypto.toJWKHolder
+import no.nav.helse.crypto.toJWKSetHolder
 import org.apache.kafka.clients.*
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.clients.producer.*
@@ -24,9 +26,9 @@ internal class RiverTest {
     val env = RiverEnvironment("testapp")
     private val json = Json(JsonConfiguration.Stable)
 
-    private val jwk1 = lagEnJWK("key1")
-    private val jwk2 = lagEnJWK("key2")
-    private val jwkSet = JWKSet(listOf(jwk1, jwk2))
+    private val jwk1 = lagEnJWK("key1").toJWKHolder()
+    private val jwk2 = lagEnJWK("key2").toJWKHolder()
+    private val jwkSet = JWKSet(listOf(jwk1.jwk(), jwk2.jwk())).toJWKSetHolder()
 
     private var bufferedRiver: BufferedRiver? = null
 

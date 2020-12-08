@@ -18,6 +18,7 @@ data class Interesse internal constructor(
             it >= iterasjon
         })
         fun oppslagsresultat(infotype: String) = Interesse(type = typeOppslagsresultat, infotype = infotype)
+        fun oppslagsresultat(oppslagstype: Oppslagtype<*>) = oppslagsresultat(infotype = oppslagstype.infotype)
         fun vurdering(infotype: String) = Interesse(type = typeVurdering, infotype = infotype)
     }
 }

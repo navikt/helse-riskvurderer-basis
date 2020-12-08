@@ -1,5 +1,6 @@
 package no.nav.helse.risk
 
+import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
 import kotlinx.serialization.json.*
@@ -75,6 +76,22 @@ class InteresseTest {
             "type" to "oppslagsresultat"
             "infotype" to "nokogreior"
         }.tilfredsstillerInteresser(interesserSomObjekter))
+    }
+
+    @Serializable data class Tulletype(val a: String)
+
+    @Test
+    fun interesserKanAngisSomOppslagstype() {
+        val melding = json {
+            "type" to "oppslagsresultat"
+            "infotype" to "orginfo-open"
+        }
+        assertTrue(melding.tilfredsstillerInteresser(listOf(
+            Interesse.oppslagsresultat(Oppslagtype("orginfo-open", Tulletype.serializer()))
+        )))
+        assertFalse(melding.tilfredsstillerInteresser(listOf(
+            Interesse.oppslagsresultat(Oppslagtype("nokoanna", Tulletype.serializer()))
+        )))
     }
 
     @Test

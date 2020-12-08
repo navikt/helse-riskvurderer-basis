@@ -1,5 +1,6 @@
 package no.nav.helse.risk
 
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 
@@ -29,6 +30,8 @@ data class RiskNeed(
     val retryCount: Int? = null
 )
 
+class Oppslagtype<T>(val infotype: String, val serializer: DeserializationStrategy<T>)
+
 fun JsonObject.tilRiskNeed(): RiskNeed =
     jsonFlexible.fromJson(RiskNeed.serializer(), this)
 
@@ -41,6 +44,14 @@ fun List<JsonObject>.finnOppslagsresultat(infotype: String): JsonElement? {
     }
     return if (kandidat == null) null else kandidat.jsonObject[dataKey]
 }
+
+fun <T>List<JsonObject>.finnOppslagsresultat(oppslagstype: Oppslagtype<T>): T? =
+    this.finnOppslagsresultat(oppslagstype.infotype)?.let { jsonFlexible.fromJson(oppslagstype.serializer, it) }
+
+fun <T>List<JsonObject>.finnPaakrevdOppslagsresultat(oppslagstype: Oppslagtype<T>): T =
+    this.finnOppslagsresultat(oppslagstype.infotype)?.let { jsonFlexible.fromJson(oppslagstype.serializer, it) }
+        ?:error("Mangler oppslagsresultat med infotype=${oppslagstype.infotype}")
+
 
 fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
     this.let { meldinger ->

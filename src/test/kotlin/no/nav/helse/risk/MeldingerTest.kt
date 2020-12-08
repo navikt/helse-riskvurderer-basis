@@ -1,15 +1,18 @@
 package no.nav.helse.risk
 
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.json
 import kotlinx.serialization.json.jsonArray
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.assertThrows
 
 class MeldingerTest {
 
@@ -33,6 +36,8 @@ class MeldingerTest {
         "infotype" to "testoppslag"
         "data" to json {
             "a" to "b"
+            "fornavn" to "Ola"
+            "etternavn" to "Nordmann"
         }
         "vedtaksperiodeId" to "1"
     }
@@ -45,8 +50,30 @@ class MeldingerTest {
 
     @Test
     fun `finnOppslagsresultat returnerer data-elementet`() {
-        assertEquals(json { "a" to "b" }, meldinger.finnOppslagsresultat("testoppslag"))
+        assertEquals(json { "a" to "b"; "fornavn" to "Ola"; "etternavn" to "Nordmann" }, meldinger.finnOppslagsresultat("testoppslag"))
     }
+
+    @Serializable
+    data class TestOppslag(val fornavn:String, val etternavn:String)
+    val TEST_OPPSLAGSTYPE = Oppslagtype("testoppslag", TestOppslag.serializer())
+
+    @Test
+    fun `Typet oppslagsresultat gitt av Oppslagtype ignorerer ukjente felter ("a" to "b")`() {
+        assertEquals(TestOppslag("Ola", "Nordmann"), meldinger.finnPaakrevdOppslagsresultat(TEST_OPPSLAGSTYPE))
+    }
+
+    @Test
+    fun `manglende men paakrevd oppslagsresultat`() {
+        assertThrows<java.lang.IllegalStateException> {
+            listOf(riskNeed).finnPaakrevdOppslagsresultat(TEST_OPPSLAGSTYPE)
+        }
+    }
+
+    @Test
+    fun `manglende men IKKE paakrevd oppslagsresultat`() {
+        assertNull(listOf(riskNeed).finnOppslagsresultat(TEST_OPPSLAGSTYPE))
+    }
+
     @Test
     fun finnRiskNeed() {
         assertEquals(jsonFlexible.fromJson(RiskNeed.serializer(), riskNeed), meldinger.finnRiskNeed())

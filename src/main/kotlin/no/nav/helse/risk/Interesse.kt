@@ -10,16 +10,16 @@ data class Interesse internal constructor(
     val iterasjonsMatcher: ((Int) -> Boolean)? = null
 ) {
     companion object {
-        val riskNeed:Interesse = Interesse(type = typeRiskNeed)
-        fun riskNeed(iterasjon: Int) = Interesse(type = typeRiskNeed, iterasjonsMatcher = {
+        val riskNeed:Interesse = Interesse(type = Meldingstype.RiskNeed.name)
+        fun riskNeed(iterasjon: Int) = Interesse(type = Meldingstype.RiskNeed.name, iterasjonsMatcher = {
             it == iterasjon
         })
-        fun riskNeedMedMinimum(iterasjon: Int) = Interesse(type = typeRiskNeed, iterasjonsMatcher = {
+        fun riskNeedMedMinimum(iterasjon: Int) = Interesse(type = Meldingstype.RiskNeed.name, iterasjonsMatcher = {
             it >= iterasjon
         })
-        fun oppslagsresultat(infotype: String) = Interesse(type = typeOppslagsresultat, infotype = infotype)
+        fun oppslagsresultat(infotype: String) = Interesse(type = Meldingstype.oppslagsresultat.name, infotype = infotype)
         fun oppslagsresultat(oppslagstype: Oppslagtype<*>) = oppslagsresultat(infotype = oppslagstype.infotype)
-        fun vurdering(infotype: String) = Interesse(type = typeVurdering, infotype = infotype)
+        fun vurdering(infotype: String) = Interesse(type = Meldingstype.vurdering.name, infotype = infotype)
     }
 }
 

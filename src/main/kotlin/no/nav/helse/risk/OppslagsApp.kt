@@ -13,7 +13,7 @@ open class OppslagsApp(
     kafkaClientId: String,
     infotype: String,
     interessertI: List<Interesse>,
-    ignoreIfNotPresent: List<Interesse> = interessertI.filter { it.type == typeRiskNeed },
+    ignoreIfNotPresent: List<Interesse> = interessertI.filter { it.type == Meldingstype.RiskNeed.name },
     oppslagstjeneste: (List<JsonObject>) -> JsonElement,
     windowTimeInSeconds: Long = 5,
     decryptionJWKS: JWKSetHolder? = null,

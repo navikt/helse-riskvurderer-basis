@@ -8,11 +8,14 @@ private val jsonFlexible = Json(JsonConfiguration.Stable.copy(
     ignoreUnknownKeys = true
 ))
 
-const val typeOppslagsresultat = "oppslagsresultat"
-const val typeRiskNeed = "RiskNeed"
+enum class Meldingstype {
+    oppslagsresultat,
+    RiskNeed,
+    vurdering
+}
+
 const val vedtaksperiodeIdKey = "vedtaksperiodeId"
 const val typeKey = "type"
-const val typeVurdering = "vurdering"
 const val infotypeKey = "infotype"
 const val iterasjonKey = "iterasjon"
 const val dataKey = "data"
@@ -36,11 +39,11 @@ fun JsonObject.tilRiskNeed(): RiskNeed =
     jsonFlexible.fromJson(RiskNeed.serializer(), this)
 
 fun List<JsonObject>.finnRiskNeed(): RiskNeed? =
-    this.find { it[typeKey]?.content == typeRiskNeed }?.tilRiskNeed()
+    this.find { it[typeKey]?.content == Meldingstype.RiskNeed.name }?.tilRiskNeed()
 
 fun List<JsonObject>.finnOppslagsresultat(infotype: String): JsonElement? {
     val kandidat = this.find {
-        it[typeKey]?.contentOrNull == typeOppslagsresultat && it[infotypeKey]?.contentOrNull == infotype
+        it[typeKey]?.contentOrNull == Meldingstype.oppslagsresultat.name && it[infotypeKey]?.contentOrNull == infotype
     }
     return if (kandidat == null) null else kandidat.jsonObject[dataKey]
 }
@@ -66,7 +69,7 @@ fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
 
 @Serializable
 data class Vurderingsmelding(
-    val type: String = typeVurdering,
+    val type: String = Meldingstype.vurdering.name,
     val infotype: String,
     val vedtaksperiodeId: String,
     val score: Int,

@@ -5,7 +5,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.json
 import kotlinx.serialization.json.jsonArray
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.util.*
@@ -86,7 +85,7 @@ class MeldingerTest {
     @Test
     fun vurderingsmeldingDeserialiseres() {
         val melding = json {
-            "type" to typeVurdering
+            "type" to "vurdering"
             "infotype" to "whatever"
             "vedtaksperiodeId" to UUID.randomUUID().toString()
             "score" to 6
@@ -105,7 +104,7 @@ class MeldingerTest {
     @Test
     fun `vurderingsmelding kan deSerialiseres uten begrunnelserSomAleneKreverManuellBehandling`() {
         val melding = json {
-            "type" to typeVurdering
+            "type" to "vurdering"
             "infotype" to "whatever"
             "vedtaksperiodeId" to UUID.randomUUID().toString()
             "score" to 6

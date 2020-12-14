@@ -53,6 +53,8 @@ dependencies {
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+    implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
+
     api("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")

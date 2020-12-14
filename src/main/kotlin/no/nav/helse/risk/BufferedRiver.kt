@@ -6,6 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
+import no.nav.helse.buffer.WindowBufferEmittable
 import no.nav.helse.buffer.WindowBufferEmitter
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -62,9 +63,9 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
                         skipMessagesOlderThanSeconds, timestamp, System.currentTimeMillis())
                 } else {
                     if (mangeTilEn) {
-                        aggregator.store(value["vedtaksperiodeId"]!!.content, value, timestamp)
+                        aggregator.store(value["vedtaksperiodeId"]!!.content, value, key, timestamp) // NB: KEY bør vare samme som innkommende åkke som (RiskNeed?++?),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
                     } else {
-                        lagOgSendSvar(listOf(value))
+                        lagOgSendSvar(WindowBufferEmittable(messages = listOf(value), kafkaKey = key))
                     }
                 }
             }
@@ -74,7 +75,8 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
         (skipMessagesOlderThanSeconds > 0) && // NB / TODO: Will we need to consider Zone here?
             (timestamp + (skipMessagesOlderThanSeconds * 1000) < System.currentTimeMillis())
 
-    private fun lagOgSendSvar(answers: List<JsonObject>) {
+    private fun lagOgSendSvar(emitted: WindowBufferEmittable) {
+        val answers = emitted.messages
         val vedtaksperiodeId = answers.finnUnikVedtaksperiodeId()
 
         val ikkeTilfredsstilt:Interesse? = skipEmitIfNotPresent.find { paakrevdInteresse ->
@@ -84,7 +86,7 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
             log.debug("Mangler Interesse=$ikkeTilfredsstilt for vedtaksperiodeId=$vedtaksperiodeId. Ignorerer sesjon.")
         } else {
             answerer(answers, vedtaksperiodeId)?.also { svar ->
-                kafkaProducer.send(ProducerRecord(riskRiverTopic, vedtaksperiodeId, svar))
+                kafkaProducer.send(ProducerRecord(riskRiverTopic, emitted.kafkaKey, svar))
             }
         }
     }

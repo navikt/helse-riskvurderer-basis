@@ -34,9 +34,12 @@ class WindowBufferEmitterTest {
         val o2 = Json.parse(JsonObject.serializer(), opinion2)
 
         val sessions = mutableListOf<List<JsonObject>>()
-        fun lagOgSendVurdering(msgs: List<JsonObject>) {
-            sessions += msgs
-            println("laOgSend: $msgs")
+        val expectedKafkaKey = "whateverkey"
+
+        fun lagOgSendVurdering(emitted: WindowBufferEmittable) {
+            assertEquals(expectedKafkaKey, emitted.kafkaKey)
+            sessions += emitted.messages
+            println("lagOgSend: ${emitted.messages} key=${emitted.kafkaKey}")
         }
 
         val clock = mockk<Clock>()
@@ -44,14 +47,14 @@ class WindowBufferEmitterTest {
         every { clock.millis() } returns 10000
 
         val window = WindowBufferEmitter(20, ::lagOgSendVurdering, CollectorRegistry.defaultRegistry, clock, false)
-        window.store("periode1", o1a, 1000)
-        window.store("periode1", o1b, 12000)
-        window.store("periode1", o1b, 18000)
+        window.store("periode1", o1a, expectedKafkaKey, 1000)
+        window.store("periode1", o1b, expectedKafkaKey, 12000)
+        window.store("periode1", o1b, expectedKafkaKey, 18000)
 
         assertEquals(1, window.activeKeys)
 
-        window.store("periode2", o2, 7000)
-        window.store("periode2", o2, 17000)
+        window.store("periode2", o2, expectedKafkaKey, 7000)
+        window.store("periode2", o2, expectedKafkaKey, 17000)
 
         assertEquals(2, window.activeKeys)
 
@@ -60,7 +63,7 @@ class WindowBufferEmitterTest {
         assertEquals(0, sessions.size)
         assertEquals(2, window.activeKeys)
 
-        window.store("periode1", o1a, 38001)
+        window.store("periode1", o1a, expectedKafkaKey, 38001)
         assertEquals(2, window.activeKeys)
 
         every { clock.millis() } returns 60000
@@ -99,9 +102,11 @@ class WindowBufferEmitterTest {
         val o1b = Json.parse(JsonObject.serializer(), opinion1b)
 
         val emittedSessions = mutableListOf<List<JsonObject>>()
-        fun lagOgSendVurdering(msgs: List<JsonObject>) {
-            emittedSessions += msgs
-            println("laOgSend: $msgs")
+        val expectedKafkaKey = "einAnnaNykjel"
+        fun lagOgSendVurdering(emitted: WindowBufferEmittable) {
+            assertEquals(expectedKafkaKey, emitted.kafkaKey)
+            emittedSessions += emitted.messages
+            println("lagOgSend: ${emitted.messages} key=${emitted.kafkaKey}")
         }
 
         val clock = mockk<Clock>()
@@ -125,9 +130,9 @@ class WindowBufferEmitterTest {
                     && (it.find { msg -> msg["infotype"]?.content == "B" } != null)
             })
         assertEquals(0, window.activeKeys)
-        window.store("periode1", o1a, 3000)
+        window.store("periode1", o1a, expectedKafkaKey, 3000)
         assertEquals(1, window.activeKeys)
-        window.store("periode1", o1b, 10000)
+        window.store("periode1", o1b, expectedKafkaKey, 10000)
         assertEquals(0, window.activeKeys)
         assertEquals(1, emittedSessions.size, "should have been emitted early because of earlyExpireCondition")
         emittedSessions[0].apply {
@@ -147,7 +152,7 @@ class WindowBufferEmitterTest {
         window.runExpiryCheck()
         assertEquals(0, emittedSessions.size, "should not be emitted again, even after window-expiry")
 
-        window.store("periode1", o1a, clock.millis())
+        window.store("periode1", o1a, expectedKafkaKey, clock.millis())
         assertEquals(1, window.activeKeys)
         every { clock.millis() } returns current + windowSizeInMillis + 1000
         current = clock.millis()

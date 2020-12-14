@@ -10,7 +10,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 internal interface ExpiredSession<K, V> {
-    val key: K
+    val sessionId: WindowBufferEmitterSessionId<K>
     val values: List<V>
     fun delete()
 }
@@ -19,31 +19,32 @@ internal class MySessionStore<K, V>(
     private val metrics: WindowBufferEmitterMetrics,
     private val sessionEarlyExpireCondition: ((List<V>) -> Boolean)?) {
 
-    private val data: MutableMap<K, MutableMap<UUID, Sess<V>>> = mutableMapOf()
+    private val data: MutableMap<WindowBufferEmitterSessionId<K>, MutableMap<UUID, Sess<K,V>>> = mutableMapOf()
 
     val activeKeys: Int get() = data.size
 
-    private inner class MyExpiredSession(override val key: K, val session: Sess<V>) : ExpiredSession<K, V> {
+    private inner class MyExpiredSession(val session: Sess<K,V>) : ExpiredSession<K, V> {
+        override val sessionId = session.sessionId
         override val values: List<V>
             get() = session.recs
 
         override fun delete() {
-            data[key]?.let {
+            data[sessionId]?.let {
                 it.remove(session.id)
                 synchronized(it) {
                     if (it.isEmpty()) {
-                        data.remove(key)
+                        data.remove(sessionId)
                     }
                 }
             }
         }
     }
 
-    private class Sess<T>(timestamp: Long) {
+    private class Sess<K,V>(timestamp: Long, val sessionId: WindowBufferEmitterSessionId<K>) {
         val id = UUID.randomUUID()
         val intialTimestamp: Long = timestamp
         var lastActiveTimestamp: Long = timestamp
-        val recs: MutableList<T> = mutableListOf()
+        val recs: MutableList<V> = mutableListOf()
         var expiredEarlyByCondition: Boolean = false
     }
 
@@ -57,12 +58,12 @@ internal class MySessionStore<K, V>(
 
     var sessionGapMs: Long = Duration.ofSeconds(5).toMillis()
 
-    private fun Sess<V>.hasExpiredBy(timestamp: Long) =
+    private fun Sess<K,V>.hasExpiredBy(timestamp: Long) =
         (timestamp - this.lastActiveTimestamp > sessionGapMs) ||
             (timestamp - this.intialTimestamp > sessionMaxAgeMs) ||
             this.expiredEarlyByCondition
 
-    private fun Sess<V>.addToSession(value: V, timestamp: Long) {
+    private fun Sess<K,V>.addToSession(value: V, timestamp: Long) {
         this.recs += value
         if (sessionEarlyExpireCondition?.let { it(recs) } ?: false) {
             this.expiredEarlyByCondition = true
@@ -73,25 +74,25 @@ internal class MySessionStore<K, V>(
         this.lastActiveTimestamp = timestamp
     }
 
-    fun set(key: K, value: V, timestamp: Long) {
-        set(key, value, timestamp, false)
+    fun set(sessionId: WindowBufferEmitterSessionId<K>, value: V, timestamp: Long) {
+        set(sessionId, value, timestamp, false)
     }
 
-    fun setAndReturnSessionOnEarlyExpiry(key: K, value: V, timestamp: Long): ExpiredSession<K, V>? {
-        return set(key, value, timestamp, true)
+    fun setAndReturnSessionOnEarlyExpiry(sessionId: WindowBufferEmitterSessionId<K>, value: V, timestamp: Long): ExpiredSession<K, V>? {
+        return set(sessionId, value, timestamp, true)
     }
 
-    private fun set(key: K, value: V, timestamp: Long, checkExpiry: Boolean): MyExpiredSession? {
-        val sessions = data[key] ?: mutableMapOf<UUID, Sess<V>>().apply { data[key] = this }
+    private fun set(sessionId: WindowBufferEmitterSessionId<K>, value: V, timestamp: Long, checkExpiry: Boolean): MyExpiredSession? {
+        val sessions = data[sessionId] ?: mutableMapOf<UUID, Sess<K,V>>().apply { data[sessionId] = this }
         synchronized(sessions) {
             val activeSession = sessions.values.lastOrNull().let {
                 if (it == null || it.hasExpiredBy(timestamp))
-                    Sess<V>(timestamp).also { newSession -> sessions[newSession.id] = newSession }
+                    Sess<K,V>(timestamp, sessionId).also { newSession -> sessions[newSession.id] = newSession }
                 else it
             }
             activeSession.addToSession(value, timestamp)
             if (activeSession.expiredEarlyByCondition && checkExpiry) {
-                return MyExpiredSession(key, activeSession)
+                return MyExpiredSession(activeSession)
             }
         }
         return null
@@ -100,12 +101,12 @@ internal class MySessionStore<K, V>(
     fun allExpiredSessions(currentTime: Long, ignoreEarlyExpiredSessions: Boolean = false): List<ExpiredSession<K, V>> =
         data.keys.flatMap { allExpiredSessionsForKey(it, currentTime, ignoreEarlyExpiredSessions) }
 
-    fun allExpiredSessionsForKey(key: K, currentTime: Long, ignoreEarlyExpiredSessions: Boolean): List<ExpiredSession<K, V>> =
-        data[key]?.values?.filter {
+    fun allExpiredSessionsForKey(sessionId: WindowBufferEmitterSessionId<K>, currentTime: Long, ignoreEarlyExpiredSessions: Boolean): List<ExpiredSession<K, V>> =
+        data[sessionId]?.values?.filter {
             it.hasExpiredBy(currentTime)
                 && !(ignoreEarlyExpiredSessions && it.expiredEarlyByCondition)
         }?.map {
-            MyExpiredSession(key, it)
+            MyExpiredSession(it)
         } ?: emptyList()
 
 }
@@ -113,8 +114,13 @@ internal class MySessionStore<K, V>(
 
 private val log = LoggerFactory.getLogger(WindowBufferEmitter::class.java)
 
+class WindowBufferEmittable(
+    val messages: List<JsonObject>,
+    val kafkaKey: String
+)
+
 class WindowBufferEmitter(private val windowSizeInSeconds: Long,
-                          private val aggregateAndEmit: (List<JsonObject>) -> Unit,
+                          private val aggregateAndEmit: (WindowBufferEmittable) -> Unit,
                           collectorRegistry: CollectorRegistry,
                           private val clock: Clock = Clock.systemDefaultZone(),
                           private val scheduleExpiryCheck: Boolean = true,
@@ -166,9 +172,9 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                         metrics.emittedSessionUnconditional()
                     }
                     try {
-                        aggregateAndEmit(it.values)
+                        aggregateAndEmit(WindowBufferEmittable(messages = it.values, kafkaKey = it.sessionId.kafkaKey))
                     } catch (ex:Exception) {
-                        log.error("Error emitting messages for key=${it.key}, removing, ignoring and continuing...!", ex)
+                        log.error("Error emitting messages for session=${it.sessionId}, removing, ignoring and continuing...!", ex)
                     }
                     it.delete()
                 }
@@ -184,16 +190,41 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
         sessionGapMs = windowSizeInSeconds * 1000
     }
 
-    fun store(key: String, value: JsonObject, timestamp: Long) {
+    fun store(sessionKey: String, value: JsonObject, kafkaKey: String, timestamp: Long) {
         if (earlyExpiryEnabled) {
-            val earlyExpiredSession = store.setAndReturnSessionOnEarlyExpiry(key, value, timestamp)
+            val earlyExpiredSession = store.setAndReturnSessionOnEarlyExpiry(WindowBufferEmitterSessionId(sessionKey, kafkaKey), value, timestamp)
             if (earlyExpiredSession != null) {
                 metrics.emittedSessionComplete()
-                aggregateAndEmit(earlyExpiredSession.values)
+                aggregateAndEmit(WindowBufferEmittable(messages = earlyExpiredSession.values, kafkaKey = earlyExpiredSession.sessionId.kafkaKey))
                 earlyExpiredSession.delete()
             }
         } else {
-            store.set(key, value, timestamp)
+            store.set(WindowBufferEmitterSessionId(sessionKey, kafkaKey), value, timestamp)
         }
+    }
+}
+
+
+class WindowBufferEmitterSessionId<K>(
+    val sessionKey: K,
+    val kafkaKey: String
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as WindowBufferEmitterSessionId<*>
+        if (sessionKey != other.sessionKey) return false
+        if (kafkaKey != other.kafkaKey) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = sessionKey?.hashCode() ?: 0
+        result = 31 * result + kafkaKey.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "UniqueSessionId(sessionKey=$sessionKey, kafkaKey='$kafkaKey')"
     }
 }

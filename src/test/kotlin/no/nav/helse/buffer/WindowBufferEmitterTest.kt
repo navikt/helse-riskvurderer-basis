@@ -15,6 +15,7 @@ import org.junit.jupiter.api.TestInstance
 import java.io.StringWriter
 import java.time.Clock
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class WindowBufferEmitterTest {
@@ -173,6 +174,18 @@ class WindowBufferEmitterTest {
         assertTrue(metrics.contains("buffered_session_emitted_after_secs_summary_sum 7.0")) // 10000 - 3000
         assertTrue(metrics.contains("buffered_session_emitted_time_left_secs_summary_count 1.0"))
         assertTrue(metrics.contains("buffered_session_emitted_time_left_secs_summary_sum 13.0")) // 20 - 7
+    }
+
+    @Test
+    fun `sessionId equals and hashCode should make sense`() {
+        assertEquals(WindowBufferEmitterSessionId("s1", "k1"), WindowBufferEmitterSessionId("s1", "k1"))
+        assertEquals(WindowBufferEmitterSessionId("s1", "k1").hashCode(), WindowBufferEmitterSessionId("s1", "k1").hashCode())
+
+        assertNotEquals(WindowBufferEmitterSessionId("s1", "k1"), WindowBufferEmitterSessionId("s1", "k2"))
+        assertNotEquals(WindowBufferEmitterSessionId("s1", "k1").hashCode(), WindowBufferEmitterSessionId("s1", "k2").hashCode())
+
+        assertNotEquals(WindowBufferEmitterSessionId("s1", "k1"), WindowBufferEmitterSessionId("s2", "k1"))
+        assertNotEquals(WindowBufferEmitterSessionId("s1", "k1").hashCode(), WindowBufferEmitterSessionId("s2", "k1").hashCode())
     }
 
     private fun metricsString() : String {

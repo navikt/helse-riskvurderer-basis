@@ -15,6 +15,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.JsonElement
 import java.net.URI
+import java.util.*
+import javax.crypto.KeyGenerator
 
 private val json = Json(JsonConfiguration.Stable)
 
@@ -26,7 +28,7 @@ fun JsonElement.encryptAsJWE(jwk: JWKHolder): String {
    return encryptAsJWE(toString().toByteArray(charset = Charsets.UTF_8), jwk.jwk())!!
 }
 
-private fun decryptJWE(jweString: String, jwkSet: JWKSet): String {
+internal fun decryptJWE(jweString: String, jwkSet: JWKSet): String {
    val jwe = JWEObject.parse(jweString)
    val keyId = jwe.header.keyID
    val jwk: JWK = jwkSet.getKeyByKeyId(keyId) ?: throw RuntimeException("No decryption key found with keyId=$keyId")
@@ -42,7 +44,7 @@ private fun decryptJWE(jweString: String, jwkSet: JWKSet): String {
    return String(jwe.payload.toBytes(), Charsets.UTF_8)
 }
 
-private fun encryptAsJWE(content: ByteArray, jwk: JWK): String? {
+internal fun encryptAsJWE(content: ByteArray, jwk: JWK): String? {
    val jweEncrypter: JWEEncrypter
    val jweAlgorithm: JWEAlgorithm
    if (jwk is OctetSequenceKey) {
@@ -65,4 +67,18 @@ private fun encryptAsJWE(content: ByteArray, jwk: JWK): String? {
    val jwe = JWEObject(header, Payload(content))
    jwe.encrypt(jweEncrypter)
    return jwe.serialize()
+}
+
+internal fun createRandomJWKAES(): JWK {
+   val keygen = KeyGenerator.getInstance("AES")
+   keygen.init(256)
+   val key = keygen.generateKey()
+   val keyBase64 = Base64URL.encode(key.encoded).toString()
+   val jwkString = """
+         {"kty":"oct",
+          "kid":"${UUID.randomUUID().toString()}",
+          "alg":"A256KW",
+          "k":"$keyBase64"}
+      """.trimIndent()
+   return JWK.parse(jwkString)
 }

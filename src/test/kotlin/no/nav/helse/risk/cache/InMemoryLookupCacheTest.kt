@@ -1,5 +1,6 @@
 package no.nav.helse.risk.cache
 
+import com.nimbusds.jose.JWEObject
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -168,7 +169,23 @@ class InMemoryLookupCacheTest {
         assertEquals(jsonArrayOf(*mutations[0].slice(0..0).toTypedArray()),
             runBlocking { cache.cachedLookup(::sf1, mutations[0][0])!!["params"]})
         assertEquals(15 + 5+4+3+2+1, cache.cache.estimatedSize())
+    }
 
+    @Test
+    fun `cache-content should be stored as JWE`() {
+        val cache = InMemoryLookupCache(serializer = ListSerializer(JsonObject.serializer()),
+            collectorRegistry = CollectorRegistry.defaultRegistry)
+        "2222".let { fnr ->
+            validate5Times(cache, fnr)
+            assertEquals(1, fnrCount[fnr])
+        }
+        cache.cache.asMap().apply {
+            assertEquals(1, this.size)
+            this.entries.first().apply {
+                val jwe = JWEObject.parse(this.value.serializedValue)
+                assertEquals(JWEObject.State.ENCRYPTED, jwe.state)
+            }
+        }
     }
 
     suspend fun sjson(init: JsonObjectBuilder.() -> Unit): JsonObject {

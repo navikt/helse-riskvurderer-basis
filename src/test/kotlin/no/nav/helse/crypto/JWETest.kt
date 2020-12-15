@@ -6,10 +6,12 @@ import com.nimbusds.jose.util.Base64URL
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.json
 import kotlinx.serialization.json.jsonArray
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.util.*
 import javax.crypto.KeyGenerator
+import kotlin.test.assertNotEquals
+
 
 class JWETest {
 
@@ -51,6 +53,17 @@ class JWETest {
         val decryptedJson = JsonElement.decryptFromJWE(jwe, jwkSet.toJWKSetHolder()).jsonObject
         assertEquals(someJson, decryptedJson)
         println(decryptedJson.toString())
+    }
+
+    @Test
+    fun `random AES JWK should not be hardcoded`() {
+        val jwk1 = createRandomJWKAES()
+        assertEquals(jwk1, jwk1)
+        assertTrue(Arrays.equals(jwk1.toOctetSequenceKey().toByteArray(), jwk1.toOctetSequenceKey().toByteArray()))
+
+        val jwk2 = createRandomJWKAES()
+        assertNotEquals(jwk1, jwk2)
+        assertFalse(Arrays.equals(jwk1.toOctetSequenceKey().toByteArray(), jwk2.toOctetSequenceKey().toByteArray()))
     }
 }
 

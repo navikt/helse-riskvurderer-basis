@@ -2,12 +2,16 @@ package no.nav.helse.risk.cache
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Counter
 import kotlinx.serialization.Decoder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.json.JsonElement
+import no.nav.helse.crypto.*
+import no.nav.helse.crypto.decryptJWE
 import org.slf4j.LoggerFactory
 import java.lang.ClassCastException
 import java.security.MessageDigest
@@ -98,7 +102,6 @@ class InMemoryLookupCache<RET>(
             if (cached != null) {
                 log.info("Using cached result from ${cached.timestamp}");
                 metrics.usedCache()
-                @Suppress("UNCHECKED_CAST")
                 deserialize(cached.serializedValue)
             } else {
                 metrics.notInCache()
@@ -111,11 +114,22 @@ class InMemoryLookupCache<RET>(
         }
 
     private fun serialize(value: RET) : String {
-        return JSON.stringify(serializer, value)
+        return encrypt(JSON.stringify(serializer, value))
     }
 
     private fun deserialize(serializedValue: String) : RET {
-        return JSON.parse(serializer, serializedValue)
+        return JSON.parse(serializer, decrypt(serializedValue))
+    }
+
+    private val jwk = createRandomJWKAES()
+    private val jwks = JWKSet(jwk)
+
+    private fun decrypt(jwe: String): String {
+        return decryptJWE(jwe, jwks)
+    }
+
+    private fun encrypt(data: String): String {
+        return encryptAsJWE(data.toByteArray(charset = Charsets.UTF_8), jwk)!!
     }
 
 }

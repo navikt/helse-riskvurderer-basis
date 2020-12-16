@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 
 class InMemoryLookupCacheTest {
@@ -171,6 +172,15 @@ class InMemoryLookupCacheTest {
         assertEquals(15 + 5+4+3+2+1, cache.cache.estimatedSize())
     }
 
+    private fun f5Nullable(p1:String?, p2:String?, p3:String?, p4:String?, p5:String?): JsonObject = json { "params" to jsonArray { +p1; +p2; +p3; +p4; +p5 } }
+
+    @Test
+    fun `should not crash on NULL-parameters`() {
+        val cache = InMemoryLookupCache(serializer = JsonObject.serializer(), collectorRegistry = CollectorRegistry.defaultRegistry)
+        for (i in 1..10) { assertEquals(jsonArrayOf("1", null, "3", "4", "5"), cache.cachedLookup(::f5Nullable, "1", null, "3", "4", "5")!!["params"]) }
+        assertEquals(1, cache.cache.estimatedSize())
+    }
+
     @Test
     fun `cache-content should be stored as JWE`() {
         val cache = InMemoryLookupCache(serializer = ListSerializer(JsonObject.serializer()),
@@ -188,13 +198,38 @@ class InMemoryLookupCacheTest {
         }
     }
 
+    @Test
+    fun `answers should not be mixed up even when request-hash-collision`() {
+        val cache = InMemoryLookupCache(serializer = ListSerializer(JsonObject.serializer()),
+            collectorRegistry = CollectorRegistry.defaultRegistry)
+        val answer2222 = cache.cachedLookup(::someLookupFunc, "2222", fom ,tom)!!
+        assertEquals(1, fnrCount["2222"])
+        assertEquals(answer2222,  cache.cachedLookup(::someLookupFunc, "2222", fom ,tom)!!)
+        assertEquals(1, fnrCount["2222"], "test-sanity-check: should still be only one _actual_ lookup since result is cached")
+        val answer3333 = cache.cachedLookup(::someLookupFunc, "3333", fom ,tom)!!
+        assertEquals(1, fnrCount["3333"])
+        cache.cache.asMap().apply {
+            val entries = this.entries.toList()
+            val firstKeyWithSecondValue = entries[0].key to entries[1].value
+            val secondKeyWithFirstValue = entries[1].key to entries[0].value
+            // Switch entries to simulate hash-collision:
+            firstKeyWithSecondValue.let { cache.cache.put(it.first, it.second) }
+            secondKeyWithFirstValue.let { cache.cache.put(it.first, it.second) }
+        }
+        val answer2222_2ndTime = cache.cachedLookup(::someLookupFunc, "2222", fom ,tom)
+        assertNotEquals(answer3333, answer2222_2ndTime, "MUST not be the wrong value!")
+        assertEquals(answer2222, answer2222_2ndTime, "cache-miss should cause new lookup giving the correct value")
+        assertEquals(2, fnrCount["2222"], "now we should have done a total of 2 _actual_ lookups for '2222'")
+    }
+
+
     suspend fun sjson(init: JsonObjectBuilder.() -> Unit): JsonObject {
         delay(1)
         return json(init)
     }
 
 
-    private fun jsonArrayOf(vararg vals: String): JsonArray =
+    private fun jsonArrayOf(vararg vals: String?): JsonArray =
         jsonArray { vals.forEach { +it } }
 
     private fun validate5Times(cache: InMemoryLookupCache<List<JsonObject>>, fnr:String) {

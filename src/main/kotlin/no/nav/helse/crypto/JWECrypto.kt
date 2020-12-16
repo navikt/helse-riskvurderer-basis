@@ -11,12 +11,11 @@ import com.nimbusds.jose.jwk.OctetSequenceKey
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.util.Base64
 import com.nimbusds.jose.util.Base64URL
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.*
 import java.net.URI
 import java.util.*
 import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 
 private val json = Json(JsonConfiguration.Stable)
 
@@ -69,16 +68,20 @@ internal fun encryptAsJWE(content: ByteArray, jwk: JWK): String? {
    return jwe.serialize()
 }
 
-internal fun createRandomJWKAES(): JWK {
+internal fun jwkSecretKeyFrom(kid: String, key: SecretKey): JWK {
+   val keyBase64 = Base64URL.encode(key.encoded).toString()
+   val jwkJson = json {
+      "kty" to "oct"
+      "kid" to kid
+      "alg" to "A256KW"
+      "k" to keyBase64
+   }
+   return JWK.parse(jwkJson.toString())
+}
+
+internal fun createRandomJWKAES(kid: String = UUID.randomUUID().toString()): JWK {
    val keygen = KeyGenerator.getInstance("AES")
    keygen.init(256)
    val key = keygen.generateKey()
-   val keyBase64 = Base64URL.encode(key.encoded).toString()
-   val jwkString = """
-         {"kty":"oct",
-          "kid":"${UUID.randomUUID().toString()}",
-          "alg":"A256KW",
-          "k":"$keyBase64"}
-      """.trimIndent()
-   return JWK.parse(jwkString)
+   return jwkSecretKeyFrom(kid, key)
 }

@@ -2,22 +2,24 @@ package no.nav.helse.risk.cache
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Counter
-import kotlinx.serialization.Decoder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.json.JsonElement
-import no.nav.helse.crypto.*
+import no.nav.helse.crypto.createRandomJWKAES
 import no.nav.helse.crypto.decryptJWE
+import no.nav.helse.crypto.encryptAsJWE
+import no.nav.helse.crypto.jwkSecretKeyFrom
 import org.slf4j.LoggerFactory
-import java.lang.ClassCastException
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.*
+import javax.crypto.spec.SecretKeySpec
+import kotlin.experimental.xor
 
 private val log = LoggerFactory.getLogger(InMemoryLookupCache::class.java)
 
@@ -42,94 +44,110 @@ class InMemoryLookupCache<RET>(
         .build()
 
     fun <P1> cachedLookup(function: (P1) -> RET?, param1: P1): RET? =
-        sha256("$function $param1").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1))
+        requestParams(function, param1).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1))
         }
 
     fun <P1, P2> cachedLookup(function: (P1, P2) -> RET?, param1: P1, param2: P2): RET? =
-        sha256("$function $param1 $param2").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1, param2))
+        requestParams(function, param1, param2).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2))
         }
 
     fun <P1, P2, P3> cachedLookup(function: (P1, P2, P3) -> RET?, param1: P1, param2: P2, param3: P3): RET? =
-        sha256("$function $param1 $param2 $param3").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1, param2, param3))
+        requestParams(function, param1, param2, param3).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3))
         }
 
     fun <P1, P2, P3, P4> cachedLookup(function: (P1, P2, P3, P4) -> RET?, param1: P1, param2: P2, param3: P3, param4: P4): RET? =
-        sha256("$function $param1 $param2 $param3 $param4").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1, param2, param3, param4))
+        requestParams(function, param1, param2, param3, param4).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3, param4))
         }
 
     fun <P1, P2, P3, P4, P5> cachedLookup(function: (P1, P2, P3, P4, P5) -> RET?, param1: P1, param2: P2, param3: P3, param4: P4, param5: P5): RET? =
-        sha256("$function $param1 $param2 $param3 $param4 $param5").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1, param2, param3, param4, param5))
+        requestParams(function, param1, param2, param3, param4, param5).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3, param4, param5))
         }
 
 
     // SUSPEND-VERSIONS:
     suspend fun <P1> cachedLookup(function: suspend (P1) -> RET?, param1: P1): RET? =
-        sha256("$function $param1").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1))
+        requestParams(function, param1).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1))
         }
 
     suspend fun <P1, P2> cachedLookup(function: suspend (P1, P2) -> RET?, param1: P1, param2: P2): RET? =
-        sha256("$function $param1 $param2").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1, param2))
+        requestParams(function, param1, param2).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2))
         }
 
     suspend fun <P1, P2, P3> cachedLookup(function: suspend (P1, P2, P3) -> RET?, param1: P1, param2: P2, param3: P3): RET? =
-        sha256("$function $param1 $param2 $param3").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1, param2, param3))
+        requestParams(function, param1, param2, param3).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3))
         }
 
     suspend fun <P1, P2, P3, P4> cachedLookup(function: suspend (P1, P2, P3, P4) -> RET?, param1: P1, param2: P2, param3: P3, param4: P4): RET? =
-        sha256("$function $param1 $param2 $param3 $param4").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1, param2, param3, param4))
+        requestParams(function, param1, param2, param3, param4).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3, param4))
         }
 
     suspend fun <P1, P2, P3, P4, P5> cachedLookup(function: suspend (P1, P2, P3, P4, P5) -> RET?, param1: P1, param2: P2, param3: P3, param4: P4, param5: P5): RET? =
-        sha256("$function $param1 $param2 $param3 $param4 $param5").let { requestHash ->
-            cacheIfNotNull(requestHash, cachedResult(requestHash) ?: function(param1, param2, param3, param4, param5))
+        requestParams(function, param1, param2, param3, param4, param5).let { requestParams ->
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3, param4, param5))
         }
 
-    private fun cacheIfNotNull(requestHash: String, result: RET?) : RET? =
-        result.also { if (result != null) cache.put(requestHash, CachedValue(serializedValue = serialize(result))) }
+    private fun requestParams(vararg params:Any?) : RequestInfo {
+        return RequestInfo(params = params.map { "$it" })
+    }
 
-    private fun cachedResult(requestHash: String): RET? =
+    private fun cacheIfNotNull(requestParams: RequestInfo, result: RET?) : RET? =
+        result.also { if (result != null) cache.put(requestParams.requestHash(), CachedValue(serializedValue = serialize(result, requestParams))) }
+
+    private fun cachedResult(requestParams: RequestInfo): RET? =
         try {
-            val cached:CachedValue? = cache.getIfPresent(requestHash)
+            val cached:CachedValue? = cache.getIfPresent(requestParams.requestHash())
             if (cached != null) {
-                log.info("Using cached result from ${cached.timestamp}");
+                log.info("Using cached result from ${cached.timestamp}")
                 metrics.usedCache()
-                deserialize(cached.serializedValue)
+                deserialize(cached.serializedValue, requestParams)
             } else {
                 metrics.notInCache()
                 null
             }
-        } catch (ex: ClassCastException) {
+        } catch (ex: Exception) {
             metrics.errorUsingCache()
-            log.error("ClassCastException returning cached result")
+            log.error("Exception returning cached result: ${ex.javaClass}")
             null
         }
 
-    private fun serialize(value: RET) : String {
-        return encrypt(JSON.stringify(serializer, value))
+    private fun serialize(value: RET, requestParams: RequestInfo) : String {
+        return encrypt(JSON.stringify(serializer, value), requestParams)
     }
 
-    private fun deserialize(serializedValue: String) : RET {
-        return JSON.parse(serializer, decrypt(serializedValue))
+    private fun deserialize(serializedValue: String, requestParams: RequestInfo) : RET {
+        return JSON.parse(serializer, decrypt(serializedValue, requestParams))
     }
 
-    private val jwk = createRandomJWKAES()
-    private val jwks = JWKSet(jwk)
-
-    private fun decrypt(jwe: String): String {
-        return decryptJWE(jwe, jwks)
+    private val masterKey:ByteArray = createRandomJWKAES().toOctetSequenceKey().toSecretKey("AES").encoded
+    private val specificKeySalt:String = UUID.randomUUID().toString()
+    private fun specificKey(requestParams: RequestInfo) : JWK {
+        val saltedRequestHash = sha256Bytes(specificKeySalt + requestParams.params.joinToString("#"))
+        val specificKey = masterKey.xor(saltedRequestHash)
+        return jwkSecretKeyFrom(
+            kid = "the-only-right-one",
+            key = SecretKeySpec(specificKey, "AES"))
     }
 
-    private fun encrypt(data: String): String {
-        return encryptAsJWE(data.toByteArray(charset = Charsets.UTF_8), jwk)!!
+    private fun decrypt(jwe: String, requestParams: RequestInfo): String {
+        return decryptJWE(jwe, JWKSet(specificKey(requestParams)))
+    }
+
+    private fun encrypt(data: String, requestParams: RequestInfo): String {
+        return encryptAsJWE(data.toByteArray(charset = Charsets.UTF_8), specificKey(requestParams))!!
+    }
+
+    private data class RequestInfo(val params: List<String>) {
+        init { require(params.size >= 2) { "Should include at least function and one parameter" } }
+        fun requestHash() : String = sha256(params.joinToString(";"))
     }
 
 }
@@ -145,10 +163,21 @@ class LookupCacheMetrics(collectorRegistry: CollectorRegistry) {
     fun errorUsingCache() { cacheRequestCounter.labels("error").inc() }
 }
 
-private fun sha256(data:String): String {
+private fun sha256Bytes(data:String): ByteArray {
     val digest = MessageDigest.getInstance("SHA-256")
-    val hash = digest.digest(data.toByteArray(charset = Charsets.UTF_8))
-    return hash.toHexString()
+    return digest.digest(data.toByteArray(charset = Charsets.UTF_8))
 }
 
+private fun sha256(data:String): String = sha256Bytes(data).toHexString()
+
 private fun ByteArray.toHexString() = this.joinToString("") { String.format("%02x", it) }
+
+// TODO: Test
+internal fun ByteArray.xor(other: ByteArray): ByteArray {
+    require(this.size == other.size)
+    val ret = ByteArray(this.size)
+    for (i in ret.indices) {
+        ret[i] = this[i] xor other[i]
+    }
+    return ret
+}

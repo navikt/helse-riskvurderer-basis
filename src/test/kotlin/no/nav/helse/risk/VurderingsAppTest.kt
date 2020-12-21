@@ -153,16 +153,14 @@ class VurderingsAppTest {
         ) andThenThrows Done()
 
         val producedMessages = mutableListOf<ProducerRecord<String, JsonObject>>()
-        every { producer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>() andThenThrows IllegalStateException(
-            "no more please!"
-        )
+        every { producer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>()
 
         GlobalScope.launch {
             app.start()
         }
 
         await()
-            .atMost(Duration.ofSeconds(5))
+            .atMost(Duration.ofSeconds(10))
             .pollDelay(Duration.ofMillis(200))
             .untilAsserted {
                 assertTrue(producedMessages.size > 0)

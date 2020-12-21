@@ -16,6 +16,7 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.TopicPartition
+import org.awaitility.Awaitility
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -65,8 +66,13 @@ class RiverAppTest {
         val job = GlobalScope.launch {
             app.start()
         }
-        Thread.sleep(1000)
-        assertEquals("BUT THIS", myValue)
+
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(5))
+            .pollDelay(Duration.ofMillis(200))
+            .untilAsserted {
+                assertEquals("BUT THIS", myValue)
+            }
         job.cancel()
     }
 

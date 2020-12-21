@@ -13,6 +13,7 @@ import io.micrometer.core.instrument.binder.system.*
 import io.micrometer.prometheus.*
 import io.prometheus.client.*
 import io.prometheus.client.exporter.common.*
+import java.io.StringWriter
 import java.util.concurrent.*
 
 fun webserver(collectorRegistry: CollectorRegistry,
@@ -60,9 +61,9 @@ fun Application.riskvurderer(collectorRegistry: CollectorRegistry,
         }
         get("/metrics") {
             val names = call.request.queryParameters.getAll("name[]")?.toSet() ?: emptySet()
-            call.respondTextWriter(ContentType.parse(TextFormat.CONTENT_TYPE_004)) {
-                TextFormat.write004(this, collectorRegistry.filteredMetricFamilySamples(names))
-            }
+            val text = StringWriter()
+            TextFormat.write004(text, collectorRegistry.filteredMetricFamilySamples(names))
+            call.respondText(text = text.toString(), contentType = ContentType.parse(TextFormat.CONTENT_TYPE_004))
         }
     }
 }

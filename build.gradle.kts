@@ -7,7 +7,6 @@ val kafkaVersion = "2.4.0"
 val slf4jVersion = "1.7.30"
 val logbackVersion = "1.2.3"
 val logstashEncoderVersion = "6.5"
-val coroutinesVersion = "1.4.2"
 val serializerVersion = "1.0.1"
 val nimbusJoseVersion = "8.20.1"
 
@@ -41,11 +40,12 @@ dependencies {
         implementation(dependencyNotation)
     }
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializerVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+
     implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
     implementation("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
 

@@ -43,8 +43,10 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializerVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
-    implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    api("io.ktor:ktor-server-netty:$ktorVersion")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core") {
+        isTransitive = true
+    }
 
     implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
     implementation("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")

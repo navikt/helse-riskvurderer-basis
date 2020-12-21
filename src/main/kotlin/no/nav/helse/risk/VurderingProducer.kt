@@ -1,13 +1,12 @@
 package no.nav.helse.risk
 
-import com.nimbusds.jose.jwk.JWKSet
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import no.nav.helse.crypto.JWKSetHolder
-import no.nav.helse.crypto.decryptFromJWE
 import org.slf4j.LoggerFactory
 
 
-private val json = Json(JsonConfiguration.Stable)
+private val json = JsonRisk
 
 internal class VurderingProducer(
     private val infotype: String,
@@ -22,8 +21,8 @@ internal class VurderingProducer(
     fun lagVurdering(answers: List<JsonObject>, vedtaksperiodeId: String): JsonObject? {
         return try {
             log.info("Lager vurdering for vedtaksperiodeId=$vedtaksperiodeId")
-            val vurdering = vurderer(answers.map(::decryptIfEncrypted))
-            json.toJson(Vurderingsmelding.serializer(), Vurderingsmelding(
+            val vurdering = vurderer(answers.map { it.decryptIfEncrypted(decryptionJWKS) })
+            json.encodeToJsonElement(Vurderingsmelding.serializer(), Vurderingsmelding(
                 infotype = infotype,
                 vedtaksperiodeId = vedtaksperiodeId,
                 score = vurdering.score,
@@ -37,21 +36,4 @@ internal class VurderingProducer(
             null
         }
     }
-
-    private fun decryptIfEncrypted(message: JsonObject): JsonObject {
-        return try {
-            if (decryptionJWKS != null
-                && message.containsKey(dataKey)
-                && message[dataKey]?.contentOrNull != null
-                && message[dataKey]!!.content.startsWith("ey")) {
-                val decrypted = JsonElement.decryptFromJWE(message[dataKey]!!.content, decryptionJWKS)
-                json {}.copy(message.content.toMutableMap().apply { this[dataKey] = decrypted } )
-            } else {
-                message
-            }
-        } catch (exceptionBecauseDataElementIsNotAStringAndThusNotJWE: JsonException) {
-            message
-        }
-    }
-
 }

@@ -5,9 +5,9 @@ import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.content
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 import no.nav.common.KafkaEnvironment
 import no.nav.helse.crypto.lagEnJWK
 import no.nav.helse.crypto.toJWKSetHolder
@@ -21,15 +21,18 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.serialization.StringSerializer
 import org.awaitility.Awaitility.await
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.time.Duration
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 internal class RiverEnTilEnTest {
     val env = RiverEnvironment("testapp")
-    private val json = Json(JsonConfiguration.Stable)
+    private val json = JsonRisk
 
     @BeforeEach
     fun clearStuff() {
@@ -52,10 +55,12 @@ internal class RiverEnTilEnTest {
     ).tilInteresser()
 
     private fun initBufferedRiver() {
-        bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
+        bufferedRiver = BufferedRiver(
+            KafkaProducer<String, JsonObject>(producerConfig),
             KafkaConsumer<String, JsonObject>(consumerConfig), interesser, emptyList(),
             VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering,
-            CollectorRegistry.defaultRegistry)
+            CollectorRegistry.defaultRegistry
+        )
         GlobalScope.launch {
             bufferedRiver!!.start()
         }
@@ -66,13 +71,13 @@ internal class RiverEnTilEnTest {
         val info = infoListe.first()
         return VurderingBuilder()
             .leggVedMetadata("hei", "sann")
-            .begrunnelse("derfor", info["nummer"]!!.primitive.int)
+            .begrunnelse("derfor", info["nummer"]!!.jsonPrimitive.int)
             .build(2)
     }
 
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {
-        val value = Json.parse(JsonObject.serializer(), jsonstring)
-        val key = value["vedtaksperiodeId"]!!.content
+        val value = Json.decodeFromString(JsonObject.serializer(), jsonstring)
+        val key = value["vedtaksperiodeId"]!!.jsonPrimitive.content
         this.send(ProducerRecord(riskRiverTopic, key, value))
     }
 
@@ -88,7 +93,7 @@ internal class RiverEnTilEnTest {
             producer.sendJson("""{"nummer":3, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
             producer.sendJson("""{"nummer":6, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
             val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
-            producer.send(ProducerRecord(riskRiverTopic, json.parse(JsonObject.serializer(), payload3)))
+            producer.send(ProducerRecord(riskRiverTopic, json.decodeFromString(JsonObject.serializer(), payload3)))
         }
 
         var vurdering: Vurderingsmelding? = null
@@ -101,11 +106,11 @@ internal class RiverEnTilEnTest {
                     msgs.addAll(testConsumer
                         .poll(Duration.ofMillis(100))
                         .toList()
-                        .filter { it.value()["type"]?.content == "vurdering" }
+                        .filter { it.value()["type"]?.jsonPrimitive?.content == "vurdering" }
                     )
 
                     assertTrue(msgs.size > 0)
-                    vurdering = json.fromJson(Vurderingsmelding.serializer(), msgs.first().value())
+                    vurdering = json.decodeFromJsonElement(Vurderingsmelding.serializer(), msgs.first().value())
                 }
         }
         vurdering.apply {

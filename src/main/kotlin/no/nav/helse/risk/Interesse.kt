@@ -1,8 +1,8 @@
 package no.nav.helse.risk
 
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.content
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 data class Interesse internal constructor(
     val type: String,
@@ -36,9 +36,9 @@ private fun Int?.matcherIterasjon(interesse: Interesse) : Boolean {
 
 internal fun JsonObject.tilfredsstillerInteresser(interesser: List<Interesse>): Boolean {
     interesser.forEach { interesse ->
-        if (interesse.type == this[typeKey]?.content &&
-            (interesse.infotype == null || (interesse.infotype == this[infotypeKey]?.content)) &&
-            (this[iterasjonKey]?.intOrNull.matcherIterasjon(interesse)))
+        if (interesse.type == this[typeKey]?.jsonPrimitive?.content &&
+            (interesse.infotype == null || (interesse.infotype == this[infotypeKey]?.jsonPrimitive?.content)) &&
+            (this[iterasjonKey]?.jsonPrimitive?.intOrNull.matcherIterasjon(interesse)))
             return true
     }
     return false

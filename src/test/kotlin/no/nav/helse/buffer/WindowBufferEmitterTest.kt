@@ -6,8 +6,7 @@ import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.content
-import org.junit.jupiter.api.AfterEach
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -27,12 +26,15 @@ class WindowBufferEmitterTest {
 
     @Test
     fun `split in sessions based on windowGap`() {
-        val opinion1a = """{"vedtaksperiodeId":"periode1", "type": "vurdering", "vekt":2, "score": 4, "begrunnelser": ["reason 1", "reason 2"]}"""
-        val opinion1b = """{"vedtaksperiodeId":"periode1", "type": "vurdering", "vekt":10, "score": 10, "begrunnelser": ["reason 1", "reason 2"]}"""
-        val opinion2 = """{"vedtaksperiodeId":"periode2", "type": "vurdering", "vekt":3, "score": 5, "begrunnelser": ["reason 3"]}"""
-        val o1a = Json.parse(JsonObject.serializer(), opinion1a)
-        val o1b = Json.parse(JsonObject.serializer(), opinion1b)
-        val o2 = Json.parse(JsonObject.serializer(), opinion2)
+        val opinion1a =
+            """{"vedtaksperiodeId":"periode1", "type": "vurdering", "vekt":2, "score": 4, "begrunnelser": ["reason 1", "reason 2"]}"""
+        val opinion1b =
+            """{"vedtaksperiodeId":"periode1", "type": "vurdering", "vekt":10, "score": 10, "begrunnelser": ["reason 1", "reason 2"]}"""
+        val opinion2 =
+            """{"vedtaksperiodeId":"periode2", "type": "vurdering", "vekt":3, "score": 5, "begrunnelser": ["reason 3"]}"""
+        val o1a = Json.decodeFromString(JsonObject.serializer(), opinion1a)
+        val o1b = Json.decodeFromString(JsonObject.serializer(), opinion1b)
+        val o2 = Json.decodeFromString(JsonObject.serializer(), opinion2)
 
         val sessions = mutableListOf<List<JsonObject>>()
         val expectedKafkaKey = "whateverkey"
@@ -75,17 +77,17 @@ class WindowBufferEmitterTest {
         sessions[0].apply {
             assertEquals(3, this.size)
             for (i in 0..2) {
-                assertEquals("periode1", this[i]["vedtaksperiodeId"]?.content)
+                assertEquals("periode1", this[i]["vedtaksperiodeId"]?.jsonPrimitive?.content)
             }
         }
         sessions[1].apply {
             assertEquals(1, this.size)
-            assertEquals("periode1", this.first()["vedtaksperiodeId"]?.content)
+            assertEquals("periode1", this.first()["vedtaksperiodeId"]?.jsonPrimitive?.content)
         }
         sessions[2].apply {
             assertEquals(2, this.size)
             for (i in 0..1) {
-                assertEquals("periode2", this[i]["vedtaksperiodeId"]?.content)
+                assertEquals("periode2", this[i]["vedtaksperiodeId"]?.jsonPrimitive?.content)
             }
         }
 
@@ -97,10 +99,12 @@ class WindowBufferEmitterTest {
 
     @Test
     fun `early expiry`() {
-        val opinion1a = """{"vedtaksperiodeId":"periode1", "type": "vurdering", "infotype":"A", "vekt":2, "score": 4, "begrunnelser": ["reason 1", "reason 2"]}"""
-        val opinion1b = """{"vedtaksperiodeId":"periode1", "type": "vurdering", "infotype":"B", "vekt":10, "score": 10, "begrunnelser": ["reason 1", "reason 2"]}"""
-        val o1a = Json.parse(JsonObject.serializer(), opinion1a)
-        val o1b = Json.parse(JsonObject.serializer(), opinion1b)
+        val opinion1a =
+            """{"vedtaksperiodeId":"periode1", "type": "vurdering", "infotype":"A", "vekt":2, "score": 4, "begrunnelser": ["reason 1", "reason 2"]}"""
+        val opinion1b =
+            """{"vedtaksperiodeId":"periode1", "type": "vurdering", "infotype":"B", "vekt":10, "score": 10, "begrunnelser": ["reason 1", "reason 2"]}"""
+        val o1a = Json.decodeFromString(JsonObject.serializer(), opinion1a)
+        val o1b = Json.decodeFromString(JsonObject.serializer(), opinion1b)
 
         val emittedSessions = mutableListOf<List<JsonObject>>()
         val expectedKafkaKey = "einAnnaNykjel"
@@ -127,8 +131,8 @@ class WindowBufferEmitterTest {
             schedulerIntervalInSeconds = -1,
             sessionEarlyExpireCondition = {
                 it.size == 2
-                    && (it.find { msg -> msg["infotype"]?.content == "A" } != null)
-                    && (it.find { msg -> msg["infotype"]?.content == "B" } != null)
+                    && (it.find { msg -> msg["infotype"]?.jsonPrimitive?.content == "A" } != null)
+                    && (it.find { msg -> msg["infotype"]?.jsonPrimitive?.content == "B" } != null)
             })
         assertEquals(0, window.activeKeys)
         window.store("periode1", o1a, expectedKafkaKey, 3000)
@@ -156,7 +160,6 @@ class WindowBufferEmitterTest {
         window.store("periode1", o1a, expectedKafkaKey, clock.millis())
         assertEquals(1, window.activeKeys)
         every { clock.millis() } returns current + windowSizeInMillis + 1000
-        current = clock.millis()
 
         window.runExpiryCheck()
         assertEquals(0, window.activeKeys)
@@ -179,16 +182,25 @@ class WindowBufferEmitterTest {
     @Test
     fun `sessionId equals and hashCode should make sense`() {
         assertEquals(WindowBufferEmitterSessionId("s1", "k1"), WindowBufferEmitterSessionId("s1", "k1"))
-        assertEquals(WindowBufferEmitterSessionId("s1", "k1").hashCode(), WindowBufferEmitterSessionId("s1", "k1").hashCode())
+        assertEquals(
+            WindowBufferEmitterSessionId("s1", "k1").hashCode(),
+            WindowBufferEmitterSessionId("s1", "k1").hashCode()
+        )
 
         assertNotEquals(WindowBufferEmitterSessionId("s1", "k1"), WindowBufferEmitterSessionId("s1", "k2"))
-        assertNotEquals(WindowBufferEmitterSessionId("s1", "k1").hashCode(), WindowBufferEmitterSessionId("s1", "k2").hashCode())
+        assertNotEquals(
+            WindowBufferEmitterSessionId("s1", "k1").hashCode(),
+            WindowBufferEmitterSessionId("s1", "k2").hashCode()
+        )
 
         assertNotEquals(WindowBufferEmitterSessionId("s1", "k1"), WindowBufferEmitterSessionId("s2", "k1"))
-        assertNotEquals(WindowBufferEmitterSessionId("s1", "k1").hashCode(), WindowBufferEmitterSessionId("s2", "k1").hashCode())
+        assertNotEquals(
+            WindowBufferEmitterSessionId("s1", "k1").hashCode(),
+            WindowBufferEmitterSessionId("s2", "k1").hashCode()
+        )
     }
 
-    private fun metricsString() : String {
+    private fun metricsString(): String {
         val writer = StringWriter()
         TextFormat.write004(writer, CollectorRegistry.defaultRegistry.filteredMetricFamilySamples((emptySet())))
         return writer.toString()

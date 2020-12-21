@@ -1,22 +1,22 @@
 import org.jetbrains.kotlin.gradle.tasks.*
 
-val junitJupiterVersion = "5.6.0"
-val ktorVersion = "1.3.1"
-val micrometerVersion = "1.3.3"
+val junitJupiterVersion = "5.6.3"
+val ktorVersion = "1.4.3"
+val micrometerVersion = "1.3.16"
 val kafkaVersion = "2.4.0"
 val slf4jVersion = "1.7.30"
 val logbackVersion = "1.2.3"
-val logstashEncoderVersion = "6.3"
-val coroutinesVersion = "0.14.0"
-val serializerVersion = "0.20.0"
-val nimbusJoseVersion = "8.19"
+val logstashEncoderVersion = "6.5"
+val coroutinesVersion = "1.4.2"
+val serializerVersion = "1.0.1"
+val nimbusJoseVersion = "8.20.1"
 
 val snykImplementationDependencyOverrides = arrayOf(
     "io.netty:netty-codec-http2:4.1.46.Final"
 )
 
 plugins {
-    val kotlinVersion = "1.3.70"
+    val kotlinVersion = "1.4.21"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
     id("maven-publish")
@@ -42,7 +42,8 @@ dependencies {
     }
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-    api("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serializerVersion")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializerVersion")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")

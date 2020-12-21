@@ -1,8 +1,10 @@
 package no.nav.helse.risk
 
-import kotlinx.serialization.json.*
-import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.*
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class SerDeTest {
 
@@ -36,20 +38,20 @@ class SerDeTest {
 
    companion object {
       val singleObjectSerialized = SerDeTest::class.java.getResource("/single_object.json").readText().trim().toByteArray()
-      val singleObject = json {
-         "prop1" to "val1"
-         "prop2" to 2
+      val singleObject = buildJsonObject {
+         put("prop1", "val1")
+         put("prop2", 2)
       }
 
       val listSerialized = SerDeTest::class.java.getResource("/array.json").readText().trim().toByteArray()
       val list = listOf(
-         json {
-            "prop1" to "val1"
-            "prop2" to 2
+         buildJsonObject {
+            put("prop1", "val1")
+            put("prop2", 2)
          },
-         json {
-            "prop3" to "val3"
-            "prop4" to 4
+         buildJsonObject {
+            put("prop3", "val3")
+            put("prop4", 4)
          }
       )
    }

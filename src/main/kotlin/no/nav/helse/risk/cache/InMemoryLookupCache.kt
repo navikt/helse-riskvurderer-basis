@@ -7,12 +7,11 @@ import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Counter
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import no.nav.helse.crypto.createRandomJWKAES
 import no.nav.helse.crypto.decryptJWE
 import no.nav.helse.crypto.encryptAsJWE
 import no.nav.helse.crypto.jwkSecretKeyFrom
+import no.nav.helse.risk.JsonRisk
 import org.slf4j.LoggerFactory
 import java.security.MessageDigest
 import java.time.Duration
@@ -23,7 +22,7 @@ import kotlin.experimental.xor
 
 private val log = LoggerFactory.getLogger(InMemoryLookupCache::class.java)
 
-private val JSON = Json(JsonConfiguration.Stable)
+private val JSON = JsonRisk
 
 class InMemoryLookupCache<RET>(
     private val serializer: KSerializer<RET>,
@@ -120,11 +119,11 @@ class InMemoryLookupCache<RET>(
         }
 
     private fun serialize(value: RET, requestParams: RequestInfo) : String {
-        return encrypt(JSON.stringify(serializer, value), requestParams)
+        return encrypt(JSON.encodeToString(serializer, value), requestParams)
     }
 
     private fun deserialize(serializedValue: String, requestParams: RequestInfo) : RET {
-        return JSON.parse(serializer, decrypt(serializedValue, requestParams))
+        return JSON.decodeFromString(serializer, decrypt(serializedValue, requestParams))
     }
 
     private val masterKey:ByteArray = createRandomJWKAES().toOctetSequenceKey().toSecretKey("AES").encoded

@@ -29,7 +29,7 @@ import kotlin.test.assertTrue
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class OppslagsAppTest {
 
-    private val JSON = Json(JsonConfiguration.Stable)
+    private val JSON = JsonRisk
     val producedMessages = mutableListOf<ProducerRecord<String, JsonObject>>()
     private val partition = 0
     private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)
@@ -54,55 +54,55 @@ class OppslagsAppTest {
                 default OppslagsApp har ignoreIfNotPresent = interessertI.filter { it.type == typeRiskNeed }
                 og vår oppslagsapp krever: Interesse.riskNeedMedMinimum(2)
             */
-            json {
-                "type" to "RiskNeed"
-                "iterasjon" to 1
-                "fnr" to fnr
-                "organisasjonsnummer" to orgnr
-                "vedtaksperiodeId" to "111"
-                "behovOpprettet" to behovOpprettet.toString()
+            buildJsonObject {
+                put("type", "RiskNeed")
+                put("iterasjon", 1)
+                put("fnr", fnr)
+                put("organisasjonsnummer", orgnr)
+                put("vedtaksperiodeId", "111")
+                put("behovOpprettet", behovOpprettet.toString())
             },
-            json {
-                "type" to "oppslagsresultat"
-                "infotype" to "kobling"
-                "vedtaksperiodeId" to "111"
-                "behovOpprettet" to behovOpprettet.toString()
-                "data" to json {
-                    "key" to "data_value"
-                }
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "kobling")
+                put("vedtaksperiodeId", "111")
+                put("behovOpprettet", behovOpprettet.toString())
+                put("data", buildJsonObject {
+                    put("key", "data_value")
+                })
             },
 
             // "222" emittes "early" siden den er komplett:
-            json {
-                "type" to "RiskNeed"
-                "iterasjon" to 2
-                "fnr" to fnr
-                "organisasjonsnummer" to orgnr
-                "vedtaksperiodeId" to "222"
-                "behovOpprettet" to behovOpprettet.toString()
+            buildJsonObject {
+                put("type", "RiskNeed")
+                put("iterasjon", 2)
+                put("fnr", fnr)
+                put("organisasjonsnummer", orgnr)
+                put("vedtaksperiodeId", "222")
+                put("behovOpprettet", behovOpprettet.toString())
             },
-            json {
-                "type" to "oppslagsresultat"
-                "infotype" to "kobling"
-                "vedtaksperiodeId" to "222"
-                "behovOpprettet" to behovOpprettet.toString()
-                "data" to json {
-                    "key" to "data_value"
-                }
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "kobling")
+                put("vedtaksperiodeId", "222")
+                put("behovOpprettet", behovOpprettet.toString())
+                put("data", buildJsonObject {
+                    put("key", "data_value")
+                })
             },
 
             // "333" er IKKE komplett men har påkrevd RiskNeed(2) og emittes av schedulern etter 5 sek.
-            json {
-                "type" to "RiskNeed"
-                "iterasjon" to 2
-                "fnr" to fnr
-                "organisasjonsnummer" to orgnr
-                "vedtaksperiodeId" to "333"
-                "behovOpprettet" to behovOpprettet.toString()
+            buildJsonObject {
+                put("type", "RiskNeed")
+                put("iterasjon", 2)
+                put("fnr", fnr)
+                put("organisasjonsnummer", orgnr)
+                put("vedtaksperiodeId", "333")
+                put("behovOpprettet", behovOpprettet.toString())
             },
 
-            json {
-                "something" to "else"
+            buildJsonObject {
+                put("something", "else")
             }
         )
 
@@ -120,9 +120,9 @@ class OppslagsAppTest {
                     periodeTilMeldinger[riskNeed.vedtaksperiodeId] = meldinger
                     println(meldinger.toString())
                     val kobling = meldinger.finnOppslagsresultat("kobling")
-                    json {
-                        "felt1" to riskNeed.vedtaksperiodeId
-                        "har_kobling" to (kobling != null)
+                    buildJsonObject {
+                        put("felt1", riskNeed.vedtaksperiodeId)
+                        put("har_kobling", (kobling != null))
                     }
                 },
                 windowTimeInSeconds = 1
@@ -136,7 +136,8 @@ class OppslagsAppTest {
 
         periodeTilMeldinger["222"].apply {
             assertEquals(2, this!!.size)
-            val innkommende222 = innkommendeMeldinger.filter { it["vedtaksperiodeId"]?.contentOrNull == "222" }
+            val innkommende222 =
+                innkommendeMeldinger.filter { it["vedtaksperiodeId"]?.jsonPrimitive?.contentOrNull == "222" }
             assertEquals(innkommende222.size, this.size)
             innkommende222.forEach { innkommende ->
                 assertTrue(this.contains(innkommende))
@@ -145,7 +146,8 @@ class OppslagsAppTest {
 
         periodeTilMeldinger["333"].apply {
             assertEquals(1, this!!.size)
-            val innkommende333 = innkommendeMeldinger.filter { it["vedtaksperiodeId"]?.contentOrNull == "333" }
+            val innkommende333 =
+                innkommendeMeldinger.filter { it["vedtaksperiodeId"]?.jsonPrimitive?.contentOrNull == "333" }
             assertEquals(innkommende333.size, this.size)
             innkommende333.forEach { innkommende ->
                 assertTrue(this.contains(innkommende))
@@ -156,16 +158,16 @@ class OppslagsAppTest {
 
         assertEquals(2, answers.size)
 
-        JSON.fromJson(Oppslagsmelding.serializer(), answers.first()).apply {
+        JSON.decodeFromJsonElement(Oppslagsmelding.serializer(), answers.first()).apply {
             assertEquals("222", this.vedtaksperiodeId)
-            assertEquals("222", this.data.jsonObject["felt1"]!!.content)
-            assertEquals(true, this.data.jsonObject["har_kobling"]!!.boolean)
+            assertEquals("222", this.data.jsonObject["felt1"]!!.jsonPrimitive.content)
+            assertEquals(true, this.data.jsonObject["har_kobling"]!!.jsonPrimitive.boolean)
         }
 
-        JSON.fromJson(Oppslagsmelding.serializer(), answers[1]).apply {
+        JSON.decodeFromJsonElement(Oppslagsmelding.serializer(), answers[1]).apply {
             assertEquals("333", this.vedtaksperiodeId)
-            assertEquals("333", this.data.jsonObject["felt1"]!!.content)
-            assertEquals(false, this.data.jsonObject["har_kobling"]!!.boolean)
+            assertEquals("333", this.data.jsonObject["felt1"]!!.jsonPrimitive.content)
+            assertEquals(false, this.data.jsonObject["har_kobling"]!!.jsonPrimitive.boolean)
         }
     }
 
@@ -178,7 +180,7 @@ class OppslagsAppTest {
             }
     }
 
-    private fun startOppslagsApp(innkommendeMeldinger: List<JsonObject>, app:OppslagsApp) {
+    private fun startOppslagsApp(innkommendeMeldinger: List<JsonObject>, app: OppslagsApp) {
         val riskConsumer = mockk<KafkaConsumer<String, JsonObject>>()
         val riskProducer = mockk<KafkaProducer<String, JsonObject>>()
         every { riskConsumer.subscribe(listOf(riskRiverTopic)) } just Runs
@@ -186,18 +188,24 @@ class OppslagsAppTest {
         producedMessages.clear()
         every { riskConsumer.subscribe(listOf(riskRiverTopic)) } just Runs
         val records = innkommendeMeldinger.map {
-            ConsumerRecord(riskRiverTopic, partition, 1,
-                "envedtaksperiodeid", it)
+            ConsumerRecord(
+                riskRiverTopic, partition, 1,
+                "envedtaksperiodeid", it
+            )
         }
-        every { riskConsumer.poll(Duration.ZERO) } returns ConsumerRecords(mapOf(riverTopicPartition to records
-        )) andThenThrows EnTilEnOppslagsAppTest.Done()
+        every { riskConsumer.poll(Duration.ZERO) } returns ConsumerRecords(
+            mapOf(
+                riverTopicPartition to records
+            )
+        ) andThenThrows EnTilEnOppslagsAppTest.Done()
 
         every { riskProducer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>() //andThenThrows IllegalStateException("no more please!")
 
         app.overrideKafkaEnvironment(
             KafkaRiverEnvironment(
                 kafkaConsumer = riskConsumer,
-                kafkaProducer = riskProducer)
+                kafkaProducer = riskProducer
+            )
         )
         GlobalScope.launch { app.start() }
     }

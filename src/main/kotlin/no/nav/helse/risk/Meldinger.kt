@@ -3,10 +3,10 @@ package no.nav.helse.risk
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import no.nav.helse.crypto.JWKSetHolder
+import no.nav.helse.crypto.decryptFromJWE
 
-private val jsonFlexible = Json(JsonConfiguration.Stable.copy(
-    ignoreUnknownKeys = true
-))
+private val jsonFlexible = JsonRisk
 
 enum class Meldingstype {
     oppslagsresultat,
@@ -36,31 +36,31 @@ data class RiskNeed(
 class Oppslagtype<T>(val infotype: String, val serializer: DeserializationStrategy<T>)
 
 fun JsonObject.tilRiskNeed(): RiskNeed =
-    jsonFlexible.fromJson(RiskNeed.serializer(), this)
+    jsonFlexible.decodeFromJsonElement(RiskNeed.serializer(), this)
 
 fun List<JsonObject>.finnRiskNeed(): RiskNeed? =
-    this.find { it[typeKey]?.content == Meldingstype.RiskNeed.name }?.tilRiskNeed()
+    this.find { it[typeKey]?.jsonPrimitive?.content == Meldingstype.RiskNeed.name }?.tilRiskNeed()
 
 fun List<JsonObject>.finnOppslagsresultat(infotype: String): JsonElement? {
     val kandidat = this.find {
-        it[typeKey]?.contentOrNull == Meldingstype.oppslagsresultat.name && it[infotypeKey]?.contentOrNull == infotype
+        it[typeKey]?.jsonPrimitive?.contentOrNull == Meldingstype.oppslagsresultat.name && it[infotypeKey]?.jsonPrimitive?.contentOrNull == infotype
     }
     return if (kandidat == null) null else kandidat.jsonObject[dataKey]
 }
 
 fun <T>List<JsonObject>.finnOppslagsresultat(oppslagstype: Oppslagtype<T>): T? =
-    this.finnOppslagsresultat(oppslagstype.infotype)?.let { jsonFlexible.fromJson(oppslagstype.serializer, it) }
+    this.finnOppslagsresultat(oppslagstype.infotype)?.let { jsonFlexible.decodeFromJsonElement(oppslagstype.serializer, it) }
 
 fun <T>List<JsonObject>.finnPaakrevdOppslagsresultat(oppslagstype: Oppslagtype<T>): T =
-    this.finnOppslagsresultat(oppslagstype.infotype)?.let { jsonFlexible.fromJson(oppslagstype.serializer, it) }
+    this.finnOppslagsresultat(oppslagstype.infotype)?.let { jsonFlexible.decodeFromJsonElement(oppslagstype.serializer, it) }
         ?:error("Mangler oppslagsresultat med infotype=${oppslagstype.infotype}")
 
 
 fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
     this.let { meldinger ->
-        meldinger.first()[vedtaksperiodeIdKey]!!.content.apply {
+        meldinger.first()[vedtaksperiodeIdKey]!!.jsonPrimitive.content.apply {
             meldinger.forEach {
-                val neste = it[vedtaksperiodeIdKey]!!.content
+                val neste = it[vedtaksperiodeIdKey]!!.jsonPrimitive.content
                 if (neste != this) throw IllegalArgumentException("ulik id: $neste != $this")
             }
         }
@@ -81,4 +81,21 @@ data class Vurderingsmelding(
 )
 
 fun JsonObject.tilVurderingsmelding(): Vurderingsmelding =
-    jsonFlexible.fromJson(Vurderingsmelding.serializer(), this)
+    jsonFlexible.decodeFromJsonElement(Vurderingsmelding.serializer(), this)
+
+
+internal fun JsonObject.decryptIfEncrypted(decryptionJWKS: JWKSetHolder?): JsonObject {
+    return try {
+        if (decryptionJWKS != null
+            && this.containsKey(dataKey)
+            && this[dataKey]?.jsonPrimitive?.contentOrNull != null
+            && this[dataKey]!!.jsonPrimitive.content.startsWith("ey")) {
+            val decrypted = JsonElement.decryptFromJWE(this[dataKey]!!.jsonPrimitive.content, decryptionJWKS)
+            JsonObject(this.toMutableMap().also { newContent -> newContent[dataKey] = decrypted })
+        } else {
+            this
+        }
+    } catch (exceptionBecauseDataElementIsNotAStringAndThusNotJWE: IllegalArgumentException) {
+        this
+    }
+}

@@ -3,9 +3,7 @@ package no.nav.helse.crypto
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.JWKSet
 import com.nimbusds.jose.util.Base64URL
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.json
-import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -17,11 +15,11 @@ class JWETest {
 
     @Test
     fun `JsonObject encryption and decryption with AES-256`() {
-        val someJson = json {
-            "hei" to "duder"
-            "data" to json {
-                "liste" to jsonArray { +"heisann"; +"hoppsann" }
-            }
+        val someJson = buildJsonObject {
+            put("hei", "duder")
+            put("data", buildJsonObject {
+                put("liste", buildJsonArray { add("heisann"); add("hoppsann") })
+            })
         }
 
         val keygen = KeyGenerator.getInstance("AES")

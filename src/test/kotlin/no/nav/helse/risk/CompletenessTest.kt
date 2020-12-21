@@ -1,6 +1,7 @@
 package no.nav.helse.risk
 
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
@@ -8,7 +9,7 @@ import kotlin.test.assertFalse
 class CompletenessTest {
 
     @Test
-    fun `isCompleteMessageSetAccordingToInterests should give right answer` () {
+    fun `isCompleteMessageSetAccordingToInterests should give right answer`() {
         val interesser = listOf(
             "RiskNeed" to null,
             "oppslagsresultat" to "orginfo",
@@ -17,32 +18,32 @@ class CompletenessTest {
         )
 
         val incomplete = listOf(
-            json {
-                "type" to "RiskNeed"
+            buildJsonObject {
+                put("type", "RiskNeed")
             },
-            json {
-                "type" to "oppslagsresultat"
-                "infotype" to "orginfo"
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "orginfo")
             }
         )
 
         assertFalse(isCompleteMessageSetAccordingToInterests(incomplete, interesser.tilInteresser()))
 
         val complete = listOf(
-            json {
-                "type" to "RiskNeed"
+            buildJsonObject {
+                put("type", "RiskNeed")
             },
-            json {
-                "type" to "oppslagsresultat"
-                "infotype" to "orginfo"
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "orginfo")
             },
-            json {
-                "type" to "oppslagsresultat"
-                "infotype" to "sensitiv1"
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "sensitiv1")
             },
-            json {
-                "type" to "oppslagsresultat"
-                "infotype" to "sensitiv2"
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "sensitiv2")
             }
         )
 

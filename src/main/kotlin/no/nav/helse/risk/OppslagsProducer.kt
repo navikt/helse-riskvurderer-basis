@@ -1,12 +1,11 @@
 package no.nav.helse.risk
 
-import com.nimbusds.jose.jwk.JWK
-import com.nimbusds.jose.jwk.JWKSet
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import no.nav.helse.crypto.JWKHolder
 import no.nav.helse.crypto.JWKSetHolder
-import no.nav.helse.crypto.decryptFromJWE
 import no.nav.helse.crypto.encryptAsJWE
 import org.slf4j.LoggerFactory
 
@@ -33,24 +32,24 @@ internal class OppslagsProducer(
     private val encryptionJWK: JWKHolder?
 ) {
 
-    private val json = Json(JsonConfiguration.Stable)
+    private val json = JsonRisk
     private val log = LoggerFactory.getLogger(OppslagsProducer::class.java)
     private val secureLog = LoggerFactory.getLogger("sikkerLogg")
 
     fun lagSvar(meldinger: List<JsonObject>, vedtaksperiodeId: String): JsonObject? {
         return try {
             log.info("Gjør oppslag for vedtaksperiodeId=$vedtaksperiodeId basert på ${meldinger.size} melding(er)")
-            val data = oppslagstjeneste(meldinger.map(::decryptIfEncrypted))
+            val data = oppslagstjeneste(meldinger.map { it.decryptIfEncrypted(decryptionJWKS)} )
             if (encryptionJWK != null) {
                 log.info("Returnerer kryptert oppslagsresultat for vedtaksperiodeId=$vedtaksperiodeId med infotype=$infotype")
-                json.toJson(OppslagsmeldingKryptert.serializer(), OppslagsmeldingKryptert(
+                json.encodeToJsonElement(OppslagsmeldingKryptert.serializer(), OppslagsmeldingKryptert(
                     infotype = infotype,
                     vedtaksperiodeId = vedtaksperiodeId,
                     data = data.encryptAsJWE(encryptionJWK)
                 )).jsonObject
             } else {
                 log.info("Returnerer oppslagsresultat for vedtaksperiodeId=$vedtaksperiodeId med infotype=$infotype")
-                json.toJson(Oppslagsmelding.serializer(), Oppslagsmelding(
+                json.encodeToJsonElement(Oppslagsmelding.serializer(), Oppslagsmelding(
                     infotype = infotype,
                     vedtaksperiodeId = vedtaksperiodeId,
                     data = data
@@ -61,22 +60,6 @@ internal class OppslagsProducer(
             log.error("$msg. Se secureLog for detaljer.")
             secureLog.error(msg, ex)
             return null
-        }
-    }
-
-    private fun decryptIfEncrypted(message: JsonObject): JsonObject {
-        return try {
-            if (decryptionJWKS != null
-                && message.containsKey(dataKey)
-                && message[dataKey]?.contentOrNull != null
-                && message[dataKey]!!.content.startsWith("ey")) {
-                val decrypted = JsonElement.decryptFromJWE(message[dataKey]!!.content, decryptionJWKS)
-                json {}.copy(message.content.toMutableMap().apply { this[dataKey] = decrypted })
-            } else {
-                message
-            }
-        } catch (exceptionBecauseDataElementIsNotAStringAndThusNotJWE: JsonException) {
-            message
         }
     }
 

@@ -1,6 +1,9 @@
 package no.nav.helse.risk
 
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -20,7 +23,6 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
@@ -28,7 +30,7 @@ class VurderingsAppTest {
 
     private val partition = 0
     private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)
-    private val json = Json(JsonConfiguration.Stable)
+    private val json = JsonRisk
 
     class Done : RuntimeException()
 
@@ -48,13 +50,13 @@ class VurderingsAppTest {
                 val riskNeed = meldinger.finnRiskNeed()!!
                 val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
                 VurderingBuilder()
-                    .begrunnelse("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.content}", 6)
+                    .begrunnelse("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.jsonPrimitive.content}", 6)
                     .leggVedMetadata("ekstraGreier", "12345")
                     .build(5)
             },
             assertOnProducedMessages = { producedMessages ->
                 assertEquals(1, producedMessages.size)
-                val vurdering = json.fromJson(Vurderingsmelding.serializer(), producedMessages.first())
+                val vurdering = json.decodeFromJsonElement(Vurderingsmelding.serializer(), producedMessages.first())
                 assertEquals(6, vurdering.score)
                 assertEquals(5, vurdering.vekt)
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
@@ -70,8 +72,8 @@ class VurderingsAppTest {
     fun `showstopper-flagg blir med i vurderingen`() {
         testMedVurdererOgAssertions(
             vurderer = { meldinger ->
-                val riskNeed = meldinger.finnRiskNeed()!!
-                val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
+                meldinger.finnRiskNeed()!!
+                meldinger.finnOppslagsresultat("testdata")!!.jsonObject
                 VurderingBuilder()
                     .begrunnelseSomKreverManuellBehandling("showstopper")
                     .build(10)
@@ -79,7 +81,7 @@ class VurderingsAppTest {
             },
             assertOnProducedMessages = { producedMessages ->
                 assertEquals(1, producedMessages.size)
-                val vurdering = json.fromJson(Vurderingsmelding.serializer(), producedMessages.first())
+                val vurdering = json.decodeFromJsonElement(Vurderingsmelding.serializer(), producedMessages.first())
                 assertEquals(10, vurdering.score)
                 assertEquals(10, vurdering.vekt)
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
@@ -102,28 +104,28 @@ class VurderingsAppTest {
         val behovOpprettet = LocalDateTime.now()
         val rec1 = ConsumerRecord(riskRiverTopic, partition, 1,
             "envedtaksperiodeid",
-            json {
-                "type" to "RiskNeed"
-                "iterasjon" to 1
-                "fnr" to fnr
-                "organisasjonsnummer" to orgnr
-                "vedtaksperiodeId" to vedtaksperiodeid
-                "behovOpprettet" to behovOpprettet.toString()
-                "foersteFravaersdag" to "2020-01-01"
-                "sykepengegrunnlag" to 50000.0
-                "periodeFom" to "2020-02-01"
-                "periodeTom" to "2020-02-28"
+            buildJsonObject {
+                put("type", "RiskNeed")
+                put("iterasjon", 1)
+                put("fnr", fnr)
+                put("organisasjonsnummer", orgnr)
+                put("vedtaksperiodeId", vedtaksperiodeid)
+                put("behovOpprettet", behovOpprettet.toString())
+                put("foersteFravaersdag", "2020-01-01")
+                put("sykepengegrunnlag", 50000.0)
+                put("periodeFom", "2020-02-01")
+                put("periodeTom", "2020-02-28")
             })
         val rec2 = ConsumerRecord(riskRiverTopic, partition, 1,
             "envedtaksperiodeid",
-            json {
-                "type" to "oppslagsresultat"
-                "infotype" to "testdata"
-                "vedtaksperiodeId" to vedtaksperiodeid
-                "data" to json {
-                    "felt-1" to "verdi-1"
-                    "c" to listOf(1, 2, 3)
-                }
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "testdata")
+                put("vedtaksperiodeId", vedtaksperiodeid)
+                put("data", buildJsonObject {
+                    put("felt-1", "verdi-1")
+                    put("c", buildJsonArray {add(1); add(2); add(3) })
+                })
             })
 
         val app = VurderingsApp(
@@ -131,20 +133,29 @@ class VurderingsAppTest {
             vurderer = vurderer,
             interessertI = listOf(
                 Interesse.riskNeed(1),
-                Interesse.oppslagsresultat("testdata"))
-        ).overrideKafkaEnvironment(KafkaRiverEnvironment(
-            kafkaConsumer = consumer,
-            kafkaProducer = producer
-        ))
+                Interesse.oppslagsresultat("testdata")
+            )
+        ).overrideKafkaEnvironment(
+            KafkaRiverEnvironment(
+                kafkaConsumer = consumer,
+                kafkaProducer = producer
+            )
+        )
 
         every { consumer.subscribe(listOf(riskRiverTopic)) } just Runs
 
-        every { consumer.poll(Duration.ZERO) } returns ConsumerRecords(mapOf(riverTopicPartition to listOf(
-            rec1, rec2)
-        )) andThenThrows Done()
+        every { consumer.poll(Duration.ZERO) } returns ConsumerRecords(
+            mapOf(
+                riverTopicPartition to listOf(
+                    rec1, rec2
+                )
+            )
+        ) andThenThrows Done()
 
         val producedMessages = mutableListOf<ProducerRecord<String, JsonObject>>()
-        every { producer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>() andThenThrows IllegalStateException("no more please!")
+        every { producer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>() andThenThrows IllegalStateException(
+            "no more please!"
+        )
 
         GlobalScope.launch {
             app.start()

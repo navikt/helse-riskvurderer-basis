@@ -1,44 +1,40 @@
 package no.nav.helse.risk
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.json.json
-import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.jupiter.api.assertThrows
 
 class MeldingerTest {
 
-    private val jsonFlexible = Json(JsonConfiguration.Stable.copy(
-        ignoreUnknownKeys = true
-    ))
-    val riskNeed = json {
-        "type" to "RiskNeed"
-        "vedtaksperiodeId" to "1"
-        "organisasjonsnummer" to "123456789"
-        "fnr" to "01010100000"
-        "behovOpprettet" to  LocalDateTime.now().toString()
-        "iterasjon" to 1
-        "foersteFravaersdag" to "2020-01-01"
-        "sykepengegrunnlag" to 50000.0
-        "periodeFom" to "2020-02-01"
-        "periodeTom" to "2020-02-28"
+    private val jsonFlexible = JsonRisk
+
+    val riskNeed = buildJsonObject {
+        put("type", "RiskNeed")
+        put("vedtaksperiodeId", "1")
+        put("organisasjonsnummer", "123456789")
+        put("fnr", "01010100000")
+        put("behovOpprettet", LocalDateTime.now().toString())
+        put("iterasjon", 1)
+        put("foersteFravaersdag", "2020-01-01")
+        put("sykepengegrunnlag", 50000.0)
+        put("periodeFom", "2020-02-01")
+        put("periodeTom", "2020-02-28")
     }
-    val testoppslag = json {
-        "type" to "oppslagsresultat"
-        "infotype" to "testoppslag"
-        "data" to json {
-            "a" to "b"
-            "fornavn" to "Ola"
-            "etternavn" to "Nordmann"
-        }
-        "vedtaksperiodeId" to "1"
+    val testoppslag = buildJsonObject {
+        put("type", "oppslagsresultat")
+        put("infotype", "testoppslag")
+        put("data", buildJsonObject {
+            put("a", "b")
+            put("fornavn", "Ola")
+            put("etternavn", "Nordmann")
+        })
+        put("vedtaksperiodeId", "1")
     }
     val meldinger = listOf(riskNeed, testoppslag)
 
@@ -49,15 +45,19 @@ class MeldingerTest {
 
     @Test
     fun `finnOppslagsresultat returnerer data-elementet`() {
-        assertEquals(json { "a" to "b"; "fornavn" to "Ola"; "etternavn" to "Nordmann" }, meldinger.finnOppslagsresultat("testoppslag"))
+        assertEquals(
+            buildJsonObject { put("a", "b"); put("fornavn", "Ola"); put("etternavn", "Nordmann") },
+            meldinger.finnOppslagsresultat("testoppslag")
+        )
     }
 
     @Serializable
-    data class TestOppslag(val fornavn:String, val etternavn:String)
+    data class TestOppslag(val fornavn: String, val etternavn: String)
+
     val TEST_OPPSLAGSTYPE = Oppslagtype("testoppslag", TestOppslag.serializer())
 
     @Test
-    fun `Typet oppslagsresultat gitt av Oppslagtype ignorerer ukjente felter ("a" to "b")`() {
+    fun `Typet oppslagsresultat gitt av Oppslagtype ignorerer ukjente felter ("a",  "b")`() {
         assertEquals(TestOppslag("Ola", "Nordmann"), meldinger.finnPaakrevdOppslagsresultat(TEST_OPPSLAGSTYPE))
     }
 
@@ -75,8 +75,9 @@ class MeldingerTest {
 
     @Test
     fun finnRiskNeed() {
-        assertEquals(jsonFlexible.fromJson(RiskNeed.serializer(), riskNeed), meldinger.finnRiskNeed())
+        assertEquals(jsonFlexible.decodeFromJsonElement(RiskNeed.serializer(), riskNeed), meldinger.finnRiskNeed())
     }
+
     @Test
     fun `finnOppslagsresultat gir NULL hvis ikke finnes`() {
         assertNull(meldinger.finnOppslagsresultat("noeAnnet"))
@@ -84,14 +85,14 @@ class MeldingerTest {
 
     @Test
     fun vurderingsmeldingDeserialiseres() {
-        val melding = json {
-            "type" to "vurdering"
-            "infotype" to "whatever"
-            "vedtaksperiodeId" to UUID.randomUUID().toString()
-            "score" to 6
-            "vekt" to 7
-            "begrunnelser" to jsonArray { +"something"; +"showstopper" }
-            "begrunnelserSomAleneKreverManuellBehandling" to jsonArray { +"showstopper" }
+        val melding = buildJsonObject {
+            put("type", "vurdering")
+            put("infotype", "whatever")
+            put("vedtaksperiodeId", UUID.randomUUID().toString())
+            put("score", 6)
+            put("vekt", 7)
+            put("begrunnelser", buildJsonArray { add("something"); add("showstopper") })
+            put("begrunnelserSomAleneKreverManuellBehandling", buildJsonArray { add("showstopper") })
         }
         val vurderingsmelding = melding.tilVurderingsmelding()
         vurderingsmelding.apply {
@@ -103,13 +104,13 @@ class MeldingerTest {
 
     @Test
     fun `vurderingsmelding kan deSerialiseres uten begrunnelserSomAleneKreverManuellBehandling`() {
-        val melding = json {
-            "type" to "vurdering"
-            "infotype" to "whatever"
-            "vedtaksperiodeId" to UUID.randomUUID().toString()
-            "score" to 6
-            "vekt" to 7
-            "begrunnelser" to jsonArray { +"something"; +"showstopper" }
+        val melding = buildJsonObject {
+            put("type", "vurdering")
+            put("infotype", "whatever")
+            put("vedtaksperiodeId", UUID.randomUUID().toString())
+            put("score", 6)
+            put("vekt", 7)
+            put("begrunnelser", buildJsonArray { add("something"); add("showstopper") })
         }
         val vurderingsmelding = melding.tilVurderingsmelding()
         vurderingsmelding.apply {
@@ -121,18 +122,18 @@ class MeldingerTest {
 
     @Test
     fun `skal kunne deSerialisere RiskNeed med og uten optional verdier`() {
-        json {
-            "type" to "RiskNeed"
-            "vedtaksperiodeId" to "1"
-            "organisasjonsnummer" to "123456789"
-            "fnr" to "01010100000"
-            "behovOpprettet" to  LocalDateTime.now().toString()
-            "iterasjon" to 1
-            "foersteFravaersdag" to "2020-01-01"
-            "sykepengegrunnlag" to 50000.0
-            "periodeFom" to "2020-02-01"
-            "periodeTom" to "2020-02-28"
-            "fjlksdfdaslkfj" to "sdfdskfdsj"
+        buildJsonObject {
+            put("type", "RiskNeed")
+            put("vedtaksperiodeId", "1")
+            put("organisasjonsnummer", "123456789")
+            put("fnr", "01010100000")
+            put("behovOpprettet", LocalDateTime.now().toString())
+            put("iterasjon", 1)
+            put("foersteFravaersdag", "2020-01-01")
+            put("sykepengegrunnlag", 50000.0)
+            put("periodeFom", "2020-02-01")
+            put("periodeTom", "2020-02-28")
+            put("fjlksdfdaslkfj", "sdfdskfdsj")
         }.jsonObject.tilRiskNeed().apply {
             assertEquals("1", this.vedtaksperiodeId)
             assertNull(this.originalBehov)
@@ -140,51 +141,51 @@ class MeldingerTest {
             assertNull(this.isRetry)
         }
 
-        json {
-            "type" to "RiskNeed"
-            "vedtaksperiodeId" to "1"
-            "organisasjonsnummer" to "123456789"
-            "fnr" to "01010100000"
-            "behovOpprettet" to  LocalDateTime.now().toString()
-            "iterasjon" to 1
-            "isRetry" to true
+        buildJsonObject {
+            put("type", "RiskNeed")
+            put("vedtaksperiodeId", "1")
+            put("organisasjonsnummer", "123456789")
+            put("fnr", "01010100000")
+            put("behovOpprettet", LocalDateTime.now().toString())
+            put("iterasjon", 1)
+            put("isRetry", true)
         }.jsonObject.tilRiskNeed().apply {
             assertEquals("1", this.vedtaksperiodeId)
             assertTrue(this.isRetry ?: false)
             assertNull(this.retryCount)
         }
 
-        json {
-            "type" to "RiskNeed"
-            "vedtaksperiodeId" to "1"
-            "organisasjonsnummer" to "123456789"
-            "fnr" to "01010100000"
-            "behovOpprettet" to  LocalDateTime.now().toString()
-            "iterasjon" to 1
-            "isRetry" to true
-            "retryCount" to 2
+        buildJsonObject {
+            put("type", "RiskNeed")
+            put("vedtaksperiodeId", "1")
+            put("organisasjonsnummer", "123456789")
+            put("fnr", "01010100000")
+            put("behovOpprettet", LocalDateTime.now().toString())
+            put("iterasjon", 1)
+            put("isRetry", true)
+            put("retryCount", 2)
         }.jsonObject.tilRiskNeed().apply {
             assertEquals("1", this.vedtaksperiodeId)
             assertTrue(this.isRetry ?: false)
             assertEquals(2, this.retryCount)
         }
 
-        json {
-            "type" to "RiskNeed"
-            "vedtaksperiodeId" to "1"
-            "organisasjonsnummer" to "123456789"
-            "fnr" to "01010100000"
-            "behovOpprettet" to  LocalDateTime.now().toString()
-            "iterasjon" to 1
-            "isRetry" to true
-            "retryCount" to 2
-            "originalBehov" to json {
-                "felt1" to "verdi1"
-            }
+        buildJsonObject {
+            put("type", "RiskNeed")
+            put("vedtaksperiodeId", "1")
+            put("organisasjonsnummer", "123456789")
+            put("fnr", "01010100000")
+            put("behovOpprettet", LocalDateTime.now().toString())
+            put("iterasjon", 1)
+            put("isRetry", true)
+            put("retryCount", 2)
+            put("originalBehov", buildJsonObject {
+                put("felt1", "verdi1")
+            })
         }.jsonObject.tilRiskNeed().apply {
             assertEquals("1", this.vedtaksperiodeId)
-            assertEquals(json {
-                "felt1" to "verdi1"
+            assertEquals(buildJsonObject {
+                put("felt1", "verdi1")
             }, this.originalBehov)
         }
     }

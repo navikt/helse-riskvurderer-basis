@@ -8,27 +8,23 @@ import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.json.JsonObject
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.common.TopicPartition
-import org.junit.jupiter.api.Test
-import kotlin.test.assertTrue
 import kotlinx.serialization.json.*
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.ConsumerRecords
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.apache.kafka.common.TopicPartition
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class RiverAppTest {
@@ -59,7 +55,7 @@ class RiverAppTest {
 
     @Test
     fun `launch additional stuff`() {
-        var myValue: String = "NOT THIS"
+        var myValue = "NOT THIS"
         val app = lagRiverApp(
             launchAlso = listOf<suspend CoroutineScope.() -> Unit> {
                 myValue = "BUT THIS"
@@ -90,26 +86,36 @@ class RiverAppTest {
             kafkaClientId = "testRiverApp",
             interessertI = listOf(
                 Interesse.riskNeed(1),
-                Interesse.oppslagsresultat("testdata")),
+                Interesse.oppslagsresultat("testdata")
+            ),
             skipEmitIfNotPresent = emptyList(),
             answerer = ::lagSvar,
             collectorRegistry = CollectorRegistry.defaultRegistry,
             additionalHealthCheck = additionalHealthCheck,
             launchAlso = launchAlso
-        ).overrideKafkaEnvironment(KafkaRiverEnvironment(
-            kafkaConsumer = consumer,
-            kafkaProducer = producer
-        ))
+        ).overrideKafkaEnvironment(
+            KafkaRiverEnvironment(
+                kafkaConsumer = consumer,
+                kafkaProducer = producer
+            )
+        )
 
         producedMessages.clear()
         every { consumer.subscribe(listOf(riskRiverTopic)) } just Runs
         val records = defaultInnkommendeMeldinger.map {
-            ConsumerRecord(riskRiverTopic, partition, 1,
-                "envedtaksperiodeid", it)
+            ConsumerRecord(
+                riskRiverTopic, partition, 1,
+                "envedtaksperiodeid", it
+            )
         }
-        every { consumer.poll(Duration.ZERO) } returns ConsumerRecords(mapOf(riverTopicPartition to records
-        )) andThenThrows Done()
-        every { producer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>() andThenThrows IllegalStateException("no more please!")
+        every { consumer.poll(Duration.ZERO) } returns ConsumerRecords(
+            mapOf(
+                riverTopicPartition to records
+            )
+        ) andThenThrows Done()
+        every { producer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>() andThenThrows IllegalStateException(
+            "no more please!"
+        )
 
         return app
     }
@@ -120,31 +126,31 @@ class RiverAppTest {
     val behovOpprettet = LocalDateTime.now()
 
     private val defaultInnkommendeMeldinger = listOf(
-        json {
-            "type" to "RiskNeed"
-            "iterasjon" to 1
-            "fnr" to fnr
-            "organisasjonsnummer" to orgnr
-            "vedtaksperiodeId" to vedtaksperiodeid
-            "behovOpprettet" to behovOpprettet.toString()
-            "foersteFravaersdag" to "2020-01-01"
-            "sykepengegrunnlag" to 50000.0
-            "periodeFom" to "2020-02-01"
-            "periodeTom" to "2020-02-28"
+        buildJsonObject {
+            put("type", "RiskNeed")
+            put("iterasjon", 1)
+            put("fnr", fnr)
+            put("organisasjonsnummer", orgnr)
+            put("vedtaksperiodeId", vedtaksperiodeid)
+            put("behovOpprettet", behovOpprettet.toString())
+            put("foersteFravaersdag", "2020-01-01")
+            put("sykepengegrunnlag", 50000.0)
+            put("periodeFom", "2020-02-01")
+            put("periodeTom", "2020-02-28")
         },
-        json {
-            "type" to "oppslagsresultat"
-            "infotype" to "testdata"
-            "vedtaksperiodeId" to vedtaksperiodeid
-            "data" to json {
-                "felt-1" to "verdi-1"
-                "c" to listOf(1, 2, 3)
-            }
+        buildJsonObject {
+            put("type", "oppslagsresultat")
+            put("infotype", "testdata")
+            put("vedtaksperiodeId", vedtaksperiodeid)
+            put("data", buildJsonObject {
+                put("felt-1", "verdi-1")
+                put("c", buildJsonArray { add(1); add(2); add(3) })
+            })
         }
     )
 
-    private val defaultSvar = json {
-        "this is" to "the answer"
+    private val defaultSvar = buildJsonObject {
+        put("this is", "the answer")
     }
 
 

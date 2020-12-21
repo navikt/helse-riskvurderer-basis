@@ -1,12 +1,14 @@
 package no.nav.helse.risk
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
-import kotlinx.serialization.json.*
 import kotlin.test.assertTrue
 
-private val json = Json(JsonConfiguration.Stable)
+private val json = JsonRisk
 
 class InteresseTest {
 
@@ -19,106 +21,125 @@ class InteresseTest {
 
     @Test
     fun testUinteressant() {
-        assertFalse(json {
-            "type" to "vurdering"
+        assertFalse(buildJsonObject {
+            put("type", "vurdering")
         }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
     fun testInteressantUtenInfotype() {
-        assertTrue(json {
-            "type" to "RiskNeed"
+        assertTrue(buildJsonObject {
+            put("type", "RiskNeed")
         }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
     fun testInteressantMedIterasjonSomIgnoreres() {
-        assertTrue(json {
-            "type" to "RiskNeed"
-            "iterasjon" to 1
+        assertTrue(buildJsonObject {
+            put("type", "RiskNeed")
+            put("iterasjon", 1)
         }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
     fun testInteressantTypeMedManglendeIterasjon() {
-        assertFalse(json {
-            "type" to "TulleNeed"
+        assertFalse(buildJsonObject {
+            put("type", "TulleNeed")
         }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
     fun testInteressantTypeMedFeilIterasjon() {
-        assertFalse(json {
-            "type" to "TulleNeed"
-            "iterasjon" to 1
+        assertFalse(buildJsonObject {
+            put("type", "TulleNeed")
+            put("iterasjon", 1)
         }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
     fun testInteressantTypeMedRiktigIterasjon() {
-        assertTrue(json {
-            "type" to "TulleNeed"
-            "iterasjon" to 2
+        assertTrue(buildJsonObject {
+            put("type", "TulleNeed")
+            put("iterasjon", 2)
         }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
     fun testInteressantInfotype() {
-        assertTrue(json {
-            "type" to "oppslagsresultat"
-            "infotype" to "orginfo-open"
+        assertTrue(buildJsonObject {
+            put("type", "oppslagsresultat")
+            put("infotype", "orginfo-open")
         }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
     @Test
     fun testUinteressantInfotype() {
-        assertFalse(json {
-            "type" to "oppslagsresultat"
-            "infotype" to "nokogreior"
+        assertFalse(buildJsonObject {
+            put("type", "oppslagsresultat")
+            put("infotype", "nokogreior")
         }.tilfredsstillerInteresser(interesserSomObjekter))
     }
 
-    @Serializable data class Tulletype(val a: String)
+    @Serializable
+    data class Tulletype(val a: String)
 
     @Test
     fun interesserKanAngisSomOppslagstype() {
-        val melding = json {
-            "type" to "oppslagsresultat"
-            "infotype" to "orginfo-open"
+        val melding = buildJsonObject {
+            put("type", "oppslagsresultat")
+            put("infotype", "orginfo-open")
         }
-        assertTrue(melding.tilfredsstillerInteresser(listOf(
-            Interesse.oppslagsresultat(Oppslagtype("orginfo-open", Tulletype.serializer()))
-        )))
-        assertFalse(melding.tilfredsstillerInteresser(listOf(
-            Interesse.oppslagsresultat(Oppslagtype("nokoanna", Tulletype.serializer()))
-        )))
+        assertTrue(
+            melding.tilfredsstillerInteresser(
+                listOf(
+                    Interesse.oppslagsresultat(Oppslagtype("orginfo-open", Tulletype.serializer()))
+                )
+            )
+        )
+        assertFalse(
+            melding.tilfredsstillerInteresser(
+                listOf(
+                    Interesse.oppslagsresultat(Oppslagtype("nokoanna", Tulletype.serializer()))
+                )
+            )
+        )
     }
 
     @Test
     fun interessertIVurdering() {
-        val vurdering = json.toJson(Vurderingsmelding.serializer(), Vurderingsmelding(
-            infotype = "etellerannet-vurderer",
-            vedtaksperiodeId = "123",
-            score = 10,
-            vekt = 5,
-            begrunnelser = listOf("a", "b"),
-            begrunnelserSomAleneKreverManuellBehandling = listOf("a")
-        )).jsonObject
+        val vurdering = json.encodeToJsonElement(
+            Vurderingsmelding.serializer(), Vurderingsmelding(
+                infotype = "etellerannet-vurderer",
+                vedtaksperiodeId = "123",
+                score = 10,
+                vekt = 5,
+                begrunnelser = listOf("a", "b"),
+                begrunnelserSomAleneKreverManuellBehandling = listOf("a")
+            )
+        ).jsonObject
 
         assertFalse(vurdering.tilfredsstillerInteresser(interesserSomObjekter))
-        assertTrue(vurdering.tilfredsstillerInteresser(listOf(
-            Interesse.vurdering("etellerannet-vurderer")
-        )))
-        assertFalse(vurdering.tilfredsstillerInteresser(listOf(
-            Interesse.vurdering("en-annen-vurdering")
-        )))
+        assertTrue(
+            vurdering.tilfredsstillerInteresser(
+                listOf(
+                    Interesse.vurdering("etellerannet-vurderer")
+                )
+            )
+        )
+        assertFalse(
+            vurdering.tilfredsstillerInteresser(
+                listOf(
+                    Interesse.vurdering("en-annen-vurdering")
+                )
+            )
+        )
     }
 
     @Test
     fun riskNeed_Iterasjon() {
-        val need1 = json { "type" to "RiskNeed"; "iterasjon" to 1 }
-        val need2 = json { "type" to "RiskNeed"; "iterasjon" to 2 }
-        val need3 = json { "type" to "RiskNeed"; "iterasjon" to 3 }
+        val need1 = buildJsonObject { put("type", "RiskNeed"); put("iterasjon", 1) }
+        val need2 = buildJsonObject { put("type", "RiskNeed"); put("iterasjon", 2) }
+        val need3 = buildJsonObject { put("type", "RiskNeed"); put("iterasjon", 3) }
 
         val interessertIAlleIterasjoner = listOf(Interesse.riskNeed)
         val interessertIIterasjon1 = listOf(Interesse.riskNeed(1))

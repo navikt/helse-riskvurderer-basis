@@ -5,7 +5,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.content
+import kotlinx.serialization.json.jsonPrimitive
 import no.nav.helse.buffer.WindowBufferEmittable
 import no.nav.helse.buffer.WindowBufferEmitter
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -63,7 +63,7 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
                         skipMessagesOlderThanSeconds, timestamp, System.currentTimeMillis())
                 } else {
                     if (mangeTilEn) {
-                        aggregator.store(value["vedtaksperiodeId"]!!.content, value, key, timestamp) // NB: KEY bør vare samme som innkommende åkke som (RiskNeed?++?),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+                        aggregator.store(value["vedtaksperiodeId"]!!.jsonPrimitive.content, value, key, timestamp) // NB: KEY bør vare samme som innkommende åkke som (RiskNeed?++?),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
                     } else {
                         lagOgSendSvar(WindowBufferEmittable(messages = listOf(value), kafkaKey = key))
                     }

@@ -49,31 +49,32 @@ dependencies {
     }
 
     implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
-    implementation("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
+    api("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
+    api("io.prometheus:simpleclient") {
+        isTransitive = true
+    }
 
     implementation("org.apache.kafka:kafka-clients:$kafkaVersion")
 
-    implementation("org.slf4j:slf4j-api:$slf4jVersion")
-    implementation("ch.qos.logback:logback-classic:$logbackVersion")
-    implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+    api("org.slf4j:slf4j-api:$slf4jVersion")
+    api("ch.qos.logback:logback-classic:$logbackVersion")
+    api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
     implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
 
     api("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")
+
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
     testImplementation("org.awaitility:awaitility:4.0.1")
-
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
         exclude(group = "junit")
     }
-
     testImplementation("no.nav:kafka-embedded-env:$kafkaVersion") {
         // Dont need schema-registry and it drags in a lot of vulnerable dependencies:
         exclude(group = "io.confluent", module = "kafka-schema-registry")
     }
-
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("io.mockk:mockk:1.10.0")
 }

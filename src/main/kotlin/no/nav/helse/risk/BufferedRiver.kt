@@ -55,7 +55,7 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
             .apply { subscribe(listOf(riskRiverTopic)) }
             .asFlow()
             .filterNotNull()
-            .filter { (_, value, _) -> value.tilfredsstillerInteresser(interessertI) }
+            .filter { (_, value, _) -> value.erInteressant(interessertI) }
             .filterNotNull()
             .collect { (key, value, timestamp) ->
                 if (messageIsDated(timestamp)) {
@@ -80,7 +80,7 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
         val vedtaksperiodeId = answers.finnUnikVedtaksperiodeId()
 
         val ikkeTilfredsstilt:Interesse? = skipEmitIfNotPresent.find { paakrevdInteresse ->
-            null == answers.find { answer -> answer.tilfredsstillerInteresser(listOf(paakrevdInteresse)) }
+            !paakrevdInteresse.tilfredsstillesAv(answers)
         }
         if (ikkeTilfredsstilt != null) {
             log.debug("Mangler Interesse=$ikkeTilfredsstilt for vedtaksperiodeId=$vedtaksperiodeId. Ignorerer sesjon.")
@@ -92,11 +92,10 @@ internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<Strin
     }
 }
 
-internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Interesse>) =
-    msgs.size == interesser.size && (
+internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Interesse>) : Boolean =
         interesser.fold(true, { acc, interesse ->
-            acc && (null != msgs.find { it.tilfredsstillerInteresser(listOf(interesse)) })
-        }))
+            acc && interesse.tilfredsstillesAv(msgs)
+        })
 
 
 @FlowPreview

@@ -3,6 +3,7 @@ package no.nav.helse.risk
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
@@ -23,14 +24,14 @@ class InteresseTest {
     fun testUinteressant() {
         assertFalse(buildJsonObject {
             put("type", "vurdering")
-        }.tilfredsstillerInteresser(interesserSomObjekter))
+        }.erInteressant(interesserSomObjekter))
     }
 
     @Test
     fun testInteressantUtenInfotype() {
         assertTrue(buildJsonObject {
             put("type", "RiskNeed")
-        }.tilfredsstillerInteresser(interesserSomObjekter))
+        }.erInteressant(interesserSomObjekter))
     }
 
     @Test
@@ -38,14 +39,14 @@ class InteresseTest {
         assertTrue(buildJsonObject {
             put("type", "RiskNeed")
             put("iterasjon", 1)
-        }.tilfredsstillerInteresser(interesserSomObjekter))
+        }.erInteressant(interesserSomObjekter))
     }
 
     @Test
     fun testInteressantTypeMedManglendeIterasjon() {
         assertFalse(buildJsonObject {
             put("type", "TulleNeed")
-        }.tilfredsstillerInteresser(interesserSomObjekter))
+        }.erInteressant(interesserSomObjekter))
     }
 
     @Test
@@ -53,7 +54,7 @@ class InteresseTest {
         assertFalse(buildJsonObject {
             put("type", "TulleNeed")
             put("iterasjon", 1)
-        }.tilfredsstillerInteresser(interesserSomObjekter))
+        }.erInteressant(interesserSomObjekter))
     }
 
     @Test
@@ -61,7 +62,7 @@ class InteresseTest {
         assertTrue(buildJsonObject {
             put("type", "TulleNeed")
             put("iterasjon", 2)
-        }.tilfredsstillerInteresser(interesserSomObjekter))
+        }.erInteressant(interesserSomObjekter))
     }
 
     @Test
@@ -69,7 +70,7 @@ class InteresseTest {
         assertTrue(buildJsonObject {
             put("type", "oppslagsresultat")
             put("infotype", "orginfo-open")
-        }.tilfredsstillerInteresser(interesserSomObjekter))
+        }.erInteressant(interesserSomObjekter))
     }
 
     @Test
@@ -77,7 +78,7 @@ class InteresseTest {
         assertFalse(buildJsonObject {
             put("type", "oppslagsresultat")
             put("infotype", "nokogreior")
-        }.tilfredsstillerInteresser(interesserSomObjekter))
+        }.erInteressant(interesserSomObjekter))
     }
 
     @Serializable
@@ -90,17 +91,13 @@ class InteresseTest {
             put("infotype", "orginfo-open")
         }
         assertTrue(
-            melding.tilfredsstillerInteresser(
-                listOf(
-                    Interesse.oppslagsresultat(Oppslagtype("orginfo-open", Tulletype.serializer()))
-                )
+            melding.erInteressant(
+                listOf(Interesse.oppslagsresultat(Oppslagtype("orginfo-open", Tulletype.serializer())))
             )
         )
         assertFalse(
-            melding.tilfredsstillerInteresser(
-                listOf(
-                    Interesse.oppslagsresultat(Oppslagtype("nokoanna", Tulletype.serializer()))
-                )
+            melding.erInteressant(
+                listOf(Interesse.oppslagsresultat(Oppslagtype("nokoanna", Tulletype.serializer())))
             )
         )
     }
@@ -118,20 +115,12 @@ class InteresseTest {
             )
         ).jsonObject
 
-        assertFalse(vurdering.tilfredsstillerInteresser(interesserSomObjekter))
+        assertFalse(vurdering.erInteressant(interesserSomObjekter))
         assertTrue(
-            vurdering.tilfredsstillerInteresser(
-                listOf(
-                    Interesse.vurdering("etellerannet-vurderer")
-                )
-            )
+            vurdering.erInteressant(listOf(Interesse.vurdering("etellerannet-vurderer"))),
         )
         assertFalse(
-            vurdering.tilfredsstillerInteresser(
-                listOf(
-                    Interesse.vurdering("en-annen-vurdering")
-                )
-            )
+            vurdering.erInteressant(listOf(Interesse.vurdering("en-annen-vurdering")))
         )
     }
 
@@ -141,36 +130,77 @@ class InteresseTest {
         val need2 = buildJsonObject { put("type", "RiskNeed"); put("iterasjon", 2) }
         val need3 = buildJsonObject { put("type", "RiskNeed"); put("iterasjon", 3) }
 
-        val interessertIAlleIterasjoner = listOf(Interesse.riskNeed)
-        val interessertIIterasjon1 = listOf(Interesse.riskNeed(1))
-        val interessertIIterasjon2 = listOf(Interesse.riskNeed(2))
-        val interessertIIterasjon3 = listOf(Interesse.riskNeed(3))
+        val interessertIAlleIterasjoner = Interesse.riskNeed
+        val interessertIIterasjon1 = Interesse.riskNeed(1)
+        val interessertIIterasjon2 = Interesse.riskNeed(2)
+        val interessertIIterasjon3 = Interesse.riskNeed(3)
 
-        val interessertIIterasjon2EllerHoyere = listOf(Interesse.riskNeedMedMinimum(2))
+        val interessertIIterasjon2EllerHoyere = Interesse.riskNeedMedMinimum(2)
 
         need1.apply {
-            assertTrue(this.tilfredsstillerInteresser(interessertIAlleIterasjoner))
-            assertTrue(this.tilfredsstillerInteresser(interessertIIterasjon1))
-            assertFalse(this.tilfredsstillerInteresser(interessertIIterasjon2))
-            assertFalse(this.tilfredsstillerInteresser(interessertIIterasjon3))
-            assertFalse(this.tilfredsstillerInteresser(interessertIIterasjon2EllerHoyere))
+            assertTrue(this.erInteressant(listOf(interessertIAlleIterasjoner)))
+            assertTrue(this.erInteressant(listOf(interessertIIterasjon1)))
+            assertFalse(this.erInteressant(listOf(interessertIIterasjon2)))
+            assertFalse(this.erInteressant(listOf(interessertIIterasjon3)))
+            assertFalse(this.erInteressant(listOf(interessertIIterasjon2EllerHoyere)))
         }
 
         need2.apply {
-            assertTrue(this.tilfredsstillerInteresser(interessertIAlleIterasjoner))
-            assertFalse(this.tilfredsstillerInteresser(interessertIIterasjon1))
-            assertTrue(this.tilfredsstillerInteresser(interessertIIterasjon2))
-            assertFalse(this.tilfredsstillerInteresser(interessertIIterasjon3))
-            assertTrue(this.tilfredsstillerInteresser(interessertIIterasjon2EllerHoyere))
+            assertTrue(this.erInteressant(listOf(interessertIAlleIterasjoner)))
+            assertFalse(this.erInteressant(listOf(interessertIIterasjon1)))
+            assertTrue(this.erInteressant(listOf(interessertIIterasjon2)))
+            assertFalse(this.erInteressant(listOf(interessertIIterasjon3)))
+            assertTrue(this.erInteressant(listOf(interessertIIterasjon2EllerHoyere)))
         }
 
         need3.apply {
-            assertTrue(this.tilfredsstillerInteresser(interessertIAlleIterasjoner))
-            assertFalse(this.tilfredsstillerInteresser(interessertIIterasjon1))
-            assertFalse(this.tilfredsstillerInteresser(interessertIIterasjon2))
-            assertTrue(this.tilfredsstillerInteresser(interessertIIterasjon3))
-            assertTrue(this.tilfredsstillerInteresser(interessertIIterasjon2EllerHoyere))
+            assertTrue(this.erInteressant(listOf(interessertIAlleIterasjoner)))
+            assertFalse(this.erInteressant(listOf(interessertIIterasjon1)))
+            assertFalse(this.erInteressant(listOf(interessertIIterasjon2)))
+            assertTrue(this.erInteressant(listOf(interessertIIterasjon3)))
+            assertTrue(this.erInteressant(listOf(interessertIIterasjon2EllerHoyere)))
         }
+    }
+
+    @Test
+    fun `interesser med ikkePaakrevdHvis`() {
+        val oppslag1 = buildJsonObject {
+            put("type", "oppslagsresultat")
+            put("infotype", "oppslag-1")
+        }
+        val oppslag2A = buildJsonObject {
+            put("type", "oppslagsresultat")
+            put("infotype", "oppslag-2")
+            put("data", buildJsonObject {
+                put("status", "A")
+            })
+        }
+        val oppslag2B = buildJsonObject {
+            put("type", "oppslagsresultat")
+            put("infotype", "oppslag-2")
+            put("data", buildJsonObject {
+                put("status", "B")
+            })
+        }
+        val oppslag2_UtenStatus = buildJsonObject {
+            put("type", "oppslagsresultat")
+            put("infotype", "oppslag-2")
+            put("data", buildJsonObject {
+                put("NOKO ANNA", "HEI HEI")
+            })
+        }
+
+        val interesse = Interesse.oppslagsresultat("oppslag-1", ikkePaakrevdHvis = { meldinger ->
+            meldinger.finnOppslagsresultat("oppslag-2")!!
+                .jsonObject["status"]!!
+                .jsonPrimitive.content == "A"
+        })
+
+        assertTrue(interesse.tilfredsstillesAv(listOf(oppslag1)))
+        assertTrue(interesse.tilfredsstillesAv(listOf(oppslag2A)))
+
+        assertFalse(interesse.tilfredsstillesAv(listOf(oppslag2B)))
+        assertFalse(interesse.tilfredsstillesAv(listOf(oppslag2_UtenStatus)))
     }
 
 }

@@ -209,6 +209,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
             kafkaClientId = "testvurderer",
             vurderer = vurderer,
             interessertI = interessertI,
+            ignoreIfNotPresent = interessertI.filter { it.type == Meldingstype.RiskNeed.name }, // Hindrer ekstra-vurderings-feil hvis "ekstrainfo" ikke trengs, men ankommer sist
             windowTimeInSeconds = 3
         ).overrideKafkaEnvironment(
             KafkaRiverEnvironment(

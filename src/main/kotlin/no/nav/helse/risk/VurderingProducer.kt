@@ -1,22 +1,22 @@
 package no.nav.helse.risk
 
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import no.nav.helse.crypto.JWKSetHolder
 import org.slf4j.LoggerFactory
 
-
 private val json = JsonRisk
+
+private val log = LoggerFactory.getLogger(VurderingProducer::class.java)
+private val secureLog = LoggerFactory.getLogger("sikkerLogg")
 
 internal class VurderingProducer(
     private val infotype: String,
     private val vurderer: (List<JsonObject>) -> Vurdering,
     private val decryptionJWKS: JWKSetHolder?
 ) {
-
-    companion object {
-        private val log = LoggerFactory.getLogger(VurderingProducer::class.java)
-    }
 
     fun lagVurdering(answers: List<JsonObject>, vedtaksperiodeId: String): JsonObject? {
         return try {
@@ -32,8 +32,23 @@ internal class VurderingProducer(
                 metadata = vurdering.metadata
             )).jsonObject
         } catch (ex: Exception) {
-            log.error("Feil under vurdering", ex)
+            log.error(
+                "feil under vurdering: {}, info.size()={} meldingsTyper={}, se secure log for detaljer",
+                ex::class.java.name, answers.size, answers.map { it.meldingsType() }.toString()
+            )
+            secureLog.error("Feil under vurdering", ex)
+            if (secureLog.isDebugEnabled) {
+                secureLog.debug("Feil under vurdering med data: $answers")
+            }
             null
         }
     }
+}
+
+private fun JsonObject.meldingsType() : String? {
+    var type = this[typeKey]?.jsonPrimitive?.content
+    if (type == Meldingstype.oppslagsresultat.name) {
+        type += "/${this[infotypeKey]?.jsonPrimitive?.contentOrNull}"
+    }
+    return type
 }

@@ -8,6 +8,7 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.KafkaException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.sql.SQLTransientException
 import java.util.concurrent.Executors
 
 data class KafkaRiverEnvironment(
@@ -59,7 +60,12 @@ open class RiverApp internal constructor(
     }
 
     private fun shouldCauseRestart(ex: Throwable): Boolean =
-        (ex is KafkaException)
+        (ex is KafkaException) || (ex is SQLTransientException) || (ex is Error) || restartExceptionClassNames.contains(ex.javaClass.canonicalName)
+
+    private val restartExceptionClassNames = listOf(
+        "com.bettercloud.vault.VaultException",
+        "no.nav.vault.jdbc.hikaricp.VaultError"
+    )
 
     private var bufferedRiver: BufferedRiver? = null
 

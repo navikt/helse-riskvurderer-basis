@@ -241,7 +241,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
             app.start()
         }
 
-        Thread.sleep(7000)
+        Thread.sleep(10000)
 
         assertOnProducedMessages(producedMessages.map { it.value() })
     }

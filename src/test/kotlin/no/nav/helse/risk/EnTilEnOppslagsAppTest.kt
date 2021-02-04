@@ -29,6 +29,9 @@ import kotlin.test.assertEquals
 @FlowPreview
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class EnTilEnOppslagsAppTest {
+    init {
+        Sanity.setSkipSanityChecksForProduction()
+    }
 
     private val JSON = JsonRisk
     val producedMessages = mutableListOf<ProducerRecord<String, JsonObject>>()

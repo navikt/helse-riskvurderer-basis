@@ -16,14 +16,18 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.TopicPartition
+import org.awaitility.Awaitility
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
 @FlowPreview
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class VurderingsAppIkkePaakrevdHvisTest {
     init {
         Sanity.setSkipSanityChecksForProduction()
@@ -146,7 +150,8 @@ class VurderingsAppIkkePaakrevdHvisTest {
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
                 assertEquals("$orgnr/$trengerIkkeEkstrainfo", vurdering.begrunnelser.first())
                 assertEquals(mapOf("ekstrainfo" to "{}"), vurdering.metadata)
-            }
+            },
+            atLeastNumberOfMessages = 1
         )
     }
 
@@ -173,7 +178,8 @@ class VurderingsAppIkkePaakrevdHvisTest {
 
     fun testMedInnkommendeOgAssertions(
         innkommendeMeldinger: List<JsonObject>,
-        assertOnProducedMessages: (List<JsonObject>) -> Unit
+        assertOnProducedMessages: (List<JsonObject>) -> Unit,
+        atLeastNumberOfMessages: Int = 0
     ) {
         testMedVurdererOgAssertions(
             interessertI = listOf(
@@ -198,7 +204,8 @@ class VurderingsAppIkkePaakrevdHvisTest {
                     .build(5)
             },
             innkommendeMeldinger = innkommendeMeldinger,
-            assertOnProducedMessages = assertOnProducedMessages
+            assertOnProducedMessages = assertOnProducedMessages,
+            atLeastNumberOfMessages = atLeastNumberOfMessages
         )
     }
 
@@ -206,7 +213,8 @@ class VurderingsAppIkkePaakrevdHvisTest {
         interessertI: List<Interesse>,
         vurderer: (List<JsonObject>) -> Vurdering,
         innkommendeMeldinger: List<JsonObject>,
-        assertOnProducedMessages: (List<JsonObject>) -> Unit
+        assertOnProducedMessages: (List<JsonObject>) -> Unit,
+        atLeastNumberOfMessages: Int
     ) {
         val producer = mockk<KafkaProducer<String, JsonObject>>()
         val consumer = mockk<KafkaConsumer<String, JsonObject>>()
@@ -241,7 +249,16 @@ class VurderingsAppIkkePaakrevdHvisTest {
             app.start()
         }
 
-        Thread.sleep(10000)
+        if (atLeastNumberOfMessages < 1) {
+            Thread.sleep(10000)
+        } else {
+            Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .pollDelay(Duration.ofMillis(200))
+                .untilAsserted {
+                    Assertions.assertTrue(producedMessages.size >= atLeastNumberOfMessages)
+                }
+        }
 
         assertOnProducedMessages(producedMessages.map { it.value() })
     }

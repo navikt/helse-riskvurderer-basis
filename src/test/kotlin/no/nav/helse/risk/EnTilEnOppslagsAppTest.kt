@@ -157,7 +157,7 @@ class EnTilEnOppslagsAppTest {
 
     private fun ventPaaProduserteMeldinger(minimumAntall: Int = 1) {
         Awaitility.await()
-            .atMost(Duration.ofSeconds(5))
+            .atMost(Duration.ofSeconds(30))
             .pollDelay(Duration.ofMillis(200))
             .untilAsserted {
                 Assertions.assertTrue(producedMessages.size >= minimumAntall)

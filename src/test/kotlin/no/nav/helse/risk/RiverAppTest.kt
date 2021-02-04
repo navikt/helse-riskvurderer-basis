@@ -6,6 +6,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
@@ -28,6 +29,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
+@FlowPreview
 class RiverAppTest {
 
     private val partition = 0
@@ -38,6 +40,11 @@ class RiverAppTest {
     @BeforeEach
     fun clearStuff() {
         CollectorRegistry.defaultRegistry.clear()
+    }
+
+    @BeforeEach
+    fun skipProductionChecks() {
+        Sanity.setSkipSanityChecksForProduction()
     }
 
     @Test
@@ -84,9 +91,7 @@ class RiverAppTest {
     ): RiverApp {
         val producer = mockk<KafkaProducer<String, JsonObject>>()
         val consumer = mockk<KafkaConsumer<String, JsonObject>>()
-        fun lagSvar(meldinger: List<JsonObject>, vedtaksperiodeId: String): JsonObject? {
-            return defaultSvar
-        }
+        val lagSvar : (List<JsonObject>, String) -> JsonObject = { _, _ -> defaultSvar }
 
         val app = RiverApp(
             kafkaClientId = "testRiverApp",
@@ -95,7 +100,7 @@ class RiverAppTest {
                 Interesse.oppslagsresultat("testdata")
             ),
             skipEmitIfNotPresent = emptyList(),
-            answerer = ::lagSvar,
+            answerer = lagSvar,
             collectorRegistry = CollectorRegistry.defaultRegistry,
             additionalHealthCheck = additionalHealthCheck,
             launchAlso = launchAlso

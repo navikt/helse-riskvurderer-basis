@@ -3,10 +3,16 @@ package no.nav.helse.risk
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
 
 class CompletenessTest {
+
+    @BeforeEach
+    fun skipProductionChecks() {
+        Sanity.setSkipSanityChecksForProduction()
+    }
 
     @Test
     fun `isCompleteMessageSetAccordingToInterests should give right answer`() {

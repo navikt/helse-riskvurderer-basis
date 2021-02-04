@@ -7,7 +7,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 private val log: Logger = LoggerFactory.getLogger(Interesse::class.java)
-private val secureLog = LoggerFactory.getLogger("sikkerLogg")
+private val secureLog = Sanity.getSecureLogger()
 
 data class Interesse internal constructor(
     val type: String,

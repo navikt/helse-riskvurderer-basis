@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 private val json = JsonRisk
 
 private val log = LoggerFactory.getLogger(VurderingProducer::class.java)
-private val secureLog = LoggerFactory.getLogger("sikkerLogg")
+private val secureLog = Sanity.getSecureLogger()
 
 internal class VurderingProducer(
     private val infotype: String,

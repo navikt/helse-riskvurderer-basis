@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.prometheus.client.CollectorRegistry
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
@@ -22,7 +23,12 @@ import java.time.LocalDateTime
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
+@FlowPreview
 class VurderingsAppIkkePaakrevdHvisTest {
+    init {
+        Sanity.setSkipSanityChecksForProduction()
+    }
+
     private val partition = 0
     private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)
     private val json = JsonRisk
@@ -209,7 +215,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
             kafkaClientId = "testvurderer",
             vurderer = vurderer,
             interessertI = interessertI,
-            ignoreIfNotPresent = interessertI.filter { it.type == Meldingstype.RiskNeed.name }, // Hindrer ekstra-vurderings-feil hvis "ekstrainfo" ikke trengs, men ankommer sist
+            //ignoreIfNotPresent = interessertI.filter { it.type == Meldingstype.RiskNeed.name }, // Hindrer ekstra-vurderings-feil hvis "ekstrainfo" ikke trengs, men ankommer sist
             windowTimeInSeconds = 3
         ).overrideKafkaEnvironment(
             KafkaRiverEnvironment(
@@ -235,7 +241,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
             app.start()
         }
 
-        Thread.sleep(4000)
+        Thread.sleep(7000)
 
         assertOnProducedMessages(producedMessages.map { it.value() })
     }

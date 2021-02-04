@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.prometheus.client.CollectorRegistry
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
@@ -25,8 +26,12 @@ import java.util.concurrent.Future
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+@FlowPreview
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class VurderingsAppTest {
+    init {
+        Sanity.setSkipSanityChecksForProduction()
+    }
 
     private val partition = 0
     private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)

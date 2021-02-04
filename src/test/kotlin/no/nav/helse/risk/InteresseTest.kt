@@ -5,6 +5,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -12,6 +13,11 @@ import kotlin.test.assertTrue
 private val json = JsonRisk
 
 class InteresseTest {
+
+    @BeforeEach
+    fun skipProductionChecks() {
+        Sanity.setSkipSanityChecksForProduction()
+    }
 
     val interesserSomObjekter = listOf(
         Interesse.riskNeed,

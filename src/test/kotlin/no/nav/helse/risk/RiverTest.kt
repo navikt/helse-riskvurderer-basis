@@ -30,6 +30,10 @@ import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 internal class RiverTest {
+    init {
+        Sanity.setSkipSanityChecksForProduction()
+    }
+
     val env = RiverEnvironment("testapp")
     private val json = JsonRisk
 

@@ -2,7 +2,7 @@ package no.nav.helse.risk
 
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonObject
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.KafkaException
@@ -14,6 +14,8 @@ data class KafkaRiverEnvironment(
     val kafkaConsumer: KafkaConsumer<String, JsonObject>,
     val kafkaProducer: KafkaProducer<String, JsonObject>
 )
+
+private val log: Logger = LoggerFactory.getLogger(RiverApp::class.java)
 
 open class RiverApp internal constructor(
     val kafkaClientId: String,
@@ -27,8 +29,8 @@ open class RiverApp internal constructor(
     private val additionalHealthCheck: (() -> Boolean)?,
     private val skipMessagesOlderThanSeconds: Long = -1
 ) {
+
     private val environment: RiverEnvironment = RiverEnvironment(kafkaClientId)
-    private val log: Logger = LoggerFactory.getLogger(VurderingsApp::class.java)
 
     private var overriddenKafkaEnvironment: KafkaRiverEnvironment? = null
     private fun createKafkaEnvironment(): KafkaRiverEnvironment {
@@ -68,6 +70,8 @@ open class RiverApp internal constructor(
 
     @FlowPreview
     fun start() {
+        Sanity.runSanityChecks()
+
         Runtime.getRuntime().addShutdownHook(Thread {
             applicationContext.close()
         })

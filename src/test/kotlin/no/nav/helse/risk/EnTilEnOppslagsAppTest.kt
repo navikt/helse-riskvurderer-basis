@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.prometheus.client.CollectorRegistry
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
@@ -25,6 +26,7 @@ import java.time.LocalDateTime
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
+@FlowPreview
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class EnTilEnOppslagsAppTest {
 
@@ -43,6 +45,11 @@ class EnTilEnOppslagsAppTest {
     fun clearStuff() {
         CollectorRegistry.defaultRegistry.clear()
     }
+    @BeforeEach
+    fun skipProductionChecks() {
+        Sanity.setSkipSanityChecksForProduction()
+    }
+
 
     @Test
     fun `EnTilEnOppslagsApp med default svarer paa RiskNeed(iter=1)`() {

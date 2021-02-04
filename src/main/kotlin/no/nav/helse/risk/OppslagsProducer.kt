@@ -34,7 +34,7 @@ internal class OppslagsProducer(
 
     private val json = JsonRisk
     private val log = LoggerFactory.getLogger(OppslagsProducer::class.java)
-    private val secureLog = LoggerFactory.getLogger("sikkerLogg")
+    private val secureLog = Sanity.getSecureLogger()
 
     fun lagSvar(meldinger: List<JsonObject>, vedtaksperiodeId: String): JsonObject? {
         return try {

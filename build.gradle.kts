@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.*
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val junitJupiterVersion = "5.6.3"
 val ktorVersion = "1.4.3"
@@ -58,6 +58,7 @@ dependencies {
 
     api("org.slf4j:slf4j-api:$slf4jVersion")
     api("ch.qos.logback:logback-classic:$logbackVersion")
+    implementation("ch.qos.logback:logback-core:$logbackVersion")
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
     implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
 

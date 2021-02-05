@@ -44,20 +44,29 @@ fun main() {
       - secret: $base-send"""
     val naisYamlReceive = """   filesFrom:
       - secret: $base-receive"""
-    println("Sender: ")
-    println("NAIS spec:")
+    println("**** Sender: ****")
+    println("* NAIS spec:")
     println(naisYamlSend)
     println(
-        """Kotlin-App:
+        """* Kotlin OppslagsApp:
       encryptionJWK = JWKHolder.fromSecret("${base}_jwk")
    """.trimMargin()
     )
-    println("Receiver: ")
-    println("NAIS spec:")
+    println("**** Receiver: **** ")
+    println("* NAIS spec:")
     println(naisYamlReceive)
+    println("""
+        # - PLUS - IFF multiple: --
+        mountPath: /var/run/secrets/${base}
+    """.trimMargin())
     println(
-        """Kotlin-App:
+        """* Kotlin VurderingsApp/OppslagsApp:
       decryptionJWKS = JWKSetHolder.fromSecret("${base}_jwks")
+      --- Or if multiple: ---
+      decryptionJWKS = JWKSetHolder.fromMultiple(
+            JWKSetHolder.fromDynamicFile(Paths.get("/var/run/secrets/${base}", "${base}_jwks")),
+            (....)
+      ),
    """.trimMargin()
     )
 }

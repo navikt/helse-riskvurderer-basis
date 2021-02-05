@@ -27,11 +27,11 @@ fun main() {
     val jwks = JWKSet(jwk)
     val jwkString = jwk.toJSONObject().toString()
     val jwksString = jwks.toJSONObject(false).toString()
-    println("Create JWK:")
-    val createJWKCommand = "kubectl create secret generic $base-send --from-literal=${base}_jwk='$jwkString'"
+    println("Create JWK: (If copy/paste: remember: export HISTCONTROL=ignorespace  ..and keep the leading space)")
+    val createJWKCommand = "  kubectl create secret generic $base-send --from-literal=${base}_jwk='$jwkString'"
     println(createJWKCommand)
     println("Create JWKS:")
-    val createJWKSCommand = "kubectl create secret generic $base-receive --from-literal=${base}_jwks='$jwksString'"
+    val createJWKSCommand = "  kubectl create secret generic $base-receive --from-literal=${base}_jwks='$jwksString'"
     println(createJWKSCommand)
     println("Read JWK:")
     println("kubectl get secret oppslagsdata-send -o yaml")

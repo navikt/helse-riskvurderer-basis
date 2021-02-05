@@ -135,10 +135,21 @@ class OppslagsAppTest {
                 windowTimeInSeconds = 1
             )
         )
-        Thread.sleep(1000)
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(4))
+            .pollDelay(Duration.ofMillis(100))
+            .untilAsserted {
+                Assertions.assertTrue(periodeTilMeldinger.size >= 1)
+            }
         assertEquals(1, periodeTilMeldinger.size)
 
-        Thread.sleep(6000) // Because BufferedRiver says schedulerIntervalInSeconds = 5
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(8))
+            .pollDelay(Duration.ofMillis(100))
+            .untilAsserted {
+                Assertions.assertTrue(periodeTilMeldinger.size >= 2)
+            }
+        //Thread.sleep(6000) // Because BufferedRiver says schedulerIntervalInSeconds = 5
         assertEquals(2, periodeTilMeldinger.size)
 
         periodeTilMeldinger["222"].apply {

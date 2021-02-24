@@ -61,24 +61,25 @@ class RiverAppTest {
         assertFalse(app.isHealthy())
     }
 
+
+    @Volatile var myTestValue = "NOT THIS"
     @Test
     fun `launch additional stuff`() {
-        var myValue = "NOT THIS"
         val app = lagRiverApp(
             launchAlso = listOf<suspend CoroutineScope.() -> Unit> {
-                myValue = "BUT THIS"
+                myTestValue = "BUT THIS"
             }
         )
-        assertEquals("NOT THIS", myValue)
+        assertEquals("NOT THIS", myTestValue)
         val job = GlobalScope.launch {
             app.start()
         }
 
         Awaitility.await()
-            .atMost(Duration.ofSeconds(5))
+            .atMost(Duration.ofSeconds(15))
             .pollDelay(Duration.ofMillis(200))
             .untilAsserted {
-                assertEquals("BUT THIS", myValue)
+                assertEquals("BUT THIS", myTestValue)
             }
         job.cancel()
     }

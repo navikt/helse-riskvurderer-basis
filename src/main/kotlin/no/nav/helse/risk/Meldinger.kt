@@ -27,6 +27,7 @@ data class RiskNeed(
     val fnr: String,
     val behovOpprettet: String,
     val iterasjon: Int,
+    val periodetype: String? = null,
     val originalBehov: JsonObject? = null,
     val type: String = "RiskNeed",
     val isRetry: Boolean? = null,

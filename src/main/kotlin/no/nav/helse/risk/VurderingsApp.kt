@@ -1,6 +1,5 @@
 package no.nav.helse.risk
 
-import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonObject
@@ -67,7 +66,8 @@ open class VurderingsApp(
     emitEarlyWhenAllInterestsPresent: Boolean = true,
     collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
     launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
-    additionalHealthCheck: (() -> Boolean)? = null
+    additionalHealthCheck: (() -> Boolean)? = null,
+    disableWebEndpoints: Boolean = false
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertI = interessertI,
@@ -80,5 +80,6 @@ open class VurderingsApp(
     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
     collectorRegistry = collectorRegistry,
     launchAlso = launchAlso,
-    additionalHealthCheck = additionalHealthCheck
+    additionalHealthCheck = additionalHealthCheck,
+    disableWebEndpoints = disableWebEndpoints
 )

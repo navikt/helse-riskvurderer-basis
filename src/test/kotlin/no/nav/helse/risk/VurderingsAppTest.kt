@@ -139,7 +139,8 @@ class VurderingsAppTest {
             interessertI = listOf(
                 Interesse.riskNeed(1),
                 Interesse.oppslagsresultat("testdata")
-            )
+            ),
+            disableWebEndpoints = true
         ).overrideKafkaEnvironment(
             KafkaRiverEnvironment(
                 kafkaConsumer = consumer,

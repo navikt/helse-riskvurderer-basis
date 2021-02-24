@@ -1,7 +1,5 @@
 package no.nav.helse.risk
 
-import com.nimbusds.jose.jwk.JWK
-import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonElement
@@ -17,7 +15,8 @@ class EnTilEnOppslagsApp(kafkaClientId: String,
                          collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
                          launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
                          additionalHealthCheck: (() -> Boolean)? = null,
-                         skipMessagesOlderThanSeconds: Long = -1) : OppslagsApp(
+                         skipMessagesOlderThanSeconds: Long = -1,
+                         disableWebEndpoints: Boolean = false) : OppslagsApp(
     kafkaClientId = kafkaClientId,
     infotype = infotype,
     interessertI = listOf(interesse),
@@ -31,5 +30,6 @@ class EnTilEnOppslagsApp(kafkaClientId: String,
     collectorRegistry = collectorRegistry,
     launchAlso = launchAlso,
     additionalHealthCheck = additionalHealthCheck,
-    skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds
+    skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds,
+    disableWebEndpoints = disableWebEndpoints
 )

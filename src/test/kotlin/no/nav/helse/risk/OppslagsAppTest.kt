@@ -132,7 +132,8 @@ class OppslagsAppTest {
                         put("har_kobling", (kobling != null))
                     }
                 },
-                windowTimeInSeconds = 1
+                windowTimeInSeconds = 1,
+                disableWebEndpoints = true
             )
         )
         Awaitility.await()

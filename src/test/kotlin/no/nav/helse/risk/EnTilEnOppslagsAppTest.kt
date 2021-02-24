@@ -73,7 +73,8 @@ class EnTilEnOppslagsAppTest {
                     buildJsonObject {
                         put("felt1", "data1")
                     }
-                }
+                },
+                disableWebEndpoints = true
             )
         )
         ventPaaProduserteMeldinger()
@@ -103,7 +104,8 @@ class EnTilEnOppslagsAppTest {
                     buildJsonObject {
                         put("felt1", "jauda")
                     }
-                }
+                },
+                disableWebEndpoints = true
             )
         )
         ventPaaProduserteMeldinger()
@@ -143,7 +145,8 @@ class EnTilEnOppslagsAppTest {
                     buildJsonObject {
                         put("felt1", riskNeed.vedtaksperiodeId)
                     }
-                }
+                },
+                disableWebEndpoints = true
             )
         )
         ventPaaProduserteMeldinger()

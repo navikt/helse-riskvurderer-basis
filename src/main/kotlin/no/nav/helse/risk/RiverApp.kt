@@ -28,7 +28,8 @@ open class RiverApp internal constructor(
     private val collectorRegistry: CollectorRegistry,
     private val launchAlso: List<suspend CoroutineScope.() -> Unit>,
     private val additionalHealthCheck: (() -> Boolean)?,
-    private val skipMessagesOlderThanSeconds: Long = -1
+    private val skipMessagesOlderThanSeconds: Long = -1,
+    private val disableWebEndpoints: Boolean = false
 ) {
 
     private val environment: RiverEnvironment = RiverEnvironment(kafkaClientId)
@@ -85,10 +86,14 @@ open class RiverApp internal constructor(
         val kafka = createKafkaEnvironment()
 
         GlobalScope.launch(applicationContext + exceptionHandler) {
-            launch {
-                webserver(collectorRegistry = collectorRegistry,
-                    isAlive = ::isHealthy,
-                    isReady = ::isHealthy)
+            if (!disableWebEndpoints) {
+                launch {
+                    webserver(
+                        collectorRegistry = collectorRegistry,
+                        isAlive = ::isHealthy,
+                        isReady = ::isHealthy
+                    )
+                }
             }
             launch {
                 bufferedRiver = BufferedRiver(

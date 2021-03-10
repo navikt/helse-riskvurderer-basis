@@ -3,8 +3,10 @@ package no.nav.helse.risk
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonObject
+import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.common.KafkaException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -12,8 +14,8 @@ import java.sql.SQLTransientException
 import java.util.concurrent.Executors
 
 data class KafkaRiverEnvironment(
-    val kafkaConsumer: KafkaConsumer<String, JsonObject>,
-    val kafkaProducer: KafkaProducer<String, JsonObject>
+    val kafkaConsumer: Consumer<String, JsonObject>,
+    val kafkaProducer: Producer<String, JsonObject>
 )
 
 private val log: Logger = LoggerFactory.getLogger(RiverApp::class.java)

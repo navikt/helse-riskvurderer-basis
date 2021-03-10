@@ -8,8 +8,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import no.nav.helse.buffer.WindowBufferEmittable
 import no.nav.helse.buffer.WindowBufferEmitter
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.consumer.Consumer
+import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,8 +17,8 @@ import java.time.Duration
 
 val riskRiverTopic = "helse-risk-river-v1"
 
-internal open class BufferedRiver(private val kafkaProducer: KafkaProducer<String, JsonObject>,
-                                  private val kafkaConsumer: KafkaConsumer<String, JsonObject>,
+internal open class BufferedRiver(private val kafkaProducer: Producer<String, JsonObject>,
+                                  private val kafkaConsumer: Consumer<String, JsonObject>,
                                   private val interessertI: List<Interesse>,
                                   private val skipEmitIfNotPresent: List<Interesse>,
                                   private val answerer: (List<JsonObject>, String) -> JsonObject?,
@@ -99,7 +99,7 @@ internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, in
 
 
 @FlowPreview
-private fun <K, V> KafkaConsumer<K, V>.asFlow(): Flow<Triple<K, V, Long>> = flow { while (true) emit(poll(Duration.ZERO)) }
+private fun <K, V> Consumer<K, V>.asFlow(): Flow<Triple<K, V, Long>> = flow { while (true) emit(poll(Duration.ZERO)) }
     .onEach { if (it.isEmpty) delay(100) }
     .flatMapConcat { it.asFlow() }
     .map { Triple(it.key(), it.value(), it.timestamp()) }

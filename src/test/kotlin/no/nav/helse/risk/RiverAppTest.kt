@@ -10,6 +10,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
+import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -21,6 +22,7 @@ import org.awaitility.Awaitility
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.sql.SQLTransientException
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.Future
@@ -49,7 +51,7 @@ class RiverAppTest {
 
     @Test
     fun `app is healthy by default`() {
-        val app = lagRiverApp()
+        val app = lagRiverApp().app
         assertTrue(app.isHealthy())
     }
 
@@ -57,19 +59,24 @@ class RiverAppTest {
     fun `additional health-check says NOT healthy`() {
         val app = lagRiverApp(
             additionalHealthCheck = { false }
-        )
+        ).app
         assertFalse(app.isHealthy())
     }
 
 
-    @Volatile var myTestValue = "NOT THIS"
+    @Volatile
+    var myTestValue = "NOT THIS"
+
     @Test
     fun `launch additional stuff`() {
+        val mockConsumer = MockConsumer<String, JsonObject>()
         val app = lagRiverApp(
             launchAlso = listOf<suspend CoroutineScope.() -> Unit> {
                 myTestValue = "BUT THIS"
-            }
-        )
+            },
+            predefinedConsumer = mockConsumer,
+            producerThrows = null
+        ).app
         assertEquals("NOT THIS", myTestValue)
         val job = GlobalScope.launch {
             app.start()
@@ -81,18 +88,62 @@ class RiverAppTest {
             .untilAsserted {
                 assertEquals("BUT THIS", myTestValue)
             }
+        mockConsumer.die()
         job.cancel()
     }
 
+    @Test
+    fun `TopicAuthorizationException makes app UN-healthy`() {
+        assertGetsUnhealthyWhenThrown(org.apache.kafka.common.errors.TopicAuthorizationException("BAD CREDS"))
+    }
+
+    @Test
+    fun `SQLTransientException makes app UN-healthy`() {
+        assertGetsUnhealthyWhenThrown(SQLTransientException("Better luck next time"))
+    }
+
+    fun assertGetsUnhealthyWhenThrown(throwable: Throwable) {
+        val mockConsumer = MockConsumer<String, JsonObject>()
+
+        val app = lagRiverApp(
+            consumerThrows = null,
+            producerThrows = null,
+            predefinedConsumer = mockConsumer
+        )
+        val job = GlobalScope.launch {
+            app.app.start()
+        }
+        assertTrue(app.app.isHealthy())
+        mockConsumer.pollFunction = {
+            throw throwable
+        }
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(5))
+            .pollDelay(Duration.ofMillis(200))
+            .untilAsserted {
+                assertFalse(app.app.isHealthy())
+            }
+        job.cancel()
+    }
+
+
     val producedMessages = mutableListOf<ProducerRecord<String, JsonObject>>()
+
+    class AppSetup(
+        val app: RiverApp,
+        val consumerMock: Consumer<String, JsonObject>
+    )
 
     fun lagRiverApp(
         additionalHealthCheck: (() -> Boolean)? = null,
-        launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList()
-    ): RiverApp {
+        launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
+        consumerThrows: Exception? = Done(),
+        producerThrows: Exception? = IllegalStateException("no more please!"),
+        predefinedConsumer: Consumer<String, JsonObject>? = null
+    ): AppSetup {
         val producer = mockk<KafkaProducer<String, JsonObject>>()
-        val consumer = mockk<KafkaConsumer<String, JsonObject>>()
-        val lagSvar : (List<JsonObject>, String) -> JsonObject = { _, _ -> defaultSvar }
+        val consumer = predefinedConsumer ?: mockk<KafkaConsumer<String, JsonObject>>()
+        val lagSvar: (List<JsonObject>, String) -> JsonObject = { _, _ -> defaultSvar }
 
         val app = RiverApp(
             kafkaClientId = "testRiverApp",
@@ -104,7 +155,8 @@ class RiverAppTest {
             answerer = lagSvar,
             collectorRegistry = CollectorRegistry.defaultRegistry,
             additionalHealthCheck = additionalHealthCheck,
-            launchAlso = launchAlso
+            launchAlso = launchAlso,
+            disableWebEndpoints = true
         ).overrideKafkaEnvironment(
             KafkaRiverEnvironment(
                 kafkaConsumer = consumer,
@@ -113,23 +165,35 @@ class RiverAppTest {
         )
 
         producedMessages.clear()
-        every { consumer.subscribe(listOf(riskRiverTopic)) } just Runs
-        val records = defaultInnkommendeMeldinger.map {
-            ConsumerRecord(
-                riskRiverTopic, partition, 1,
-                "envedtaksperiodeid", it
-            )
+        if (predefinedConsumer == null) {
+            every { consumer.subscribe(listOf(riskRiverTopic)) } just Runs
+            val records = defaultInnkommendeMeldinger.map {
+                ConsumerRecord(
+                    riskRiverTopic, partition, 1,
+                    "envedtaksperiodeid", it
+                )
+            }
+            (every { consumer.poll(Duration.ZERO) } returns ConsumerRecords(
+                mapOf(
+                    riverTopicPartition to records
+                )
+            )).apply {
+                if (consumerThrows != null) {
+                    this andThenThrows consumerThrows
+                }
+            }
         }
-        every { consumer.poll(Duration.ZERO) } returns ConsumerRecords(
-            mapOf(
-                riverTopicPartition to records
-            )
-        ) andThenThrows Done()
-        every { producer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>() andThenThrows IllegalStateException(
-            "no more please!"
-        )
 
-        return app
+        (every { producer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>()).apply {
+            if (producerThrows != null) {
+                this andThenThrows producerThrows
+            }
+        }
+
+        return AppSetup(
+            app = app,
+            consumerMock = consumer
+        )
     }
 
     val fnr = "01017000000"

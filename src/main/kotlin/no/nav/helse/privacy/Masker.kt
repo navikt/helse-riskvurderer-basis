@@ -27,12 +27,16 @@ class IdMasker(fieldNames: List<String> = listOf(
     }
 }
 
+interface IMasker {
+    fun mask(json: JsonElement) : JsonElement
+}
+
 open class Masker(
     val replaceByKey: Map<String, (JsonPrimitive) -> JsonPrimitive>,
     val replaceStringValues: Map<(String) -> Boolean, (String) -> String>,
     val fieldNameReplacers: Map<(String) -> Boolean, (String) -> String>
-) {
-    fun mask(json: JsonElement) = maskElement(null, json)
+) : IMasker {
+    override fun mask(json: JsonElement) = maskElement(null, json)
 
     private fun maskElement(key: String?, value: JsonElement): JsonElement {
         if (value is JsonNull) return value

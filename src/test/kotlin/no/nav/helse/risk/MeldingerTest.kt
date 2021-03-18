@@ -1,7 +1,10 @@
 package no.nav.helse.risk
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.*
+import no.nav.helse.privacy.IdMasker.Companion.hashingsalt
+import no.nav.helse.privacy.sha1
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
@@ -11,6 +14,9 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MeldingerTest {
+    init {
+        Sanity.setSkipSanityChecksForProduction()
+    }
 
     private val jsonFlexible = JsonRisk
 
@@ -57,8 +63,58 @@ class MeldingerTest {
     val TEST_OPPSLAGSTYPE = Oppslagtype("testoppslag", TestOppslag.serializer())
 
     @Test
-    fun `Typet oppslagsresultat gitt av Oppslagtype ignorerer ukjente felter ("a",  "b")`() {
+    fun `Typet oppslagsresultat gitt av Oppslagtype ignorerer ukjente felter (a,  b)`() {
         assertEquals(TestOppslag("Ola", "Nordmann"), meldinger.finnPaakrevdOppslagsresultat(TEST_OPPSLAGSTYPE))
+    }
+
+    @Test
+    fun `deserialiseringsfeil med logging til tjenestelogg`() {
+        val manglerEtternavn = buildJsonObject {
+            put("type", "oppslagsresultat")
+            put("infotype", "testoppslag")
+            put("data", buildJsonObject {
+                put("a", "b")
+                put("fornavn", "Ola")
+                put("fnr-ident", "01019012345")
+            })
+            put("vedtaksperiodeId", "1")
+        }
+
+        val logTap = LogTapper(Sanity.getSecureLogger())
+        val meldinger = listOf(manglerEtternavn)
+
+        assertThrows<SerializationException> {
+            meldinger.finnPaakrevdOppslagsresultat(TEST_OPPSLAGSTYPE)
+        }
+        assertEquals(0, logTap.messages().size,
+            "skal ikke logge når ikke logOnDeserializationError er satt")
+
+        assertThrows<SerializationException> {
+            meldinger.finnPaakrevdOppslagsresultat(TEST_OPPSLAGSTYPE, true)
+        }
+        assertEquals(1, logTap.messages().size)
+
+
+        assertThrows<SerializationException> {
+            meldinger.finnOppslagsresultat(TEST_OPPSLAGSTYPE)
+        }
+        assertEquals(1, logTap.messages().size,
+            "skal ikke logge når ikke logOnDeserializationError er satt")
+
+        assertThrows<SerializationException> {
+            meldinger.finnOppslagsresultat(TEST_OPPSLAGSTYPE, true)
+        }
+        assertEquals(2, logTap.messages().size)
+
+        logTap.messages().forEach {
+            assertEquals(
+                """SerializationException: Field 'etternavn' is required, but it was missing: {
+    "a": "b",
+    "fornavn": "Ola",
+    "fnr-ident": "${sha1(hashingsalt + "01019012345").take(11)}(11)"
+}""", it, "Skal logge original JSON til tjenestelogg med maskerte identer"
+            )
+        }
     }
 
     @Test

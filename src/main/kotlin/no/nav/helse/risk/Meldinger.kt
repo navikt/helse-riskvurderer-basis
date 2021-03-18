@@ -2,9 +2,12 @@ package no.nav.helse.risk
 
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.*
 import no.nav.helse.crypto.JWKSetHolder
 import no.nav.helse.crypto.decryptFromJWE
+import no.nav.helse.privacy.IMasker
+import no.nav.helse.privacy.IdMasker
 
 private val jsonFlexible = JsonRisk
 
@@ -49,11 +52,34 @@ fun List<JsonObject>.finnOppslagsresultat(infotype: String): JsonElement? {
     return if (kandidat == null) null else kandidat.jsonObject[dataKey]
 }
 
-fun <T>List<JsonObject>.finnOppslagsresultat(oppslagstype: Oppslagtype<T>): T? =
-    this.finnOppslagsresultat(oppslagstype.infotype)?.let { jsonFlexible.decodeFromJsonElement(oppslagstype.serializer, it) }
+private val secureLog = Sanity.getSecureLogger()
+private val prettyJson = Json(from = JsonRisk) {
+    prettyPrint = true
+}
 
-fun <T>List<JsonObject>.finnPaakrevdOppslagsresultat(oppslagstype: Oppslagtype<T>): T =
-    this.finnOppslagsresultat(oppslagstype.infotype)?.let { jsonFlexible.decodeFromJsonElement(oppslagstype.serializer, it) }
+private fun <T> Oppslagtype<T>.decode(json: JsonElement,
+                                      logOnDeserializationError: Boolean = false,
+                                      logMasker: IMasker = IdMasker()) : T {
+    return try {
+        jsonFlexible.decodeFromJsonElement(this.serializer, json)
+    } catch (ex: SerializationException) {
+        if (logOnDeserializationError) {
+            secureLog.error("SerializationException: ${ex.message}: {}",
+                prettyJson.encodeToString(JsonElement.serializer(), logMasker.mask(json)))
+        }
+        throw ex
+    }
+}
+
+fun <T>List<JsonObject>.finnOppslagsresultat(oppslagstype: Oppslagtype<T>,
+                                             logOnDeserializationError: Boolean = false,
+                                             logMasker: IMasker = IdMasker()): T? =
+    this.finnOppslagsresultat(oppslagstype.infotype)?.let { oppslagstype.decode(it, logOnDeserializationError, logMasker) }
+
+fun <T>List<JsonObject>.finnPaakrevdOppslagsresultat(oppslagstype: Oppslagtype<T>,
+                                                     logOnDeserializationError: Boolean = false,
+                                                     logMasker: IMasker = IdMasker()): T =
+    this.finnOppslagsresultat(oppslagstype.infotype)?.let { oppslagstype.decode(it, logOnDeserializationError, logMasker) }
         ?:error("Mangler oppslagsresultat med infotype=${oppslagstype.infotype}")
 
 

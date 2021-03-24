@@ -152,6 +152,7 @@ class MeldingerTest {
         }
         val vurderingsmelding = melding.tilVurderingsmelding()
         vurderingsmelding.apply {
+            assertTrue(this.erGammeltFormat())
             assertEquals("whatever", this.infotype)
             assertEquals(listOf("something", "showstopper"), this.begrunnelser)
             assertEquals(listOf("showstopper"), this.begrunnelserSomAleneKreverManuellBehandling)

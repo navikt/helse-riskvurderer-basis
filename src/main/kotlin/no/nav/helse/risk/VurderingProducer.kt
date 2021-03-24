@@ -25,6 +25,7 @@ internal class VurderingProducer(
             json.encodeToJsonElement(Vurderingsmelding.serializer(), Vurderingsmelding(
                 infotype = infotype,
                 vedtaksperiodeId = vedtaksperiodeId,
+                regeltreff = vurdering.regeltreff,
                 score = vurdering.score,
                 vekt = vurdering.vekt,
                 begrunnelser = vurdering.begrunnelser,

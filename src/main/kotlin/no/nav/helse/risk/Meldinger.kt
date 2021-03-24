@@ -95,17 +95,29 @@ fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
 
 
 @Serializable
+data class Regeltreff(
+    val begrunnelse: String,
+    val score: Int,
+    val vekt: Int,
+    val kreverManuellBehandling: Boolean = false,
+    val kategorier: List<String> = emptyList()
+)
+
+@Serializable
 data class Vurderingsmelding(
     val type: String = Meldingstype.vurdering.name,
     val infotype: String,
     val vedtaksperiodeId: String,
-    val score: Int,
-    val vekt: Int,
-    val begrunnelser: List<String>,
-    val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,
-    val passerteSjekker: List<String>? = null, // TODO: nullable inntil alle tjenester er migrert
+    @Deprecated("Bruk regeltreff i stedet") val score: Int,
+    @Deprecated("Bruk regeltreff i stedet") val vekt: Int,
+    @Deprecated("Bruk regeltreff i stedet") val begrunnelser: List<String>,
+    @Deprecated("Bruk regeltreff i stedet") val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,
+    val regeltreff: List<Regeltreff>? = null, // TODO: nullable inntil alle tjenester er migrert
+    val passerteSjekker: List<String>? = null, // TODO: nullable inntil alle tjenester er migrert (READY?)
     val metadata: Map<String,String>? = null
-)
+) {
+    fun erGammeltFormat() = null == regeltreff
+}
 
 fun JsonObject.tilVurderingsmelding(): Vurderingsmelding =
     jsonFlexible.decodeFromJsonElement(Vurderingsmelding.serializer(), this)

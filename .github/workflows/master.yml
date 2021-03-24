@@ -12,9 +12,9 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions/setup-java@v1
         with:
-          java-version: '12.x'
+          java-version: '11.x'
       - name: test and build
-        run: ./gradlew -Pversion="0.9.$(echo $GITHUB_SHA | cut -c1-7)" build publish
+        run: ./gradlew -Pversion="0.10.$(echo $GITHUB_SHA | cut -c1-7)" build publish
         env:
           ORG_GRADLE_PROJECT_githubUser: x-access-token
           ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}

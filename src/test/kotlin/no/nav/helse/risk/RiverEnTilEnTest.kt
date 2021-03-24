@@ -131,7 +131,7 @@ internal class RiverEnTilEnTest {
     @AfterEach
     fun tearDown() {
         testConsumer.close()
-        bufferedRiver?.tearDown()
+        //bufferedRiver?.tearDown()
         bufferedRiver = null
         kafka.tearDown()
     }

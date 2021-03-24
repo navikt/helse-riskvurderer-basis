@@ -6,50 +6,75 @@ import kotlinx.serialization.json.JsonObject
 import no.nav.helse.crypto.JWKSetHolder
 
 data class Vurdering(
-    val score: Int,
-    val vekt: Int,
-    val begrunnelser: List<String>,
-    val begrunnelserSomAleneKreverManuellBehandling: List<String>,
+    @Deprecated("Bruk regeltreff i stedet") val score: Int,
+    @Deprecated("Bruk regeltreff i stedet") val vekt: Int,
+    @Deprecated("Bruk regeltreff i stedet") val begrunnelser: List<String>,
+    @Deprecated("Bruk regeltreff i stedet") val begrunnelserSomAleneKreverManuellBehandling: List<String>,
+    val regeltreff: List<Regeltreff>,
     val passerteSjekker: List<String>,
     val metadata: Map<String, String>
 )
 
 class VurderingBuilder {
-    private var score: Int = 0
-    private val begrunnelser = mutableListOf<String>()
     private val passerteSjekker = mutableListOf<String>()
-    private val begrunnelserSomAleneKreverManuellBehandling = mutableListOf<String>()
     private val metadata = mutableMapOf<String, String>()
-    fun begrunnelse(begrunnelse: String, scoreTillegg: Int) : VurderingBuilder {
-        begrunnelser += begrunnelse
-        score += scoreTillegg
+    private val regeltreff = mutableListOf<Regeltreff>()
+
+    fun regeltreff(treff: Regeltreff): VurderingBuilder {
+        regeltreff.add(treff)
         return this
     }
 
-    fun begrunnelseSomKreverManuellBehandling(begrunnelse: String) : VurderingBuilder {
-        begrunnelser += begrunnelse
-        begrunnelserSomAleneKreverManuellBehandling += begrunnelse
-        score += 10
-        return this
-    }
+    @Deprecated("Bruk regeltreff i stedet")
+    fun begrunnelse(begrunnelse: String, scoreTillegg: Int): VurderingBuilder =
+        regeltreff(
+            Regeltreff(
+                begrunnelse = begrunnelse,
+                score = scoreTillegg,
+                vekt = 10
+            )
+        )
 
-    fun passerteSjekk(beskrivelse: String) : VurderingBuilder {
+    @Deprecated("Bruk regeltreff i stedet")
+    fun begrunnelseSomKreverManuellBehandling(begrunnelse: String): VurderingBuilder =
+        regeltreff(
+            Regeltreff(
+                begrunnelse = begrunnelse,
+                score = 10,
+                vekt = 10,
+                kreverManuellBehandling = true
+            )
+        )
+
+    fun passerteSjekk(beskrivelse: String): VurderingBuilder {
         passerteSjekker += beskrivelse
         return this
     }
 
-    fun leggVedMetadata(key: String, value: String) : VurderingBuilder {
+    fun leggVedMetadata(key: String, value: String): VurderingBuilder {
         metadata[key] = value
         return this
     }
 
-    fun build(vekt: Int): Vurdering {
+    private fun bakoverkompatibel_begrunnelser(): List<String> =
+        regeltreff.map { it.begrunnelse }
+
+    private fun bakoverkompatibel_begrunnelserSomAleneKreverManuellBehandling(): List<String> =
+        regeltreff.filter { it.kreverManuellBehandling }.map { it.begrunnelse }
+
+    private fun bakoverkompatibel_score(): Int =
+        regeltreff.map { it.score }.sum()
+
+
+
+    fun build(vekt: Int = 10): Vurdering {
         if (vekt > 10) throw IllegalArgumentException("Vekt kan ikke være over 10")
         return Vurdering(
-            score = minOf(10, score),
+            score = minOf(10, bakoverkompatibel_score()),
             vekt = vekt,
-            begrunnelser = begrunnelser,
-            begrunnelserSomAleneKreverManuellBehandling = begrunnelserSomAleneKreverManuellBehandling,
+            begrunnelser = bakoverkompatibel_begrunnelser(),
+            begrunnelserSomAleneKreverManuellBehandling = bakoverkompatibel_begrunnelserSomAleneKreverManuellBehandling(),
+            regeltreff = regeltreff,
             passerteSjekker = passerteSjekker,
             metadata = metadata
         )
@@ -75,7 +100,8 @@ open class VurderingsApp(
     answerer = VurderingProducer(
         infotype = kafkaClientId,
         vurderer = vurderer,
-        decryptionJWKS = decryptionJWKS)::lagVurdering,
+        decryptionJWKS = decryptionJWKS
+    )::lagVurdering,
     windowTimeInSeconds = windowTimeInSeconds,
     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
     collectorRegistry = collectorRegistry,

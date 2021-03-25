@@ -25,11 +25,12 @@ internal class VurderingProducer(
             json.encodeToJsonElement(Vurderingsmelding.serializer(), Vurderingsmelding(
                 infotype = infotype,
                 vedtaksperiodeId = vedtaksperiodeId,
-                regeltreff = vurdering.regeltreff,
+                sjekkresultater = vurdering.sjekkresultat,
                 score = vurdering.score,
                 vekt = vurdering.vekt,
                 begrunnelser = vurdering.begrunnelser,
                 begrunnelserSomAleneKreverManuellBehandling = vurdering.begrunnelserSomAleneKreverManuellBehandling,
+                passerteSjekker = vurdering.passerteSjekker,
                 metadata = vurdering.metadata
             )).jsonObject
         } catch (ex: Exception) {

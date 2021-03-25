@@ -17,6 +17,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.TopicPartition
 import org.awaitility.Awaitility.await
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -24,7 +25,6 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @FlowPreview
@@ -57,6 +57,7 @@ class VurderingsAppTest {
                 val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
                 VurderingBuilder()
                     .begrunnelse("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.jsonPrimitive.content}", 6)
+                    .passerteSjekk("Ellers greit")
                     .leggVedMetadata("ekstraGreier", "12345")
                     .build(5)
             },
@@ -68,16 +69,27 @@ class VurderingsAppTest {
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
                 assertEquals(1, vurdering.begrunnelser.size)
                 assertEquals("$orgnr/verdi-1", vurdering.begrunnelser.first())
+                assertEquals(1, vurdering.passerteSjekker!!.size)
+                assertEquals("Ellers greit", vurdering.passerteSjekker!!.first())
                 assertTrue(vurdering.begrunnelserSomAleneKreverManuellBehandling!!.isEmpty())
-                vurdering.regeltreff!!.apply {
-                    assertEquals(1, size)
-                    first().apply {
-                        assertEquals("$orgnr/verdi-1", begrunnelse)
-                        assertEquals(6, score)
-                        assertEquals(10, vekt)
-                        assertFalse(kreverManuellBehandling)
-                    }
-                }
+                Assertions.assertEquals(
+                    listOf(
+                        Sjekkresultat(
+                            id = "1",
+                            begrunnelse = "$orgnr/verdi-1",
+                            score = 6,
+                            vekt = 10,
+                            kreverManuellBehandling = false
+                        ),
+                        Sjekkresultat(
+                            id = "2",
+                            begrunnelse = "Ellers greit",
+                            score = 0,
+                            vekt = 10,
+                            kreverManuellBehandling = false
+                        ),
+                    ), vurdering.sjekkresultater
+                )
                 assertEquals("12345", vurdering.metadata!!["ekstraGreier"])
             }
         )
@@ -104,7 +116,7 @@ class VurderingsAppTest {
                 assertEquals("showstopper", vurdering.begrunnelser.first())
                 assertEquals(1, vurdering.begrunnelserSomAleneKreverManuellBehandling!!.size)
                 assertEquals("showstopper", vurdering.begrunnelserSomAleneKreverManuellBehandling!!.first())
-                vurdering.regeltreff!!.apply {
+                vurdering.sjekkresultater!!.apply {
                     assertEquals(1, size)
                     first().apply {
                         assertEquals("showstopper", begrunnelse)

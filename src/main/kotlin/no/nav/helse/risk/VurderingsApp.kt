@@ -6,39 +6,66 @@ import kotlinx.serialization.json.JsonObject
 import no.nav.helse.crypto.JWKSetHolder
 
 data class Vurdering(
-    @Deprecated("Bruk regeltreff i stedet") val score: Int,
-    @Deprecated("Bruk regeltreff i stedet") val vekt: Int,
-    @Deprecated("Bruk regeltreff i stedet") val begrunnelser: List<String>,
-    @Deprecated("Bruk regeltreff i stedet") val begrunnelserSomAleneKreverManuellBehandling: List<String>,
-    val regeltreff: List<Regeltreff>,
-    val passerteSjekker: List<String>,
+    @Deprecated("Bruk sjekkresultat i stedet") val score: Int,
+    @Deprecated("Bruk sjekkresultat i stedet") val vekt: Int,
+    @Deprecated("Bruk sjekkresultat i stedet") val begrunnelser: List<String>,
+    @Deprecated("Bruk sjekkresultat i stedet") val begrunnelserSomAleneKreverManuellBehandling: List<String>,
+    val sjekkresultat: List<Sjekkresultat>,
+    @Deprecated("Bruk sjekkresultat(score=0) i stedet") val passerteSjekker: List<String>,
     val metadata: Map<String, String>
 )
 
 class VurderingBuilder {
-    private val passerteSjekker = mutableListOf<String>()
     private val metadata = mutableMapOf<String, String>()
-    private val regeltreff = mutableListOf<Regeltreff>()
+    private val sjekkresultater = mutableListOf<Sjekkresultat>()
+    private var sjekkIdCounter = 0
+    private fun nySjekkId(): String = (++sjekkIdCounter).toString()
 
-    fun regeltreff(treff: Regeltreff): VurderingBuilder {
-        regeltreff.add(treff)
+    fun sjekkresultat(treff: Sjekkresultat): VurderingBuilder {
+        sjekkresultater.add(treff)
         return this
     }
 
-    @Deprecated("Bruk regeltreff i stedet")
+    fun nySjekk(vekt: Int, id: String = nySjekkId(), kategorier: List<String> = emptyList()) = SjekkresultatBuilder(vekt, id, kategorier)
+    fun passertSjekk(vekt: Int, tekst: String, id: String = nySjekkId()) = nySjekk(vekt, id).passert(tekst)
+
+    inner class SjekkresultatBuilder internal constructor(val vekt: Int, val id: String, val kategorier: List<String> = emptyList()) {
+        private var finalized = false
+        fun passert(tekst: String) = resultat(tekst = tekst, score = 0, kreverManuellBehandling = false)
+        fun kreverManuellBehandling(tekst: String) = resultat(tekst = tekst, score = 10, kreverManuellBehandling = true)
+        fun resultat(tekst: String, score: Int, kreverManuellBehandling: Boolean = false, ytterligereKategorier: List<String> = emptyList()) {
+            if (finalized) throw IllegalStateException("Resultat er allerede generert")
+            sjekkresultat(
+                Sjekkresultat(
+                    id = id,
+                    begrunnelse = tekst,
+                    vekt = vekt,
+                    score = score,
+                    kreverManuellBehandling = kreverManuellBehandling,
+                    kategorier = (kategorier + ytterligereKategorier).toSet().toList()
+                )
+            )
+            finalized = true
+        }
+    }
+
+    @Deprecated("Bruk nySjekk() eller sjekkresultat() i stedet")
     fun begrunnelse(begrunnelse: String, scoreTillegg: Int): VurderingBuilder =
-        regeltreff(
-            Regeltreff(
+        sjekkresultat(
+            Sjekkresultat(
+                id = nySjekkId(),
                 begrunnelse = begrunnelse,
                 score = scoreTillegg,
-                vekt = 10
+                vekt = 10,
+                kreverManuellBehandling = false
             )
         )
 
-    @Deprecated("Bruk regeltreff i stedet")
+    @Deprecated("Bruk nySjekk() eller sjekkresultat() i stedet")
     fun begrunnelseSomKreverManuellBehandling(begrunnelse: String): VurderingBuilder =
-        regeltreff(
-            Regeltreff(
+        sjekkresultat(
+            Sjekkresultat(
+                id = nySjekkId(),
                 begrunnelse = begrunnelse,
                 score = 10,
                 vekt = 10,
@@ -46,8 +73,17 @@ class VurderingBuilder {
             )
         )
 
+    @Deprecated("Bruk nySjekk() eller sjekkresultat(score=0) i stedet")
     fun passerteSjekk(beskrivelse: String): VurderingBuilder {
-        passerteSjekker += beskrivelse
+        sjekkresultat(
+            Sjekkresultat(
+                id = nySjekkId(),
+                begrunnelse = beskrivelse,
+                score = 0,
+                vekt = 10,
+                kreverManuellBehandling = false
+            )
+        )
         return this
     }
 
@@ -57,14 +93,16 @@ class VurderingBuilder {
     }
 
     private fun bakoverkompatibel_begrunnelser(): List<String> =
-        regeltreff.map { it.begrunnelse }
+        sjekkresultater.filter { it.score > 0 }.map { it.begrunnelse }
 
     private fun bakoverkompatibel_begrunnelserSomAleneKreverManuellBehandling(): List<String> =
-        regeltreff.filter { it.kreverManuellBehandling }.map { it.begrunnelse }
+        sjekkresultater.filter { it.kreverManuellBehandling }.map { it.begrunnelse }
 
     private fun bakoverkompatibel_score(): Int =
-        regeltreff.map { it.score }.sum()
+        sjekkresultater.map { it.score }.sum()
 
+    private fun bakoverkompatibel_passerteSjekker(): List<String> =
+        sjekkresultater.filter { it.score == 0 }.map { it.begrunnelse }
 
 
     fun build(vekt: Int = 10): Vurdering {
@@ -74,8 +112,8 @@ class VurderingBuilder {
             vekt = vekt,
             begrunnelser = bakoverkompatibel_begrunnelser(),
             begrunnelserSomAleneKreverManuellBehandling = bakoverkompatibel_begrunnelserSomAleneKreverManuellBehandling(),
-            regeltreff = regeltreff,
-            passerteSjekker = passerteSjekker,
+            sjekkresultat = sjekkresultater,
+            passerteSjekker = bakoverkompatibel_passerteSjekker(),
             metadata = metadata
         )
     }

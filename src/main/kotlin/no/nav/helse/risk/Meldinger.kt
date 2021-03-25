@@ -95,7 +95,8 @@ fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
 
 
 @Serializable
-data class Regeltreff(
+data class Sjekkresultat(
+    val id: String,
     val begrunnelse: String,
     val score: Int,
     val vekt: Int,
@@ -108,15 +109,15 @@ data class Vurderingsmelding(
     val type: String = Meldingstype.vurdering.name,
     val infotype: String,
     val vedtaksperiodeId: String,
-    @Deprecated("Bruk regeltreff i stedet") val score: Int,
-    @Deprecated("Bruk regeltreff i stedet") val vekt: Int,
-    @Deprecated("Bruk regeltreff i stedet") val begrunnelser: List<String>,
-    @Deprecated("Bruk regeltreff i stedet") val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,
-    val regeltreff: List<Regeltreff>? = null, // TODO: nullable inntil alle tjenester er migrert
-    val passerteSjekker: List<String>? = null, // TODO: nullable inntil alle tjenester er migrert (READY?)
+    @Deprecated("Bruk sjekkresultater i stedet") val score: Int,
+    @Deprecated("Bruk sjekkresultater i stedet") val vekt: Int,
+    @Deprecated("Bruk sjekkresultater i stedet") val begrunnelser: List<String>,
+    @Deprecated("Bruk sjekkresultater i stedet") val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,
+    val sjekkresultater: List<Sjekkresultat>? = null, // TODO: nullable inntil alle tjenester er migrert
+    @Deprecated("Bruk sjekkresultater(score=0) i stedet") val passerteSjekker: List<String>? = null, // TODO: nullable inntil alle tjenester er migrert (READY?)
     val metadata: Map<String,String>? = null
 ) {
-    fun erGammeltFormat() = null == regeltreff
+    fun erGammeltFormat() = null == sjekkresultater
 }
 
 fun JsonObject.tilVurderingsmelding(): Vurderingsmelding =

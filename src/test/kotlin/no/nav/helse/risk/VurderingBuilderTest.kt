@@ -24,9 +24,9 @@ class VurderingBuilderTest {
     @Test
     fun etParBegrunnelser() {
         val vurdering = VurderingBuilder()
-        vurdering.nySjekk(vekt = 4, id="SJEKK-1").resultat("FEIL-1", score = 1)
-        vurdering.nySjekk(vekt = 6).resultat("noeErFeil", score = 2)
-        vurdering.nySjekk(vekt = 7).resultat("endaMerErFeil", score = 4)
+        vurdering.nySjekk(vekt = 4, id = "SJEKK-1") { resultat("FEIL-1", score = 1) }
+        vurdering.nySjekk(vekt = 6) { resultat("noeErFeil", score = 2) }
+        vurdering.nySjekk(vekt = 7) { resultat("endaMerErFeil", score = 4) }
         vurdering.build(5).apply {
             assertEquals(listOf("FEIL-1", "noeErFeil", "endaMerErFeil"), this.begrunnelser)
             assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
@@ -81,7 +81,7 @@ class VurderingBuilderTest {
     fun passerteSjekker() {
         val vurdering = VurderingBuilder()
         vurdering.passertSjekk(vekt = 4, "ser greit ut")
-        vurdering.nySjekk(vekt = 5).passert("np")
+        vurdering.nySjekk(vekt = 5) { passert("np") }
         vurdering.build(5).apply {
             assertEquals(emptyList<String>(), this.begrunnelser)
             assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
@@ -147,8 +147,12 @@ class VurderingBuilderTest {
     @Test
     fun begrunnelserSomAleneKreverManuellBehandling() {
         val vurdering = VurderingBuilder()
-        vurdering.nySjekk(vekt = 5, kategorier = listOf("Type-1")).resultat("noeErFeil", 1, ytterligereKategorier = listOf("Type-1B"))
-        vurdering.nySjekk(vekt = 5).kreverManuellBehandling("Noe er ALvorlig feil")
+        vurdering.nySjekk(vekt = 5, kategorier = listOf("Type-1")) {
+            resultat("noeErFeil", 1, ytterligereKategorier = listOf("Type-1B"))
+        }
+        vurdering.nySjekk(vekt = 5) {
+            kreverManuellBehandling("Noe er ALvorlig feil")
+        }
         vurdering.build(10).apply {
             assertEquals(listOf("noeErFeil", "Noe er ALvorlig feil"), this.begrunnelser)
             assertEquals(listOf("Noe er ALvorlig feil"), this.begrunnelserSomAleneKreverManuellBehandling)
@@ -177,5 +181,5 @@ class VurderingBuilderTest {
 
         }
     }
-
 }
+

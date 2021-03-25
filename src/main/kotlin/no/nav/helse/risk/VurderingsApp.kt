@@ -26,26 +26,44 @@ class VurderingBuilder {
         return this
     }
 
-    fun nySjekk(vekt: Int, id: String = nySjekkId(), kategorier: List<String> = emptyList()) = SjekkresultatBuilder(vekt, id, kategorier)
-    fun passertSjekk(vekt: Int, tekst: String, id: String = nySjekkId()) = nySjekk(vekt, id).passert(tekst)
+    fun nySjekk(
+        vekt: Int,
+        id: String = nySjekkId(),
+        kategorier: List<String> = emptyList(),
+        block: SjekkresultatBuilder.() -> Sjekkresultat
+    ) {
+        val builder = SjekkresultatBuilder(vekt, id, kategorier)
+        sjekkresultat(block.invoke(builder))
+    }
 
-    inner class SjekkresultatBuilder internal constructor(val vekt: Int, val id: String, val kategorier: List<String> = emptyList()) {
+    fun passertSjekk(vekt: Int, tekst: String, id: String = nySjekkId()) = nySjekk(vekt, id) {
+        passert(tekst)
+    }
+
+    inner class SjekkresultatBuilder internal constructor(
+        val vekt: Int,
+        val id: String,
+        val kategorier: List<String> = emptyList()
+    ) {
         private var finalized = false
+        internal fun isFinalized() = finalized
         fun passert(tekst: String) = resultat(tekst = tekst, score = 0, kreverManuellBehandling = false)
         fun kreverManuellBehandling(tekst: String) = resultat(tekst = tekst, score = 10, kreverManuellBehandling = true)
-        fun resultat(tekst: String, score: Int, kreverManuellBehandling: Boolean = false, ytterligereKategorier: List<String> = emptyList()) {
+        fun resultat(
+            tekst: String,
+            score: Int,
+            kreverManuellBehandling: Boolean = false,
+            ytterligereKategorier: List<String> = emptyList()
+        ): Sjekkresultat {
             if (finalized) throw IllegalStateException("Resultat er allerede generert")
-            sjekkresultat(
-                Sjekkresultat(
-                    id = id,
-                    begrunnelse = tekst,
-                    vekt = vekt,
-                    score = score,
-                    kreverManuellBehandling = kreverManuellBehandling,
-                    kategorier = (kategorier + ytterligereKategorier).toSet().toList()
-                )
-            )
-            finalized = true
+            return Sjekkresultat(
+                id = id,
+                begrunnelse = tekst,
+                vekt = vekt,
+                score = score,
+                kreverManuellBehandling = kreverManuellBehandling,
+                kategorier = (kategorier + ytterligereKategorier).toSet().toList()
+            ).also { finalized = true }
         }
     }
 

@@ -40,14 +40,18 @@ class VurderingBuilder {
         passert(tekst)
     }
 
+    fun ikkeAktuellSjekk(tekst: String, id: String = nySjekkId()) = nySjekk(0, id) {
+        ikkeAktuell(tekst)
+    }
+
     inner class SjekkresultatBuilder internal constructor(
         val vekt: Int,
         val id: String,
         val kategorier: List<String> = emptyList()
     ) {
         private var finalized = false
-        internal fun isFinalized() = finalized
         fun passert(tekst: String) = resultat(tekst = tekst, score = 0, kreverManuellBehandling = false)
+        fun ikkeAktuell(tekst: String) = passert(tekst).copy(vekt = 0)
         fun kreverManuellBehandling(tekst: String) = resultat(tekst = tekst, score = 10, kreverManuellBehandling = true)
         fun resultat(
             tekst: String,
@@ -120,7 +124,7 @@ class VurderingBuilder {
         sjekkresultater.map { it.score }.sum()
 
     private fun bakoverkompatibel_passerteSjekker(): List<String> =
-        sjekkresultater.filter { it.score == 0 }.map { it.begrunnelse }
+        sjekkresultater.filter { it.score == 0 && it.vekt != 0 }.map { it.begrunnelse }
 
 
     fun build(vekt: Int = 10): Vurdering {

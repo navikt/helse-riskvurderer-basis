@@ -78,10 +78,12 @@ class VurderingBuilderTest {
     }
 
     @Test
-    fun passerteSjekker() {
+    fun `to passerte sjekker og 2 ikke-aktuelle`() {
         val vurdering = VurderingBuilder()
         vurdering.passertSjekk(vekt = 4, "ser greit ut")
         vurdering.nySjekk(vekt = 5) { passert("np") }
+        vurdering.nySjekk(vekt = 10) { ikkeAktuell("Sjekk 3 ikke relevant") }
+        vurdering.ikkeAktuellSjekk("Sjekk 4 er ikke aktuell")
         vurdering.build(5).apply {
             assertEquals(emptyList<String>(), this.begrunnelser)
             assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
@@ -103,6 +105,20 @@ class VurderingBuilderTest {
                         begrunnelse = "np",
                         score = 0,
                         vekt = 5,
+                        kreverManuellBehandling = false
+                    ),
+                    Sjekkresultat(
+                        id = "3",
+                        begrunnelse = "Sjekk 3 ikke relevant",
+                        score = 0,
+                        vekt = 0,
+                        kreverManuellBehandling = false
+                    ),
+                    Sjekkresultat(
+                        id = "4",
+                        begrunnelse = "Sjekk 4 er ikke aktuell",
+                        score = 0,
+                        vekt = 0,
                         kreverManuellBehandling = false
                     ),
                 ), this.sjekkresultat

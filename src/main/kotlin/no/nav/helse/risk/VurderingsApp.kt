@@ -15,6 +15,7 @@ data class Vurdering(
     val metadata: Map<String, String>
 )
 
+
 class VurderingBuilder {
     private val metadata = mutableMapOf<String, String>()
     private val sjekkresultater = mutableListOf<Sjekkresultat>()
@@ -30,10 +31,10 @@ class VurderingBuilder {
         vekt: Int,
         id: String = nySjekkId(),
         kategorier: List<String> = emptyList(),
-        block: SjekkresultatBuilder.() -> Sjekkresultat
+        sjekk: SjekkresultatBuilder.() -> Sjekkresultat
     ) {
         val builder = SjekkresultatBuilder(vekt, id, kategorier)
-        sjekkresultat(block.invoke(builder))
+        sjekkresultat(sjekk.invoke(builder))
     }
 
     fun passertSjekk(vekt: Int, tekst: String, id: String = nySjekkId()) = nySjekk(vekt, id) {

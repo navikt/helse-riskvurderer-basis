@@ -197,5 +197,66 @@ class VurderingBuilderTest {
 
         }
     }
+
+
+    @Test
+    fun `sjekk delegert til funksjon`() {
+        fun sjekk(info: List<Int>): VurderingBuilder.SjekkresultatBuilder.() -> Sjekkresultat =
+            {
+                if (info.isEmpty())
+                    ikkeAktuell("Ingen data")
+                else if (info.size == 1)
+                    passert("Kun ett element")
+                else resultat("${info.size} elementer", score = info.size)
+            }
+
+        VurderingBuilder().apply {
+            nySjekk(vekt = 5, sjekk = sjekk(emptyList()))
+        }.build().apply {
+            assertEquals(
+                listOf(
+                    Sjekkresultat(
+                        id = "1",
+                        begrunnelse = "Ingen data",
+                        score = 0,
+                        vekt = 0,
+                        kreverManuellBehandling = false
+                    )
+                ), this.sjekkresultat
+            )
+        }
+
+        VurderingBuilder().apply {
+            nySjekk(vekt = 5, sjekk = sjekk(listOf(1)))
+        }.build().apply {
+            assertEquals(
+                listOf(
+                    Sjekkresultat(
+                        id = "1",
+                        begrunnelse = "Kun ett element",
+                        score = 0,
+                        vekt = 5,
+                        kreverManuellBehandling = false
+                    )
+                ), this.sjekkresultat
+            )
+        }
+
+        VurderingBuilder().apply {
+            nySjekk(vekt = 5, sjekk = sjekk(listOf(1, 2, 3)))
+        }.build().apply {
+            assertEquals(
+                listOf(
+                    Sjekkresultat(
+                        id = "1",
+                        begrunnelse = "3 elementer",
+                        score = 3,
+                        vekt = 5,
+                        kreverManuellBehandling = false
+                    )
+                ), this.sjekkresultat
+            )
+        }
+    }
 }
 

@@ -3,23 +3,8 @@ package no.nav.helse.risk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 class VurderingBuilderTest {
-
-    @Test
-    fun etParBegrunnelser_LEGACY() {
-        val vurdering = VurderingBuilder()
-        vurdering.begrunnelse("noeErFeil", 2)
-        vurdering.begrunnelse("endaMerErFeil", 5)
-        vurdering.build(5).apply {
-            assertEquals(listOf("noeErFeil", "endaMerErFeil"), this.begrunnelser)
-            assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
-            assertEquals(emptyList<String>(), passerteSjekker)
-            assertEquals(7, this.score)
-            assertEquals(5, this.vekt)
-        }
-    }
 
     @Test
     fun etParBegrunnelser() {
@@ -62,20 +47,6 @@ class VurderingBuilderTest {
         }
     }
 
-
-    @Test
-    fun passerteSjekker_LEGACY() {
-        val vurdering = VurderingBuilder()
-        vurdering.passerteSjekk("ser greit ut")
-        vurdering.passerteSjekk("np")
-        vurdering.build(5).apply {
-            assertEquals(emptyList<String>(), this.begrunnelser)
-            assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
-            assertEquals(listOf("ser greit ut", "np"), this.passerteSjekker)
-            assertEquals(0, this.score)
-            assertEquals(5, this.vekt)
-        }
-    }
 
     @Test
     fun `to passerte sjekker og 2 ikke-aktuelle`() {
@@ -123,40 +94,6 @@ class VurderingBuilderTest {
                     ),
                 ), this.sjekkresultat
             )
-        }
-    }
-
-
-    @Test
-    fun scoreBlirAldriOver10_LEGACY() {
-        val vurdering = VurderingBuilder()
-        vurdering.begrunnelse("noeErFeil", 8)
-        vurdering.begrunnelse("endaMerErFeil", 9)
-        vurdering.build(7).apply {
-            assertEquals(listOf("noeErFeil", "endaMerErFeil"), this.begrunnelser)
-            assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
-            assertEquals(10, this.score)
-            assertEquals(7, this.vekt)
-        }
-    }
-
-    @Test
-    fun vektOver10TillatesIkke_LEGACY() {
-        val vurdering = VurderingBuilder()
-        vurdering.begrunnelse("noeErFeil", 8)
-        assertThrows<IllegalArgumentException> { vurdering.build(11) }
-    }
-
-    @Test
-    fun begrunnelserSomAleneKreverManuellBehandling_LEGACY() {
-        val vurdering = VurderingBuilder()
-        vurdering.begrunnelse("noeErFeil", 1)
-        vurdering.begrunnelseSomKreverManuellBehandling("Noe er ALvorlig feil")
-        vurdering.build(10).apply {
-            assertEquals(listOf("noeErFeil", "Noe er ALvorlig feil"), this.begrunnelser)
-            assertEquals(listOf("Noe er ALvorlig feil"), this.begrunnelserSomAleneKreverManuellBehandling)
-            assertEquals(10, this.score)
-            assertEquals(10, this.vekt)
         }
     }
 

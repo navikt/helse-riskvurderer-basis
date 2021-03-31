@@ -73,10 +73,12 @@ internal class RiverEnTilEnTest {
     fun vurderer(infoListe: List<JsonObject>): Vurdering {
         require(infoListe.size == 1)
         val info = infoListe.first()
-        return VurderingBuilder()
-            .leggVedMetadata("hei", "sann")
-            .begrunnelse("derfor", info["nummer"]!!.jsonPrimitive.int)
-            .build(2)
+        return VurderingBuilder().apply {
+            leggVedMetadata("hei", "sann")
+            nySjekk(vekt = 5) {
+                resultat("derfor", info["nummer"]!!.jsonPrimitive.int)
+            }
+        }.build(2)
     }
 
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {

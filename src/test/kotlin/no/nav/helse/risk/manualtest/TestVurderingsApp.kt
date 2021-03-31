@@ -27,6 +27,7 @@ val orgnr = "123456789"
 
 @FlowPreview
 fun main() {
+    Sanity.setSkipSanityChecksForProduction()
     val producer = mockk<KafkaProducer<String, JsonObject>>()
     val consumer = mockk<KafkaConsumer<String, JsonObject>>()
 
@@ -62,10 +63,12 @@ fun main() {
         vurderer = { meldinger ->
             val riskNeed = meldinger.finnRiskNeed()!!
             val data = meldinger.finnOppslagsresultat("testdata")!!.jsonObject
-            VurderingBuilder()
-                .begrunnelse("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.jsonPrimitive.content}", 6)
-                .leggVedMetadata("ekstraGreier", "12345")
-                .build(5)
+            VurderingBuilder().apply {
+                nySjekk(vekt = 5) {
+                    resultat("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.jsonPrimitive.content}", 6)
+                }
+                leggVedMetadata("ekstraGreier", "12345")
+            }.build(5)
         },
         interessertI = listOf(
             Interesse.riskNeed(1),

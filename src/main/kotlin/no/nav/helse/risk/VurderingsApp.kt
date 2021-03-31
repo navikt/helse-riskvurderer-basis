@@ -72,44 +72,6 @@ class VurderingBuilder {
         }
     }
 
-    @Deprecated("Bruk nySjekk() eller sjekkresultat() i stedet")
-    fun begrunnelse(begrunnelse: String, scoreTillegg: Int): VurderingBuilder =
-        sjekkresultat(
-            Sjekkresultat(
-                id = nySjekkId(),
-                begrunnelse = begrunnelse,
-                score = scoreTillegg,
-                vekt = 10,
-                kreverManuellBehandling = false
-            )
-        )
-
-    @Deprecated("Bruk nySjekk() eller sjekkresultat() i stedet")
-    fun begrunnelseSomKreverManuellBehandling(begrunnelse: String): VurderingBuilder =
-        sjekkresultat(
-            Sjekkresultat(
-                id = nySjekkId(),
-                begrunnelse = begrunnelse,
-                score = 10,
-                vekt = 10,
-                kreverManuellBehandling = true
-            )
-        )
-
-    @Deprecated("Bruk nySjekk() eller sjekkresultat(score=0) i stedet")
-    fun passerteSjekk(beskrivelse: String): VurderingBuilder {
-        sjekkresultat(
-            Sjekkresultat(
-                id = nySjekkId(),
-                begrunnelse = beskrivelse,
-                score = 0,
-                vekt = 10,
-                kreverManuellBehandling = false
-            )
-        )
-        return this
-    }
-
     fun leggVedMetadata(key: String, value: String): VurderingBuilder {
         metadata[key] = value
         return this

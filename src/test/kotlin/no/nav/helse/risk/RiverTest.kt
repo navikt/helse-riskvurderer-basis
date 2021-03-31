@@ -74,9 +74,11 @@ internal class RiverTest {
     }
 
     fun vurderer(info: List<JsonObject>): Vurdering {
-        return VurderingBuilder()
-            .begrunnelse("derfor", info.map { it["data"]!!.jsonObject["nummer"]!!.jsonPrimitive.int }.sum())
-            .build(2)
+        return VurderingBuilder().apply {
+            nySjekk(vekt = 5) {
+                resultat("derfor", info.map { it["data"]!!.jsonObject["nummer"]!!.jsonPrimitive.int }.sum())
+            }
+        }.build(2)
     }
 
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {

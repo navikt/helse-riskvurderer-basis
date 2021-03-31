@@ -201,10 +201,12 @@ class VurderingsAppIkkePaakrevdHvisTest {
                 } else {
                     meldinger.finnOppslagsresultat("ekstrainfo")?.jsonObject ?: buildJsonObject { }
                 }
-                VurderingBuilder()
-                    .begrunnelse("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.jsonPrimitive.content}", 6)
-                    .leggVedMetadata("ekstrainfo", ekstrainfo.toString())
-                    .build(5)
+                VurderingBuilder().apply {
+                    nySjekk(vekt = 5) {
+                        resultat("${riskNeed.organisasjonsnummer}/${data["felt-1"]!!.jsonPrimitive.content}", 6)
+                    }
+                    leggVedMetadata("ekstrainfo", ekstrainfo.toString())
+                }.build(5)
             },
             innkommendeMeldinger = innkommendeMeldinger,
             assertOnProducedMessages = assertOnProducedMessages,

@@ -111,10 +111,10 @@ data class Vurderingsmelding(
     val vedtaksperiodeId: String,
     @Deprecated("Bruk sjekkresultater i stedet") val score: Int,
     @Deprecated("Bruk sjekkresultater i stedet") val vekt: Int,
-    @Deprecated("Bruk sjekkresultater i stedet") val begrunnelser: List<String>,
-    @Deprecated("Bruk sjekkresultater i stedet") val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,
+    val begrunnelser: List<String>, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
+    val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,  // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val sjekkresultater: List<Sjekkresultat>? = null, // TODO: nullable inntil alle tjenester er migrert
-    @Deprecated("Bruk sjekkresultater(score=0) i stedet") val passerteSjekker: List<String>? = null, // TODO: nullable inntil alle tjenester er migrert (READY?)
+    val passerteSjekker: List<String>? = null, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val metadata: Map<String,String>? = null
 ) {
     fun erGammeltFormat() = null == sjekkresultater

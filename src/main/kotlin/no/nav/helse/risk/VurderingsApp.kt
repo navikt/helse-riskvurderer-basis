@@ -8,10 +8,10 @@ import no.nav.helse.crypto.JWKSetHolder
 data class Vurdering(
     @Deprecated("Bruk sjekkresultat i stedet") val score: Int,
     @Deprecated("Bruk sjekkresultat i stedet") val vekt: Int,
-    @Deprecated("Bruk sjekkresultat i stedet") val begrunnelser: List<String>,
-    @Deprecated("Bruk sjekkresultat i stedet") val begrunnelserSomAleneKreverManuellBehandling: List<String>,
+    val begrunnelser: List<String>, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
+    val begrunnelserSomAleneKreverManuellBehandling: List<String>, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val sjekkresultat: List<Sjekkresultat>,
-    @Deprecated("Bruk sjekkresultat(score=0) i stedet") val passerteSjekker: List<String>,
+    val passerteSjekker: List<String>, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val metadata: Map<String, String>
 )
 

@@ -6,6 +6,7 @@ import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.JWKSet
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Counter
+import io.prometheus.client.Summary
 import kotlinx.serialization.KSerializer
 import no.nav.helse.crypto.createRandomJWKAES
 import no.nav.helse.crypto.decryptJWE
@@ -44,55 +45,71 @@ class InMemoryLookupCache<RET>(
 
     fun <P1> cachedLookup(function: (P1) -> RET?, param1: P1): RET? =
         requestParams(function, param1).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timed { function(param1) })
         }
 
     fun <P1, P2> cachedLookup(function: (P1, P2) -> RET?, param1: P1, param2: P2): RET? =
         requestParams(function, param1, param2).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timed { function(param1, param2) })
         }
 
     fun <P1, P2, P3> cachedLookup(function: (P1, P2, P3) -> RET?, param1: P1, param2: P2, param3: P3): RET? =
         requestParams(function, param1, param2, param3).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timed { function(param1, param2, param3) })
         }
 
     fun <P1, P2, P3, P4> cachedLookup(function: (P1, P2, P3, P4) -> RET?, param1: P1, param2: P2, param3: P3, param4: P4): RET? =
         requestParams(function, param1, param2, param3, param4).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3, param4))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timed { function(param1, param2, param3, param4) })
         }
 
     fun <P1, P2, P3, P4, P5> cachedLookup(function: (P1, P2, P3, P4, P5) -> RET?, param1: P1, param2: P2, param3: P3, param4: P4, param5: P5): RET? =
         requestParams(function, param1, param2, param3, param4, param5).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3, param4, param5))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timed { function(param1, param2, param3, param4, param5) })
         }
 
 
     // SUSPEND-VERSIONS:
     suspend fun <P1> cachedLookup(function: suspend (P1) -> RET?, param1: P1): RET? =
         requestParams(function, param1).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timedSuspend { function(param1) })
         }
 
     suspend fun <P1, P2> cachedLookup(function: suspend (P1, P2) -> RET?, param1: P1, param2: P2): RET? =
         requestParams(function, param1, param2).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timedSuspend { function(param1, param2) })
         }
 
     suspend fun <P1, P2, P3> cachedLookup(function: suspend (P1, P2, P3) -> RET?, param1: P1, param2: P2, param3: P3): RET? =
         requestParams(function, param1, param2, param3).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timedSuspend { function(param1, param2, param3) })
         }
 
     suspend fun <P1, P2, P3, P4> cachedLookup(function: suspend (P1, P2, P3, P4) -> RET?, param1: P1, param2: P2, param3: P3, param4: P4): RET? =
         requestParams(function, param1, param2, param3, param4).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3, param4))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timedSuspend { function(param1, param2, param3, param4) })
         }
 
     suspend fun <P1, P2, P3, P4, P5> cachedLookup(function: suspend (P1, P2, P3, P4, P5) -> RET?, param1: P1, param2: P2, param3: P3, param4: P4, param5: P5): RET? =
         requestParams(function, param1, param2, param3, param4, param5).let { requestParams ->
-            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: function(param1, param2, param3, param4, param5))
+            cacheIfNotNull(requestParams, cachedResult(requestParams) ?: timedSuspend { function(param1, param2, param3, param4, param5) })
         }
+
+    private suspend fun <T> timedSuspend(block: suspend () -> T) : T {
+        val start = System.currentTimeMillis()
+        return block().also {
+            val millis = System.currentTimeMillis() - start
+            metrics.millisSpentOnUncachedCall(millis)
+        }
+    }
+
+    private fun <T> timed(block: () -> T) : T {
+        val start = System.currentTimeMillis()
+        return block().also {
+            val millis = System.currentTimeMillis() - start
+            metrics.millisSpentOnUncachedCall(millis)
+        }
+    }
 
     private fun requestParams(vararg params:Any?) : RequestInfo {
         return RequestInfo(params = params.map { "$it" })
@@ -157,9 +174,19 @@ class LookupCacheMetrics(collectorRegistry: CollectorRegistry) {
         .labelNames("result")
         .register(collectorRegistry)
 
+    private val milliesUsedForUncachedCall = Summary
+        .build("risk_lookup_cache_uncached_millis_summary",
+            "Millisekunder brukt for ikke-cachede kall")
+        .register(collectorRegistry)
+
     fun usedCache() { cacheRequestCounter.labels("used_cache").inc() }
     fun notInCache() { cacheRequestCounter.labels("not_in_cache").inc() }
     fun errorUsingCache() { cacheRequestCounter.labels("error").inc() }
+
+    fun millisSpentOnUncachedCall(ms: Long) {
+        milliesUsedForUncachedCall.observe(ms.toDouble())
+    }
+
 }
 
 private fun sha256Bytes(data:String): ByteArray {

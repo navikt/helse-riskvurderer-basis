@@ -98,6 +98,7 @@ fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
 data class Sjekkresultat(
     val id: String,
     val begrunnelse: String,
+    val variabler: List<String> = emptyList(),
     val score: Int,
     val vekt: Int,
     val kreverManuellBehandling: Boolean = false,

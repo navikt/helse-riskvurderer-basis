@@ -54,8 +54,18 @@ class VurderingBuilder {
         fun passert(tekst: String) = resultat(tekst = tekst, score = 0, kreverManuellBehandling = false)
         fun ikkeAktuell(tekst: String) = passert(tekst).copy(vekt = 0)
         fun kreverManuellBehandling(tekst: String) = resultat(tekst = tekst, score = 10, kreverManuellBehandling = true)
+
+        inner class TekstMedVariabler(
+            val tekst: String,
+            val vars: List<Any>
+        ) {
+            override fun toString(): String = tekst.format(*vars.toTypedArray())
+        }
+
+        fun tekst(tekst: String, vararg vars: Any) = TekstMedVariabler(tekst = tekst, vars = vars.toList())
+
         fun resultat(
-            tekst: String,
+            tekst: TekstMedVariabler,
             score: Int,
             kreverManuellBehandling: Boolean = false,
             ytterligereKategorier: List<String> = emptyList()
@@ -63,13 +73,25 @@ class VurderingBuilder {
             if (finalized) throw IllegalStateException("Resultat er allerede generert")
             return Sjekkresultat(
                 id = id,
-                begrunnelse = tekst,
+                begrunnelse = tekst.toString(),
+                variabler = tekst.vars.map { it.toString() },
                 vekt = vekt,
                 score = score,
                 kreverManuellBehandling = kreverManuellBehandling,
                 kategorier = (kategorier + ytterligereKategorier).toSet().toList()
             ).also { finalized = true }
         }
+
+        fun resultat(
+            tekst: String,
+            score: Int,
+            kreverManuellBehandling: Boolean = false,
+            ytterligereKategorier: List<String> = emptyList()
+        ): Sjekkresultat = resultat(
+            tekst = tekst(tekst),
+            score = score,
+            kreverManuellBehandling = kreverManuellBehandling,
+            ytterligereKategorier = ytterligereKategorier)
     }
 
     fun leggVedMetadata(key: String, value: String): VurderingBuilder {

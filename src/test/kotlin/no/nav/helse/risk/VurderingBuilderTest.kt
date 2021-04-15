@@ -6,6 +6,35 @@ import org.junit.jupiter.api.Test
 
 class VurderingBuilderTest {
 
+
+    @Test
+    fun variabler() {
+        val vurdering = VurderingBuilder()
+        vurdering.nySjekk(vekt = 4, id = "SJEKK-1") {
+            resultat(
+                tekst = tekst("To forskjellige verdier (%d og %d)", 3000, 4),
+                score = 1
+            )
+        }
+        vurdering.build().apply {
+            assertEquals(listOf("To forskjellige verdier (3000 og 4)"), this.begrunnelser)
+            assertEquals(
+                listOf(
+                    Sjekkresultat(
+                        id = "SJEKK-1",
+                        begrunnelse = "To forskjellige verdier (3000 og 4)",
+                        variabler = listOf("3000", "4"),
+                        score = 1,
+                        vekt = 4,
+                        kreverManuellBehandling = false
+                    )
+                ), this.sjekkresultat
+            )
+
+        }
+        println(vurdering.build())
+    }
+
     @Test
     fun etParBegrunnelser() {
         val vurdering = VurderingBuilder()

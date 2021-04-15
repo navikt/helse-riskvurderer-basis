@@ -117,7 +117,17 @@ class InteresseTest {
                 score = 10,
                 vekt = 5,
                 begrunnelser = listOf("a", "b"),
-                begrunnelserSomAleneKreverManuellBehandling = listOf("a")
+                begrunnelserSomAleneKreverManuellBehandling = listOf("a"),
+                sjekkresultater = listOf(
+                    Sjekkresultat(
+                        id = "SJEKK-1",
+                        begrunnelse = "noko",
+                        variabler = listOf("1000"),
+                        score = 1,
+                        vekt = 4,
+                        kreverManuellBehandling = false
+                    )
+                )
             )
         ).jsonObject
 

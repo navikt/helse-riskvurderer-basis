@@ -114,12 +114,10 @@ data class Vurderingsmelding(
     @Deprecated("Bruk sjekkresultater i stedet") val vekt: Int,
     val begrunnelser: List<String>, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,  // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
-    val sjekkresultater: List<Sjekkresultat>? = null, // TODO: nullable inntil alle tjenester er migrert
+    val sjekkresultater: List<Sjekkresultat>,
     val passerteSjekker: List<String>? = null, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val metadata: Map<String,String>? = null
-) {
-    fun erGammeltFormat() = null == sjekkresultater
-}
+)
 
 fun JsonObject.tilVurderingsmelding(): Vurderingsmelding =
     jsonFlexible.decodeFromJsonElement(Vurderingsmelding.serializer(), this)

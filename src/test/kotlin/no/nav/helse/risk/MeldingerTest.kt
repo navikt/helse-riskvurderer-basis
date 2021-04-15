@@ -147,12 +147,13 @@ class MeldingerTest {
             put("vedtaksperiodeId", UUID.randomUUID().toString())
             put("score", 6)
             put("vekt", 7)
+            put("sjekkresultater", buildJsonArray {  })
             put("begrunnelser", buildJsonArray { add("something"); add("showstopper") })
             put("begrunnelserSomAleneKreverManuellBehandling", buildJsonArray { add("showstopper") })
         }
         val vurderingsmelding = melding.tilVurderingsmelding()
         vurderingsmelding.apply {
-            assertTrue(this.erGammeltFormat())
+            //assertTrue(this.erGammeltFormat())
             assertEquals("whatever", this.infotype)
             assertEquals(listOf("something", "showstopper"), this.begrunnelser)
             assertEquals(listOf("showstopper"), this.begrunnelserSomAleneKreverManuellBehandling)
@@ -167,6 +168,7 @@ class MeldingerTest {
             put("vedtaksperiodeId", UUID.randomUUID().toString())
             put("score", 6)
             put("vekt", 7)
+            put("sjekkresultater", buildJsonArray {  })
             put("begrunnelser", buildJsonArray { add("something"); add("showstopper") })
         }
         val vurderingsmelding = melding.tilVurderingsmelding()

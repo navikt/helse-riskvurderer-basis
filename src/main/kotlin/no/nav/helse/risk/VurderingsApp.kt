@@ -59,22 +59,26 @@ class VurderingBuilder {
             val tekst: String,
             val vars: List<Any>
         ) {
-            override fun toString(): String = tekst.format(*vars.toTypedArray())
+            override fun toString(): String = tekst
+                .replace("%", "%%")
+                .replace("{}", "%s")
+                .format(*vars.toTypedArray())
         }
 
         fun tekst(tekst: String, vararg vars: Any) = TekstMedVariabler(tekst = tekst, vars = vars.toList())
 
         fun resultat(
-            tekst: TekstMedVariabler,
+            tekst: String,
             score: Int,
             kreverManuellBehandling: Boolean = false,
-            ytterligereKategorier: List<String> = emptyList()
+            ytterligereKategorier: List<String> = emptyList(),
+            variabler: List<String> = emptyList()
         ): Sjekkresultat {
             if (finalized) throw IllegalStateException("Resultat er allerede generert")
             return Sjekkresultat(
                 id = id,
-                begrunnelse = tekst.toString(),
-                variabler = tekst.vars.map { it.toString() },
+                begrunnelse = tekst,
+                variabler = variabler,
                 vekt = vekt,
                 score = score,
                 kreverManuellBehandling = kreverManuellBehandling,
@@ -83,12 +87,13 @@ class VurderingBuilder {
         }
 
         fun resultat(
-            tekst: String,
+            tekst: TekstMedVariabler,
             score: Int,
             kreverManuellBehandling: Boolean = false,
             ytterligereKategorier: List<String> = emptyList()
         ): Sjekkresultat = resultat(
-            tekst = tekst(tekst),
+            tekst = tekst.toString(),
+            variabler = tekst.vars.map { it.toString() },
             score = score,
             kreverManuellBehandling = kreverManuellBehandling,
             ytterligereKategorier = ytterligereKategorier)

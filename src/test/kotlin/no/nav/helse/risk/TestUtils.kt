@@ -5,6 +5,9 @@ import ch.qos.logback.core.AppenderBase
 import ch.qos.logback.core.ContextBase
 import org.slf4j.Logger
 
+fun Sjekkresultat.toJsonElement() =
+    JsonRisk.encodeToJsonElement(Sjekkresultat.serializer(), this)
+
 internal class LogTapper(logger: Logger) {
     val logbackLogger = logger as ch.qos.logback.classic.Logger
     val logEvents = mutableListOf<ILoggingEvent>()

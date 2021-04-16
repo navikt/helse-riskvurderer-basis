@@ -45,8 +45,6 @@ class VurderingBuilderTest {
             assertEquals(listOf("FEIL-1", "noeErFeil", "endaMerErFeil"), this.begrunnelser)
             assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
             assertEquals(emptyList<String>(), passerteSjekker)
-            assertEquals(7, this.score)
-            assertEquals(5, this.vekt)
 
             assertEquals(
                 listOf(
@@ -88,8 +86,6 @@ class VurderingBuilderTest {
             assertEquals(emptyList<String>(), this.begrunnelser)
             assertTrue(this.begrunnelserSomAleneKreverManuellBehandling.isEmpty())
             assertEquals(listOf("ser greit ut", "np"), this.passerteSjekker)
-            assertEquals(0, this.score)
-            assertEquals(5, this.vekt)
 
             assertEquals(
                 listOf(
@@ -138,8 +134,6 @@ class VurderingBuilderTest {
         vurdering.build(10).apply {
             assertEquals(listOf("noeErFeil", "Noe er ALvorlig feil"), this.begrunnelser)
             assertEquals(listOf("Noe er ALvorlig feil"), this.begrunnelserSomAleneKreverManuellBehandling)
-            assertEquals(10, this.score)
-            assertEquals(10, this.vekt)
 
             assertEquals(
                 listOf(

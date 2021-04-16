@@ -2,7 +2,10 @@ package no.nav.helse.risk
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 import no.nav.helse.privacy.IdMasker.Companion.hashingsalt
 import no.nav.helse.privacy.sha1
 import org.junit.jupiter.api.Test
@@ -147,35 +150,28 @@ class MeldingerTest {
             put("vedtaksperiodeId", UUID.randomUUID().toString())
             put("score", 6)
             put("vekt", 7)
-            put("sjekkresultater", buildJsonArray {  })
-            put("begrunnelser", buildJsonArray { add("something"); add("showstopper") })
-            put("begrunnelserSomAleneKreverManuellBehandling", buildJsonArray { add("showstopper") })
+            put("sjekkresultater", buildJsonArray {
+                add(Sjekkresultat(
+                    id = "1",
+                    begrunnelse = "something",
+                    score = 1,
+                    vekt = 1
+                ).toJsonElement())
+                add(Sjekkresultat(
+                    id = "1",
+                    begrunnelse = "showstopper",
+                    score = 1,
+                    vekt = 1,
+                    kreverManuellBehandling = true
+                ).toJsonElement())
+            })
         }
         val vurderingsmelding = melding.tilVurderingsmelding()
         vurderingsmelding.apply {
             //assertTrue(this.erGammeltFormat())
             assertEquals("whatever", this.infotype)
-            assertEquals(listOf("something", "showstopper"), this.begrunnelser)
-            assertEquals(listOf("showstopper"), this.begrunnelserSomAleneKreverManuellBehandling)
-        }
-    }
-
-    @Test
-    fun `vurderingsmelding kan deSerialiseres uten begrunnelserSomAleneKreverManuellBehandling`() {
-        val melding = buildJsonObject {
-            put("type", "vurdering")
-            put("infotype", "whatever")
-            put("vedtaksperiodeId", UUID.randomUUID().toString())
-            put("score", 6)
-            put("vekt", 7)
-            put("sjekkresultater", buildJsonArray {  })
-            put("begrunnelser", buildJsonArray { add("something"); add("showstopper") })
-        }
-        val vurderingsmelding = melding.tilVurderingsmelding()
-        vurderingsmelding.apply {
-            assertEquals("whatever", this.infotype)
-            assertEquals(listOf("something", "showstopper"), this.begrunnelser)
-            assertNull(this.begrunnelserSomAleneKreverManuellBehandling)
+            assertEquals(listOf("something", "showstopper"), this.begrunnelser())
+            assertEquals(listOf("showstopper"), this.begrunnelserSomAleneKreverManuellBehandling())
         }
     }
 

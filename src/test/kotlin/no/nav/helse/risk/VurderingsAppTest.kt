@@ -65,11 +65,11 @@ class VurderingsAppTest {
                 assertEquals(1, producedMessages.size)
                 val vurdering = json.decodeFromJsonElement(Vurderingsmelding.serializer(), producedMessages.first())
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
-                assertEquals(1, vurdering.begrunnelser.size)
-                assertEquals("$orgnr/verdi-1", vurdering.begrunnelser.first())
-                assertEquals(1, vurdering.passerteSjekker!!.size)
-                assertEquals("Ellers greit", vurdering.passerteSjekker!!.first())
-                assertTrue(vurdering.begrunnelserSomAleneKreverManuellBehandling!!.isEmpty())
+                assertEquals(1, vurdering.begrunnelser().size)
+                assertEquals("$orgnr/verdi-1", vurdering.begrunnelser().first())
+                assertEquals(1, vurdering.passerteSjekker().size)
+                assertEquals("Ellers greit", vurdering.passerteSjekker().first())
+                assertTrue(vurdering.begrunnelserSomAleneKreverManuellBehandling().isEmpty())
                 Assertions.assertEquals(
                     listOf(
                         Sjekkresultat(
@@ -107,11 +107,11 @@ class VurderingsAppTest {
                 assertEquals(1, producedMessages.size)
                 val vurdering = json.decodeFromJsonElement(Vurderingsmelding.serializer(), producedMessages.first())
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
-                assertEquals(1, vurdering.begrunnelser.size)
-                assertEquals("showstopper", vurdering.begrunnelser.first())
-                assertEquals(1, vurdering.begrunnelserSomAleneKreverManuellBehandling!!.size)
-                assertEquals("showstopper", vurdering.begrunnelserSomAleneKreverManuellBehandling!!.first())
-                vurdering.sjekkresultater!!.apply {
+                assertEquals(1, vurdering.begrunnelser().size)
+                assertEquals("showstopper", vurdering.begrunnelser().first())
+                assertEquals(1, vurdering.begrunnelserSomAleneKreverManuellBehandling().size)
+                assertEquals("showstopper", vurdering.begrunnelserSomAleneKreverManuellBehandling().first())
+                vurdering.sjekkresultater.apply {
                     assertEquals(1, size)
                     first().apply {
                         assertEquals("showstopper", begrunnelse)

@@ -110,14 +110,22 @@ data class Vurderingsmelding(
     val type: String = Meldingstype.vurdering.name,
     val infotype: String,
     val vedtaksperiodeId: String,
-    @Deprecated("Bruk sjekkresultater i stedet") val score: Int,
-    @Deprecated("Bruk sjekkresultater i stedet") val vekt: Int,
-    val begrunnelser: List<String>, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
-    val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,  // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
+    @Deprecated("Bruk sjekkresultater i stedet") val score: Int? = null,
+    @Deprecated("Bruk sjekkresultater i stedet") val vekt: Int? = null,
+    @Deprecated("Bruk sjekkresultater i stedet") val begrunnelser: List<String>? = null, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
+    @Deprecated("Bruk sjekkresultater i stedet") val begrunnelserSomAleneKreverManuellBehandling: List<String>? = null,  // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val sjekkresultater: List<Sjekkresultat>,
-    val passerteSjekker: List<String>? = null, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
+    @Deprecated("Bruk sjekkresultater i stedet") val passerteSjekker: List<String>? = null, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val metadata: Map<String,String>? = null
-)
+) {
+    fun begrunnelser(): List<String> =
+        sjekkresultater.filter { it.score > 0 }.map { it.begrunnelse }
+    fun begrunnelserSomAleneKreverManuellBehandling(): List<String> =
+        sjekkresultater.filter { it.kreverManuellBehandling }.map { it.begrunnelse }
+    fun passerteSjekker(): List<String> =
+        sjekkresultater.filter { it.score == 0 && it.vekt != 0 }.map { it.begrunnelse }
+
+}
 
 fun JsonObject.tilVurderingsmelding(): Vurderingsmelding =
     jsonFlexible.decodeFromJsonElement(Vurderingsmelding.serializer(), this)

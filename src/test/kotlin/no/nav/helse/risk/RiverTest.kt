@@ -127,9 +127,7 @@ internal class RiverTest {
             assertNotNull(this)
             assertEquals("vurdering", this!!.type)
             assertEquals("testapp", this.infotype)
-            assertEquals(1 + 2 + 3 + 1, this.score)
-            assertEquals(2, this.vekt)
-            assertEquals(listOf("derfor"), this.begrunnelser)
+            assertEquals(listOf("derfor"), this.begrunnelser())
         }
     }
 

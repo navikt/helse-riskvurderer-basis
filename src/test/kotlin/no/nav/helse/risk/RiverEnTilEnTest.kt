@@ -123,9 +123,7 @@ internal class RiverEnTilEnTest {
             assertNotNull(this)
             assertEquals("vurdering", this!!.type)
             assertEquals("testapp", this.infotype)
-            assertEquals(3, this.score)
-            assertEquals(2, this.vekt)
-            assertEquals(listOf("derfor"), this.begrunnelser)
+            assertEquals(listOf("derfor"), this.begrunnelser())
             assertEquals("sann", this.metadata!!["hei"])
         }
     }

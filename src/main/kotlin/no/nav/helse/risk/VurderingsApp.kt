@@ -111,7 +111,7 @@ class VurderingBuilder {
         sjekkresultater.filter { it.kreverManuellBehandling }.map { it.begrunnelse }
 
     private fun bakoverkompatibel_score(): Int =
-        sjekkresultater.map { it.score }.sum()
+        minOf(10, sjekkresultater.map { it.score }.sum())
 
     private fun bakoverkompatibel_passerteSjekker(): List<String> =
         sjekkresultater.filter { it.score == 0 && it.vekt != 0 }.map { it.begrunnelse }
@@ -120,7 +120,7 @@ class VurderingBuilder {
     fun build(vekt: Int = 10): Vurdering {
         if (vekt > 10) throw IllegalArgumentException("Vekt kan ikke være over 10")
         return Vurdering(
-            score = minOf(10, bakoverkompatibel_score()),
+            score = bakoverkompatibel_score(),
             vekt = vekt,
             begrunnelser = bakoverkompatibel_begrunnelser(),
             begrunnelserSomAleneKreverManuellBehandling = bakoverkompatibel_begrunnelserSomAleneKreverManuellBehandling(),

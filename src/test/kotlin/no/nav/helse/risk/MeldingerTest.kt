@@ -30,10 +30,6 @@ class MeldingerTest {
         put("fnr", "01010100000")
         put("behovOpprettet", LocalDateTime.now().toString())
         put("iterasjon", 1)
-        put("foersteFravaersdag", "2020-01-01")
-        put("sykepengegrunnlag", 50000.0)
-        put("periodeFom", "2020-02-01")
-        put("periodeTom", "2020-02-28")
     }
     val testoppslag = buildJsonObject {
         put("type", "oppslagsresultat")
@@ -184,10 +180,6 @@ class MeldingerTest {
             put("fnr", "01010100000")
             put("behovOpprettet", LocalDateTime.now().toString())
             put("iterasjon", 1)
-            put("foersteFravaersdag", "2020-01-01")
-            put("sykepengegrunnlag", 50000.0)
-            put("periodeFom", "2020-02-01")
-            put("periodeTom", "2020-02-28")
             put("fjlksdfdaslkfj", "sdfdskfdsj")
         }.jsonObject.tilRiskNeed().apply {
             assertEquals("1", this.vedtaksperiodeId)

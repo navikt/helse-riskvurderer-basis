@@ -209,10 +209,6 @@ class RiverAppTest {
             put("organisasjonsnummer", orgnr)
             put("vedtaksperiodeId", vedtaksperiodeid)
             put("behovOpprettet", behovOpprettet.toString())
-            put("foersteFravaersdag", "2020-01-01")
-            put("sykepengegrunnlag", 50000.0)
-            put("periodeFom", "2020-02-01")
-            put("periodeTom", "2020-02-28")
         },
         buildJsonObject {
             put("type", "oppslagsresultat")

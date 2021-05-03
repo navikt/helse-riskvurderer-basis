@@ -28,7 +28,6 @@ group = "no.nav.helse.risk"
 version = properties["version"].let { if (it == null || it == "unspecified") "local-build" else it }
 
 repositories {
-    jcenter()
     mavenCentral()
     maven("http://packages.confluent.io/maven/")
 }

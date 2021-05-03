@@ -92,7 +92,7 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
     }
 }
 
-internal fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Interesse>) : Boolean =
+fun isCompleteMessageSetAccordingToInterests(msgs: List<JsonObject>, interesser: List<Interesse>) : Boolean =
         interesser.fold(true, { acc, interesse ->
             acc && interesse.tilfredsstillesAv(msgs)
         })

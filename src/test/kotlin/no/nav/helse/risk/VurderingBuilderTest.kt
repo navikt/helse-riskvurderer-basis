@@ -32,7 +32,31 @@ class VurderingBuilderTest {
             )
 
         }
-        println(vurdering.build())
+    }
+
+    @Test
+    fun `variabler for passerte sjekker`() {
+        val vurdering = VurderingBuilder()
+        vurdering.nySjekk(vekt = 4, id = "SJEKK-1") {
+            passert(
+                tekst = tekst("Helt grei verdi: {}.", 3000),
+            )
+        }
+        vurdering.build().apply {
+            assertEquals(listOf("Helt grei verdi: 3000."), this.passerteSjekker)
+            assertEquals(
+                listOf(
+                    Sjekkresultat(
+                        id = "SJEKK-1",
+                        begrunnelse = "Helt grei verdi: 3000.",
+                        variabler = listOf("3000"),
+                        score = 0,
+                        vekt = 4,
+                        kreverManuellBehandling = false
+                    )
+                ), this.sjekkresultat
+            )
+        }
     }
 
     @Test

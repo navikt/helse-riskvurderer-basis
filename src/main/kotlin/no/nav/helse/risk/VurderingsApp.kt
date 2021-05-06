@@ -52,6 +52,7 @@ class VurderingBuilder {
     ) {
         private var finalized = false
         fun passert(tekst: String) = resultat(tekst = tekst, score = 0, kreverManuellBehandling = false)
+        fun passert(tekst: TekstMedVariabler) = resultat(tekst = tekst, score = 0, kreverManuellBehandling = false)
         fun ikkeAktuell(tekst: String) = passert(tekst).copy(vekt = 0)
         fun kreverManuellBehandling(tekst: String) = resultat(tekst = tekst, score = 10, kreverManuellBehandling = true)
 

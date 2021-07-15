@@ -42,7 +42,7 @@ internal class RiverEnvironment(
     fun createKafkaEnvironment() : KafkaRiverEnvironment =
         if (isKafkaCloud) {
             KafkaRiverEnvironment(
-                kafkaProducer = KafkaProducer(kafkaConsumerConfig()),
+                kafkaProducer = KafkaProducer(kafkaProducerConfig()),
                 kafkaConsumer = KafkaConsumer(kafkaConsumerConfig())
             )
         } else {

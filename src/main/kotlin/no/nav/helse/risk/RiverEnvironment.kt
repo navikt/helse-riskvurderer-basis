@@ -26,7 +26,7 @@ private val log = LoggerFactory.getLogger(RiverEnvironment::class.java)
 
 private val isKafkaCloud:Boolean = systemEnvOrDefault("KAFKA_CLOUD_RIVER", "false") == "true"
 
-fun riskRiverTopic(): String = if (isKafkaCloud) "helse-risk-river" else "helse-risk-river-v1"
+fun riskRiverTopic(): String = if (isKafkaCloud) "risk.helse-risk-river" else "helse-risk-river-v1"
 
 internal class RiverEnvironment(
     private val kafkaClientId: String

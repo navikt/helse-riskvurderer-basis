@@ -18,6 +18,7 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.config.SaslConfigs
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.AfterEach
@@ -35,6 +36,7 @@ internal class RiverTest {
     }
 
     val env = RiverEnvironment("testapp")
+    val kafkaConfig = TestKafkaConfig("testapp")
     private val json = JsonRisk
 
     private val jwk1 = lagEnJWK("key1").toJWKHolder()
@@ -69,7 +71,7 @@ internal class RiverTest {
     fun setup() {
         kafka.start()
         testConsumer = KafkaConsumer<String, JsonObject>(testConsumerConfig).also {
-            it.subscribe(listOf(riskRiverTopic))
+            it.subscribe(listOf(riskRiverTopic()))
         }
     }
 
@@ -84,7 +86,7 @@ internal class RiverTest {
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {
         val value = json.decodeFromString(JsonObject.serializer(), jsonstring)
         val key = value["vedtaksperiodeId"]!!.jsonPrimitive.content
-        this.send(ProducerRecord(riskRiverTopic, key, value))
+        this.send(ProducerRecord(riskRiverTopic(), key, value))
     }
 
     @Test
@@ -103,7 +105,7 @@ internal class RiverTest {
             producer.sendJson("""{"data" : "${buildJsonObject { put("nummer", 1) }.encryptAsJWE(jwk2)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv2", "type": "oppslagsresultat", "info":"firma1"}""")
 
             val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
-            producer.send(ProducerRecord(riskRiverTopic, json.decodeFromString(JsonObject.serializer(), payload3)))
+            producer.send(ProducerRecord(riskRiverTopic(), json.decodeFromString(JsonObject.serializer(), payload3)))
         }
 
         var vurdering: Vurderingsmelding? = null
@@ -144,8 +146,8 @@ internal class RiverTest {
     private val kafka = KafkaEnvironment(
         autoStart = false,
         noOfBrokers = 1,
-        topicNames = listOf(riskRiverTopic),
-        topicInfos = listOf(KafkaEnvironment.TopicInfo(riskRiverTopic)),
+        topicNames = listOf(riskRiverTopic()),
+        topicInfos = listOf(KafkaEnvironment.TopicInfo(riskRiverTopic())),
         withSchemaRegistry = false,
         withSecurity = false
     )
@@ -154,14 +156,14 @@ internal class RiverTest {
         it[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = "PLAINTEXT"
         it[SaslConfigs.SASL_MECHANISM] = "PLAIN"
     }
-    private val consumerConfig = env.kafkaConsumerConfig(
+    private val consumerConfig = kafkaConfig.kafkaConsumerConfig(
         ServiceUser("", ""), kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "tulleconsumer"
     }
-    private val testConsumerConfig = env.kafkaConsumerConfig(
+    private val testConsumerConfig = kafkaConfig.kafkaConsumerConfig(
         ServiceUser("", ""), kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
@@ -175,8 +177,8 @@ internal class RiverTest {
         it[ProducerConfig.CLIENT_ID_CONFIG] = "tulleproducer"
     }
 
-    fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String? = null) = Properties().apply {
-        putAll(env.commonKafkaConfig(serviceUser, brokers))
+    fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
+        putAll(kafkaConfig.commonKafkaConfig(serviceUser, brokers))
 
         put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
         put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonObjectSerializer::class.java)
@@ -184,6 +186,37 @@ internal class RiverTest {
         put(ProducerConfig.CLIENT_ID_CONFIG, "$env.kafkaClientId-producer")
     }
 
+}
+
+class TestKafkaConfig(val kafkaClientId: String) {
+    fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
+        putAll(commonKafkaConfig(serviceUser, brokers))
+
+        put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
+        put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonObjectSerializer::class.java)
+        put(ProducerConfig.ACKS_CONFIG, "all")
+        put(ProducerConfig.CLIENT_ID_CONFIG, "$kafkaClientId-producer")
+    }
+
+    fun kafkaConsumerConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
+        putAll(commonKafkaConfig(serviceUser, brokers))
+
+        put(ConsumerConfig.GROUP_ID_CONFIG, "$kafkaClientId-consumer")
+        put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java)
+        put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonObjectDeserializer::class.java)
+        put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1000")
+        put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest")
+        //put("default.deserialization.exception.handler", LogAndContinueExceptionHandler::class.java)
+    }
+
+    fun commonKafkaConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
+        put("application.id", kafkaClientId)
+        put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL")
+        put(SaslConfigs.SASL_MECHANISM, "PLAIN")
+        put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, brokers)
+        put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+            "username=\"${serviceUser.username}\" password=\"${serviceUser.password}\";")
+    }
 }
 
 

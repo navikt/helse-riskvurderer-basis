@@ -15,8 +15,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
-val riskRiverTopic = "helse-risk-river-v1"
-
 internal open class BufferedRiver(private val kafkaProducer: Producer<String, JsonObject>,
                                   private val kafkaConsumer: Consumer<String, JsonObject>,
                                   private val interessertI: List<Interesse>,
@@ -52,7 +50,7 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
     suspend fun start() {
         val mangeTilEn: Boolean = interessertI.size > 1
         kafkaConsumer
-            .apply { subscribe(listOf(riskRiverTopic)) }
+            .apply { subscribe(listOf(riskRiverTopic())) }
             .asFlow()
             .filterNotNull()
             .filter { (_, value, _) -> value.erInteressant(interessertI) }
@@ -86,7 +84,7 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
             log.debug("Mangler Interesse=$ikkeTilfredsstilt for vedtaksperiodeId=$vedtaksperiodeId. Ignorerer sesjon.")
         } else {
             answerer(answers, vedtaksperiodeId)?.also { svar ->
-                kafkaProducer.send(ProducerRecord(riskRiverTopic, emitted.kafkaKey, svar))
+                kafkaProducer.send(ProducerRecord(riskRiverTopic(), emitted.kafkaKey, svar))
             }
         }
     }

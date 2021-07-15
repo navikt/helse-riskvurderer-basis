@@ -36,6 +36,7 @@ internal class RiverEnTilEnTest {
     }
 
     val env = RiverEnvironment("testapp")
+    val kafkaConfig = TestKafkaConfig("testapp")
     private val json = JsonRisk
 
     @BeforeEach
@@ -47,7 +48,7 @@ internal class RiverEnTilEnTest {
     fun setup() {
         kafka.start()
         testConsumer = KafkaConsumer<String, JsonObject>(testConsumerConfig).also {
-            it.subscribe(listOf(riskRiverTopic))
+            it.subscribe(listOf(riskRiverTopic()))
         }
     }
 
@@ -60,8 +61,8 @@ internal class RiverEnTilEnTest {
 
     private fun initBufferedRiver() {
         bufferedRiver = BufferedRiver(
-            KafkaProducer<String, JsonObject>(producerConfig),
-            KafkaConsumer<String, JsonObject>(consumerConfig), interesser, emptyList(),
+            KafkaProducer(producerConfig),
+            KafkaConsumer(consumerConfig), interesser, emptyList(),
             VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering,
             CollectorRegistry.defaultRegistry
         )
@@ -84,7 +85,7 @@ internal class RiverEnTilEnTest {
     private fun KafkaProducer<String, JsonObject>.sendJson(jsonstring: String) {
         val value = Json.decodeFromString(JsonObject.serializer(), jsonstring)
         val key = value["vedtaksperiodeId"]!!.jsonPrimitive.content
-        this.send(ProducerRecord(riskRiverTopic, key, value))
+        this.send(ProducerRecord(riskRiverTopic(), key, value))
     }
 
     @Test
@@ -99,7 +100,7 @@ internal class RiverEnTilEnTest {
             producer.sendJson("""{"nummer":3, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
             producer.sendJson("""{"nummer":6, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
             val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
-            producer.send(ProducerRecord(riskRiverTopic, json.decodeFromString(JsonObject.serializer(), payload3)))
+            producer.send(ProducerRecord(riskRiverTopic(), json.decodeFromString(JsonObject.serializer(), payload3)))
         }
 
         var vurdering: Vurderingsmelding? = null
@@ -141,8 +142,8 @@ internal class RiverEnTilEnTest {
     private val kafka = KafkaEnvironment(
         autoStart = false,
         noOfBrokers = 1,
-        topicNames = listOf(riskRiverTopic),
-        topicInfos = listOf(KafkaEnvironment.TopicInfo(riskRiverTopic)),
+        topicNames = listOf(riskRiverTopic()),
+        topicInfos = listOf(KafkaEnvironment.TopicInfo(riskRiverTopic())),
         withSchemaRegistry = false,
         withSecurity = false
     )
@@ -151,14 +152,14 @@ internal class RiverEnTilEnTest {
         it[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = "PLAINTEXT"
         it[SaslConfigs.SASL_MECHANISM] = "PLAIN"
     }
-    private val consumerConfig = env.kafkaConsumerConfig(
+    private val consumerConfig = kafkaConfig.kafkaConsumerConfig(
         ServiceUser("", ""), kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "tulleconsumer"
     }
-    private val testConsumerConfig = env.kafkaConsumerConfig(
+    private val testConsumerConfig = kafkaConfig.kafkaConsumerConfig(
         ServiceUser("", ""), kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
@@ -172,8 +173,8 @@ internal class RiverEnTilEnTest {
         it[ProducerConfig.CLIENT_ID_CONFIG] = "tulleproducer"
     }
 
-    fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String? = null) = Properties().apply {
-        putAll(env.commonKafkaConfig(serviceUser, brokers))
+    fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
+        putAll(kafkaConfig.commonKafkaConfig(serviceUser, brokers))
 
         put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
         put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonObjectSerializer::class.java)

@@ -35,7 +35,7 @@ class VurderingsAppTest {
     }
 
     private val partition = 0
-    private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)
+    private val riverTopicPartition = TopicPartition(riskRiverTopic(), partition)
     private val json = JsonRisk
 
     class Done : RuntimeException()
@@ -133,7 +133,7 @@ class VurderingsAppTest {
         val consumer = mockk<KafkaConsumer<String, JsonObject>>()
 
         val behovOpprettet = LocalDateTime.now()
-        val rec1 = ConsumerRecord(riskRiverTopic, partition, 1,
+        val rec1 = ConsumerRecord(riskRiverTopic(), partition, 1,
             "envedtaksperiodeid",
             buildJsonObject {
                 put("type", "RiskNeed")
@@ -143,7 +143,7 @@ class VurderingsAppTest {
                 put("vedtaksperiodeId", vedtaksperiodeid)
                 put("behovOpprettet", behovOpprettet.toString())
             })
-        val rec2 = ConsumerRecord(riskRiverTopic, partition, 1,
+        val rec2 = ConsumerRecord(riskRiverTopic(), partition, 1,
             "envedtaksperiodeid",
             buildJsonObject {
                 put("type", "oppslagsresultat")
@@ -170,7 +170,7 @@ class VurderingsAppTest {
             )
         )
 
-        every { consumer.subscribe(listOf(riskRiverTopic)) } just Runs
+        every { consumer.subscribe(listOf(riskRiverTopic())) } just Runs
 
         every { consumer.poll(Duration.ZERO) } returns ConsumerRecords(
             mapOf(

@@ -35,7 +35,7 @@ import kotlin.test.assertTrue
 class RiverAppTest {
 
     private val partition = 0
-    private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)
+    private val riverTopicPartition = TopicPartition(riskRiverTopic(), partition)
 
     class Done : RuntimeException()
 
@@ -166,10 +166,10 @@ class RiverAppTest {
 
         producedMessages.clear()
         if (predefinedConsumer == null) {
-            every { consumer.subscribe(listOf(riskRiverTopic)) } just Runs
+            every { consumer.subscribe(listOf(riskRiverTopic())) } just Runs
             val records = defaultInnkommendeMeldinger.map {
                 ConsumerRecord(
-                    riskRiverTopic, partition, 1,
+                    riskRiverTopic(), partition, 1,
                     "envedtaksperiodeid", it
                 )
             }

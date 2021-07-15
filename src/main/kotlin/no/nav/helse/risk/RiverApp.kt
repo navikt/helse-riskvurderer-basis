@@ -4,8 +4,6 @@ import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonObject
 import org.apache.kafka.clients.consumer.Consumer
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.common.KafkaException
 import org.slf4j.Logger
@@ -37,16 +35,8 @@ open class RiverApp internal constructor(
     private val environment: RiverEnvironment = RiverEnvironment(kafkaClientId)
 
     private var overriddenKafkaEnvironment: KafkaRiverEnvironment? = null
-    private fun createKafkaEnvironment(): KafkaRiverEnvironment {
-        return overriddenKafkaEnvironment ?: environment.readServiceUserCredentials().let { kafkaUser ->
-            val kafkaConsumerConfig = environment.kafkaConsumerConfig(kafkaUser)
-            val kafkaProducerConfig = environment.kafkaProducerConfig(kafkaUser)
-            KafkaRiverEnvironment(
-                kafkaProducer = KafkaProducer<String, JsonObject>(kafkaProducerConfig),
-                kafkaConsumer = KafkaConsumer<String, JsonObject>(kafkaConsumerConfig)
-            )
-        }
-    }
+    private fun createKafkaEnvironment(): KafkaRiverEnvironment =
+        overriddenKafkaEnvironment ?: environment.createKafkaEnvironment()
 
     private val applicationContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
     private var healthy = true

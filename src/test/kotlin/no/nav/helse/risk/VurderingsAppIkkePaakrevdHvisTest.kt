@@ -34,7 +34,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
     }
 
     private val partition = 0
-    private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)
+    private val riverTopicPartition = TopicPartition(riskRiverTopic(), partition)
     private val json = JsonRisk
 
     val fnr = "01017000000"
@@ -238,12 +238,12 @@ class VurderingsAppIkkePaakrevdHvisTest {
             )
         )
 
-        every { consumer.subscribe(listOf(riskRiverTopic)) } just Runs
+        every { consumer.subscribe(listOf(riskRiverTopic())) } just Runs
 
         every { consumer.poll(Duration.ZERO) } returns ConsumerRecords(
             mapOf(
                 riverTopicPartition to innkommendeMeldinger.map {
-                    ConsumerRecord(riskRiverTopic, partition, 1, "envedtaksperiodeid", it)
+                    ConsumerRecord(riskRiverTopic(), partition, 1, "envedtaksperiodeid", it)
                 }
             )
         ) andThenThrows VurderingsAppTest.Done()

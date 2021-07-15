@@ -34,7 +34,7 @@ class OppslagsAppTest {
     private val JSON = JsonRisk
     val producedMessages = mutableListOf<ProducerRecord<String, JsonObject>>()
     private val partition = 0
-    private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)
+    private val riverTopicPartition = TopicPartition(riskRiverTopic(), partition)
 
     class Done : RuntimeException()
 
@@ -202,13 +202,13 @@ class OppslagsAppTest {
     private fun startOppslagsApp(innkommendeMeldinger: List<JsonObject>, app: OppslagsApp) {
         val riskConsumer = mockk<KafkaConsumer<String, JsonObject>>()
         val riskProducer = mockk<KafkaProducer<String, JsonObject>>()
-        every { riskConsumer.subscribe(listOf(riskRiverTopic)) } just Runs
+        every { riskConsumer.subscribe(listOf(riskRiverTopic())) } just Runs
 
         producedMessages.clear()
-        every { riskConsumer.subscribe(listOf(riskRiverTopic)) } just Runs
+        every { riskConsumer.subscribe(listOf(riskRiverTopic())) } just Runs
         val records = innkommendeMeldinger.map {
             ConsumerRecord(
-                riskRiverTopic, partition, 1,
+                riskRiverTopic(), partition, 1,
                 "envedtaksperiodeid", it
             )
         }

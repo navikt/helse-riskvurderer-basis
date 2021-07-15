@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 import java.util.concurrent.Future
 
 private val partition = 0
-private val riverTopicPartition = TopicPartition(riskRiverTopic, partition)
+private val riverTopicPartition = TopicPartition(riskRiverTopic(), partition)
 
 val fnr = "01017000000"
 val vedtaksperiodeid = "33745ddf-1362-443d-8c9f-7667325e8dc6"
@@ -32,7 +32,7 @@ fun main() {
     val consumer = mockk<KafkaConsumer<String, JsonObject>>()
 
     val behovOpprettet = LocalDateTime.now()
-    val rec1 = ConsumerRecord(riskRiverTopic, partition, 1,
+    val rec1 = ConsumerRecord(riskRiverTopic(), partition, 1,
         "envedtaksperiodeid",
         buildJsonObject {
             put("type", "RiskNeed")
@@ -42,7 +42,7 @@ fun main() {
             put("vedtaksperiodeId", vedtaksperiodeid)
             put("behovOpprettet", behovOpprettet.toString())
         })
-    val rec2 = ConsumerRecord(riskRiverTopic, partition, 1,
+    val rec2 = ConsumerRecord(riskRiverTopic(), partition, 1,
         "envedtaksperiodeid",
         buildJsonObject {
             put("type", "oppslagsresultat")
@@ -80,7 +80,7 @@ fun main() {
 
     val producedMessages = mutableListOf<ProducerRecord<String, JsonObject>>()
     every { producer.send(capture(producedMessages)) } returns mockk<Future<RecordMetadata>>()
-    every { consumer.subscribe(listOf(riskRiverTopic)) } just Runs
+    every { consumer.subscribe(listOf(riskRiverTopic())) } just Runs
     every { consumer.poll(Duration.ZERO) } answers {
         Thread.sleep(1000)
         ConsumerRecords(

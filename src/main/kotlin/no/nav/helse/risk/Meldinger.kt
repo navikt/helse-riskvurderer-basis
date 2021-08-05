@@ -131,7 +131,7 @@ fun JsonObject.tilVurderingsmelding(): Vurderingsmelding =
     jsonFlexible.decodeFromJsonElement(Vurderingsmelding.serializer(), this)
 
 
-internal fun JsonObject.decryptIfEncrypted(decryptionJWKS: JWKSetHolder?): JsonObject {
+fun JsonObject.decryptIfEncrypted(decryptionJWKS: JWKSetHolder?): JsonObject {
     return try {
         if (decryptionJWKS != null
             && this.containsKey(dataKey)

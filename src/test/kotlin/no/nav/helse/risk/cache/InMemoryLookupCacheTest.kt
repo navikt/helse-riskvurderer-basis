@@ -4,6 +4,7 @@ import com.nimbusds.jose.JWEObject
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.BeforeEach
@@ -290,6 +291,48 @@ class InMemoryLookupCacheTest {
         assertEquals(1, cache.cache.estimatedSize())
     }
 
+
+    @Serializable
+    data class SomeData(
+        val field1: String
+    )
+    @Serializable
+    data class SomeOtherData(
+        val otherField: Int
+    )
+
+    private class MultiCacheTestFuncs {
+        var someCount = 0
+        var someOtherCount = 0
+        fun lookupSomeData(f1: String) = SomeData(field1 = "$f1-1").also { someCount++ }
+        fun lookupSomeOtherData(f1: String) = SomeOtherData(otherField = f1.toInt()).also { someOtherCount++ }
+    }
+
+    @Test
+    fun `should be able to use multiple caches`() {
+        val lookupFuncs = MultiCacheTestFuncs()
+        val someCache = InMemoryLookupCache(serializer = SomeData.serializer(), collectorRegistry = CollectorRegistry.defaultRegistry, oppslagstype = "some")
+        val someOtherCache = InMemoryLookupCache(serializer = SomeOtherData.serializer(), collectorRegistry = CollectorRegistry.defaultRegistry, oppslagstype = "other")
+
+        assertEquals(0, lookupFuncs.someCount)
+        assertEquals(0, lookupFuncs.someOtherCount)
+
+        repeat(times = 5) {
+            someCache.cachedLookup(lookupFuncs::lookupSomeData, "DATA")!!.apply {
+                assertEquals("DATA-1", field1)
+                assertEquals(1, lookupFuncs.someCount)
+            }
+            someOtherCache.cachedLookup(lookupFuncs::lookupSomeOtherData, "42")!!.apply {
+                assertEquals(42, otherField)
+                assertEquals(1, lookupFuncs.someOtherCount)
+            }
+        }
+        someOtherCache.cachedLookup(lookupFuncs::lookupSomeOtherData, "43")!!.apply {
+            assertEquals(43, otherField)
+            assertEquals(2, lookupFuncs.someOtherCount)
+        }
+    }
+
     @Test
     fun `cache-content should be stored as JWE`() {
         val cache = InMemoryLookupCache(
@@ -344,7 +387,6 @@ class InMemoryLookupCacheTest {
         delay(1)
         return buildJsonObject(init)
     }
-
 
     private fun jsonArrayOf(vararg vals: String?): JsonArray =
         buildJsonArray { vals.forEach { add(it) } }

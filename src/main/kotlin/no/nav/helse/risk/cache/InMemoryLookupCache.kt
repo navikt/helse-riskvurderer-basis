@@ -32,7 +32,7 @@ class InMemoryLookupCache<RET>(
     expireAfterAccess: Duration = Duration.ofMinutes(60),
     private val oppslagstype: String = "main"
 ) {
-    private val metrics = LookupCacheMetrics(collectorRegistry, oppslagstype = oppslagstype)
+    private val metrics = LookupCacheMetrics.getInstance(collectorRegistry)
 
     internal data class CachedValue(
         val timestamp: LocalDateTime = LocalDateTime.now(),
@@ -124,14 +124,14 @@ class InMemoryLookupCache<RET>(
             val cached:CachedValue? = cache.getIfPresent(requestParams.requestHash())
             if (cached != null) {
                 log.info("Using cached result ($oppslagstype) from ${cached.timestamp}")
-                metrics.usedCache()
+                metrics.usedCache(oppslagstype)
                 deserialize(cached.serializedValue, requestParams)
             } else {
-                metrics.notInCache()
+                metrics.notInCache(oppslagstype)
                 null
             }
         } catch (ex: Exception) {
-            metrics.errorUsingCache()
+            metrics.errorUsingCache(oppslagstype)
             log.error("Exception returning cached result ($oppslagstype): ${ex.javaClass}")
             null
         }
@@ -169,7 +169,15 @@ class InMemoryLookupCache<RET>(
 
 }
 
-class LookupCacheMetrics(collectorRegistry: CollectorRegistry, private val oppslagstype:String) {
+class LookupCacheMetrics private constructor(collectorRegistry: CollectorRegistry) {
+    companion object {
+        private val registryToInstance: MutableMap<CollectorRegistry, LookupCacheMetrics> = mutableMapOf()
+        fun getInstance(collectorRegistry: CollectorRegistry) : LookupCacheMetrics {
+            return registryToInstance.getOrPut(collectorRegistry) {
+                LookupCacheMetrics(collectorRegistry)
+            }
+        }
+    }
     private val cacheRequestCounter = Counter
         .build("risk_lookup_cache_counter", "antall forsoek på å hente ut fra cache")
         .labelNames("result", "oppslagstype")
@@ -180,9 +188,9 @@ class LookupCacheMetrics(collectorRegistry: CollectorRegistry, private val oppsl
             "Millisekunder brukt for ikke-cachede kall")
         .register(collectorRegistry)
 
-    fun usedCache() { cacheRequestCounter.labels("used_cache", oppslagstype).inc() }
-    fun notInCache() { cacheRequestCounter.labels("not_in_cache", oppslagstype).inc() }
-    fun errorUsingCache() { cacheRequestCounter.labels("error", oppslagstype).inc() }
+    fun usedCache(oppslagstype:String) { cacheRequestCounter.labels("used_cache", oppslagstype).inc() }
+    fun notInCache(oppslagstype:String) { cacheRequestCounter.labels("not_in_cache", oppslagstype).inc() }
+    fun errorUsingCache(oppslagstype:String) { cacheRequestCounter.labels("error", oppslagstype).inc() }
 
     fun millisSpentOnUncachedCall(ms: Long) {
         milliesUsedForUncachedCall.observe(ms.toDouble())

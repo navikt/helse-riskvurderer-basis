@@ -100,7 +100,7 @@ class InMemoryLookupCache<RET>(
         val start = System.currentTimeMillis()
         return block().also {
             val millis = System.currentTimeMillis() - start
-            metrics.millisSpentOnUncachedCall(millis)
+            metrics.millisSpentOnUncachedCall(millis, oppslagstype)
         }
     }
 
@@ -108,7 +108,7 @@ class InMemoryLookupCache<RET>(
         val start = System.currentTimeMillis()
         return block().also {
             val millis = System.currentTimeMillis() - start
-            metrics.millisSpentOnUncachedCall(millis)
+            metrics.millisSpentOnUncachedCall(millis, oppslagstype)
         }
     }
 
@@ -186,14 +186,15 @@ class LookupCacheMetrics private constructor(collectorRegistry: CollectorRegistr
     private val milliesUsedForUncachedCall = Summary
         .build("risk_lookup_cache_uncached_millis_summary",
             "Millisekunder brukt for ikke-cachede kall")
+        .labelNames("oppslagstype")
         .register(collectorRegistry)
 
     fun usedCache(oppslagstype:String) { cacheRequestCounter.labels("used_cache", oppslagstype).inc() }
     fun notInCache(oppslagstype:String) { cacheRequestCounter.labels("not_in_cache", oppslagstype).inc() }
     fun errorUsingCache(oppslagstype:String) { cacheRequestCounter.labels("error", oppslagstype).inc() }
 
-    fun millisSpentOnUncachedCall(ms: Long) {
-        milliesUsedForUncachedCall.observe(ms.toDouble())
+    fun millisSpentOnUncachedCall(ms: Long, oppslagstype:String) {
+        milliesUsedForUncachedCall.labels(oppslagstype).observe(ms.toDouble())
     }
 
 }

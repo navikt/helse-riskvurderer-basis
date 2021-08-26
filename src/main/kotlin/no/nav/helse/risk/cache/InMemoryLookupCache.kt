@@ -29,9 +29,10 @@ class InMemoryLookupCache<RET>(
     private val serializer: KSerializer<RET>,
     collectorRegistry: CollectorRegistry,
     maximumSize: Long = 2000,
-    expireAfterAccess: Duration = Duration.ofMinutes(60)
+    expireAfterAccess: Duration = Duration.ofMinutes(60),
+    oppslagstype: String = "main"
 ) {
-    private val metrics = LookupCacheMetrics(collectorRegistry)
+    private val metrics = LookupCacheMetrics(collectorRegistry, oppslagstype = oppslagstype)
 
     internal data class CachedValue(
         val timestamp: LocalDateTime = LocalDateTime.now(),
@@ -168,10 +169,10 @@ class InMemoryLookupCache<RET>(
 
 }
 
-class LookupCacheMetrics(collectorRegistry: CollectorRegistry) {
+class LookupCacheMetrics(collectorRegistry: CollectorRegistry, private val oppslagstype:String) {
     private val cacheRequestCounter = Counter
         .build("risk_lookup_cache_counter", "antall forsoek på å hente ut fra cache")
-        .labelNames("result")
+        .labelNames("result", "oppslagstype")
         .register(collectorRegistry)
 
     private val milliesUsedForUncachedCall = Summary
@@ -179,9 +180,9 @@ class LookupCacheMetrics(collectorRegistry: CollectorRegistry) {
             "Millisekunder brukt for ikke-cachede kall")
         .register(collectorRegistry)
 
-    fun usedCache() { cacheRequestCounter.labels("used_cache").inc() }
-    fun notInCache() { cacheRequestCounter.labels("not_in_cache").inc() }
-    fun errorUsingCache() { cacheRequestCounter.labels("error").inc() }
+    fun usedCache() { cacheRequestCounter.labels("used_cache", oppslagstype).inc() }
+    fun notInCache() { cacheRequestCounter.labels("not_in_cache", oppslagstype).inc() }
+    fun errorUsingCache() { cacheRequestCounter.labels("error", oppslagstype).inc() }
 
     fun millisSpentOnUncachedCall(ms: Long) {
         milliesUsedForUncachedCall.observe(ms.toDouble())

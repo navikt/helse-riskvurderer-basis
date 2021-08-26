@@ -30,7 +30,7 @@ class InMemoryLookupCache<RET>(
     collectorRegistry: CollectorRegistry,
     maximumSize: Long = 2000,
     expireAfterAccess: Duration = Duration.ofMinutes(60),
-    oppslagstype: String = "main"
+    private val oppslagstype: String = "main"
 ) {
     private val metrics = LookupCacheMetrics(collectorRegistry, oppslagstype = oppslagstype)
 
@@ -123,7 +123,7 @@ class InMemoryLookupCache<RET>(
         try {
             val cached:CachedValue? = cache.getIfPresent(requestParams.requestHash())
             if (cached != null) {
-                log.info("Using cached result from ${cached.timestamp}")
+                log.info("Using cached result ($oppslagstype) from ${cached.timestamp}")
                 metrics.usedCache()
                 deserialize(cached.serializedValue, requestParams)
             } else {
@@ -132,7 +132,7 @@ class InMemoryLookupCache<RET>(
             }
         } catch (ex: Exception) {
             metrics.errorUsingCache()
-            log.error("Exception returning cached result: ${ex.javaClass}")
+            log.error("Exception returning cached result ($oppslagstype): ${ex.javaClass}")
             null
         }
 

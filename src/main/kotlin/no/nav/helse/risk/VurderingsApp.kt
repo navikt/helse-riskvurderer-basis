@@ -32,16 +32,19 @@ class VurderingBuilder {
         id: String = nySjekkId(),
         kategorier: List<String> = emptyList(),
         sjekk: SjekkresultatBuilder.() -> Sjekkresultat
-    ) {
+    ) : Sjekkresultat {
         val builder = SjekkresultatBuilder(vekt, id, kategorier)
-        sjekkresultat(sjekk.invoke(builder))
+        return sjekk.invoke(builder).let {
+            sjekkresultat(it)
+            it
+        }
     }
 
-    fun passertSjekk(vekt: Int, tekst: String, id: String = nySjekkId()) = nySjekk(vekt, id) {
+    fun passertSjekk(vekt: Int, tekst: String, id: String = nySjekkId()) : Sjekkresultat = nySjekk(vekt, id) {
         passert(tekst)
     }
 
-    fun ikkeAktuellSjekk(tekst: String, id: String = nySjekkId()) = nySjekk(0, id) {
+    fun ikkeAktuellSjekk(tekst: String, id: String = nySjekkId()) : Sjekkresultat = nySjekk(0, id) {
         ikkeAktuell(tekst)
     }
 

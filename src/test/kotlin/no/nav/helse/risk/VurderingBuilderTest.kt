@@ -242,5 +242,59 @@ class VurderingBuilderTest {
             )
         }
     }
+
+    @Test
+    fun `nySjekk returnerer sjekkresultatet (kan i sjeldne tilfeller tenkes regler som avhenger av resultatet fra andre regler i samme vurderingstjeneste)`() {
+        VurderingBuilder().apply {
+            nySjekk(vekt = 11, id = "entest") {
+                kreverManuellBehandling("jauda")
+            }.also { sjekkres ->
+                kotlin.test.assertEquals(
+                    Sjekkresultat(
+                        id = "entest",
+                        begrunnelse = "jauda",
+                        variabler = listOf(),
+                        score = 10,
+                        vekt = 11,
+                        kreverManuellBehandling = true,
+                    ), sjekkres
+                )
+            }
+        }
+
+        VurderingBuilder().apply {
+            nySjekk(vekt = 9, id = "annentest") {
+                passert("all good")
+            }.also { sjekkres ->
+                kotlin.test.assertEquals(
+                    Sjekkresultat(
+                        id = "annentest",
+                        begrunnelse = "all good",
+                        variabler = listOf(),
+                        score = 0,
+                        vekt = 9,
+                        kreverManuellBehandling = false,
+                    ), sjekkres
+                )
+            }
+        }
+
+        VurderingBuilder().apply {
+            nySjekk(vekt = 20, id = "tredjetest") {
+                ikkeAktuell("nothing to check")
+            }.also { sjekkres ->
+                kotlin.test.assertEquals(
+                    Sjekkresultat(
+                        id = "tredjetest",
+                        begrunnelse = "nothing to check",
+                        variabler = listOf(),
+                        score = 0,
+                        vekt = 0,
+                        kreverManuellBehandling = false,
+                    ), sjekkres
+                )
+            }
+        }
+    }
 }
 

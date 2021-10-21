@@ -1,13 +1,12 @@
 package no.nav.helse.privacy
 
-import io.ktor.util.*
 import kotlinx.serialization.json.*
 import java.security.MessageDigest
 import java.security.SecureRandom
 
-class IdMasker(fieldNames: List<String> = listOf(
-    "fnr", "identifikator", "virksomhet", "opplysningspliktig"
-)) : Masker(
+class IdMasker(fieldNames: List<String> = listOf("fnr", "identifikator", "virksomhet", "opplysningspliktig"),
+               primitiveFieldNamesExcludedFromMasking: Set<String> = emptySet()
+) : Masker(
     replaceByKey = mapOf(
         *fieldNames.map { it to ::maskId }.toTypedArray()
     ),
@@ -16,7 +15,8 @@ class IdMasker(fieldNames: List<String> = listOf(
     ),
     fieldNameReplacers = mapOf(
         ::looksLikeIdString to ::maskIdString
-    )
+    ),
+    primitiveFieldNamesExcludedFromMasking = primitiveFieldNamesExcludedFromMasking
 ) {
     companion object {
         internal val hashingsalt = randomBytesAsString()
@@ -34,7 +34,8 @@ interface IMasker {
 open class Masker(
     val replaceByKey: Map<String, (JsonPrimitive) -> JsonPrimitive>,
     val replaceStringValues: Map<(String) -> Boolean, (String) -> String>,
-    val fieldNameReplacers: Map<(String) -> Boolean, (String) -> String>
+    val fieldNameReplacers: Map<(String) -> Boolean, (String) -> String>,
+    val primitiveFieldNamesExcludedFromMasking: Set<String> = emptySet()
 ) : IMasker {
     override fun mask(json: JsonElement) = maskElement(null, json)
 
@@ -51,7 +52,7 @@ open class Masker(
             return replaceByKey[key]!!.invoke(originalValue)
         }
         return originalValue.let { primitive ->
-            if (primitive.isString) {
+            if (primitive.isString && !(primitiveFieldNamesExcludedFromMasking.contains(key))) {
                 val stringMasker:((String) -> String)? = replaceStringValues.entries.find { it.key(primitive.content) }?.value
                 if (stringMasker != null) {
                     return@let JsonPrimitive(stringMasker.invoke(primitive.content))

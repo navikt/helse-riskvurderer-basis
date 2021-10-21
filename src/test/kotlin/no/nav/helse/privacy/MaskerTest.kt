@@ -28,6 +28,25 @@ class MaskerTest {
    }
 
    @Test
+   fun `unnta visse felter`() {
+      arbeidsforholdEksempel1.toString().apply {
+         assertTrue(this.contains("1210118"))
+         assertTrue(this.contains("01129400001"))
+         assertTrue(this.contains("998877665"))
+      }
+      IdMasker().mask(arbeidsforholdEksempel1).toString().apply {
+         assertFalse(this.contains("1210118"))
+         assertFalse(this.contains("01129400001"))
+         assertFalse(this.contains("998877665"))
+      }
+      IdMasker(primitiveFieldNamesExcludedFromMasking = setOf("yrke")).mask(arbeidsforholdEksempel1).toString().apply {
+         assertTrue(this.contains("1210118"))
+         assertFalse(this.contains("01129400001"))
+         assertFalse(this.contains("998877665"))
+      }
+   }
+
+   @Test
    fun `masker riktig`() {
       val fnr = "01019077777"
       val fnr2 = "01018511111"

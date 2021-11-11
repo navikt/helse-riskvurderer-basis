@@ -104,10 +104,6 @@ tasks.withType<Test> {
     }
 }
 
-tasks.withType<Wrapper> {
-    gradleVersion = "6.1.1"
-}
-
 val sourcesJar by tasks.registering(Jar::class) {
     archiveClassifier.set("sources")
     //classifier = "sources"

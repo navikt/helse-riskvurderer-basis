@@ -1,6 +1,7 @@
 package no.nav.helse.risk
 
 import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.Summary
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -15,6 +16,16 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
+private class BufferedRiverMetrics(collectorRegistry: CollectorRegistry) {
+    private val kafkaLagMs = Summary
+        .build("buffered_river_kafka_lag_ms", "Antall MS lagg mellom skrevet til Rivar og mottatt i BufferedRiver i MS")
+        .register(collectorRegistry)
+
+    fun kafkaLagMs(ms: Long) {
+        kafkaLagMs.observe(ms.toDouble())
+    }
+}
+
 internal open class BufferedRiver(private val kafkaProducer: Producer<String, JsonObject>,
                                   private val kafkaConsumer: Consumer<String, JsonObject>,
                                   private val interessertI: List<Interesse>,
@@ -26,6 +37,7 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
                                   private val skipMessagesOlderThanSeconds: Long = -1
 ) {
     private val log: Logger = LoggerFactory.getLogger(BufferedRiver::class.java)
+    private val metrics = BufferedRiverMetrics(collectorRegistry)
 
     private val aggregator = WindowBufferEmitter(
         windowSizeInSeconds = windowTimeInSeconds,
@@ -56,6 +68,7 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
             .filter { (_, value, _) -> value.erInteressant(interessertI) }
             .filterNotNull()
             .collect { (key, value, timestamp) ->
+                metrics.kafkaLagMs(System.currentTimeMillis() - timestamp)
                 if (messageIsDated(timestamp)) {
                     log.info("Skipping incoming message because it is older than {} seconds (timestamp={} while currentTimeMillis={}",
                         skipMessagesOlderThanSeconds, timestamp, System.currentTimeMillis())

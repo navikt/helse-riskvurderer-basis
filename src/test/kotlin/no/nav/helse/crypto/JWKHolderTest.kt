@@ -1,6 +1,7 @@
 package no.nav.helse.crypto
 
 import com.nimbusds.jose.jwk.JWKSet
+import com.nimbusds.jose.util.JSONObjectUtils
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -23,8 +24,8 @@ class JWKHolderTest {
     fun `JWK and JWKS is updated when files are updated on disk`() {
         val jwk1 = lagEnJWK("key-1")
         val jwks1 = JWKSet(jwk1)
-        val jsonJWK1 = jwk1.toJSONObject().toString()
-        val jsonJWKS1 = jwks1.toJSONObject(false).toString()
+        val jsonJWK1 = jwk1.toJSONString()
+        val jsonJWKS1 = JSONObjectUtils.toJSONString(jwks1.toJSONObject(false))
 
         val jwkPath: Path = tempDirPath.resolve(UUID.randomUUID().toString())
         val jwksPath: Path = tempDirPath.resolve(UUID.randomUUID().toString())
@@ -34,8 +35,8 @@ class JWKHolderTest {
 
         val jwk2 = lagEnJWK("key-2")
         val jwks1and2 = JWKSet(listOf(jwk1, jwk2))
-        val jsonJWK2 = jwk2.toJSONObject().toString()
-        val jsonJWKS1and2 = jwks1and2.toJSONObject(false).toString()
+        val jsonJWK2 = jwk2.toJSONString()
+        val jsonJWKS1and2 = JSONObjectUtils.toJSONString(jwks1and2.toJSONObject(false))
 
         val jwkHolder = JWKHolder.fromDynamicFile(jwkPath)
         val jwksHolder = JWKSetHolder.fromDynamicFile(jwksPath)
@@ -70,8 +71,8 @@ class JWKHolderTest {
     fun `JWKSet from multiple other JWKSets`() {
         val jwk1 = lagEnJWK("key-1")
         val jwks1 = JWKSet(jwk1)
-        val jsonJWK1 = jwk1.toJSONObject().toString()
-        val jsonJWKS1 = jwks1.toJSONObject(false).toString()
+        val jsonJWK1 = jwk1.toJSONString()
+        val jsonJWKS1 = JSONObjectUtils.toJSONString(jwks1.toJSONObject(false))
         val jwk1Path: Path = tempDirPath.resolve(UUID.randomUUID().toString())
         val jwks1Path: Path = tempDirPath.resolve(UUID.randomUUID().toString())
         jsonJWK1.writeToFile(jwk1Path)
@@ -79,8 +80,8 @@ class JWKHolderTest {
 
         val jwk2 = lagEnJWK("key-2")
         val jwks2 = JWKSet(jwk2)
-        val jsonJWK2 = jwk2.toJSONObject().toString()
-        val jsonJWKS2 = jwks2.toJSONObject(false).toString()
+        val jsonJWK2 = jwk2.toJSONString()
+        val jsonJWKS2 = JSONObjectUtils.toJSONString(jwks2.toJSONObject(false))
         val jwk2Path: Path = tempDirPath.resolve(UUID.randomUUID().toString())
         val jwks2Path: Path = tempDirPath.resolve(UUID.randomUUID().toString())
         jsonJWK2.writeToFile(jwk2Path)
@@ -116,7 +117,7 @@ class JWKHolderTest {
         val jwk3 = lagEnJWK("key-3")
         val jwks1and3 = JWKSet(listOf(jwk1, jwk3))
         val jwk3Holder = jwk3.toJWKHolder()
-        val jsonJWKS1and3 = jwks1and3.toJSONObject(false).toString()
+        val jsonJWKS1and3 = JSONObjectUtils.toJSONString(jwks1and3.toJSONObject(false))
 
         val encrypted3 = payload3.encryptAsJWE(jwk3Holder)
         assertThrows<RuntimeException> { JsonElement.decryptFromJWE(encrypted3, jwksALLHolder) }
@@ -135,6 +136,7 @@ class JWKHolderTest {
     }
 
     private fun String.writeToFile(path: Path) {
+        println("WRITING $this")
         Files.writeString(
             path,
             this,

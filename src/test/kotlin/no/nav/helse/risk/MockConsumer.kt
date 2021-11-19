@@ -196,5 +196,13 @@ class MockConsumer<K, V>(
         TODO("Not yet implemented")
     }
 
+    override fun groupMetadata(): ConsumerGroupMetadata {
+        TODO("Not yet implemented")
+    }
+
+    override fun enforceRebalance() {
+        TODO("Not yet implemented")
+    }
+
 
 }

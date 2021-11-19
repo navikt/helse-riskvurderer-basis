@@ -1,21 +1,17 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val junitJupiterVersion = "5.6.3"
-val ktorVersion = "1.4.3"
-val micrometerVersion = "1.3.16"
-val kafkaVersion = "2.4.0"
-val slf4jVersion = "1.7.30"
-val logbackVersion = "1.2.3"
-val logstashEncoderVersion = "6.5"
-val serializerVersion = "1.0.1"
-val nimbusJoseVersion = "8.20.1"
-
-val snykImplementationDependencyOverrides = arrayOf(
-    "io.netty:netty-codec-http2:4.1.46.Final"
-)
+val junitJupiterVersion = "5.8.1"
+val ktorVersion = "1.6.5"
+val micrometerVersion = "1.3.20"
+val kafkaVersion = "2.8.1"
+val slf4jVersion = "1.7.32"
+val logbackVersion = "1.2.7"
+val logstashEncoderVersion = "7.0"
+val serializerVersion = "1.3.1"
+val nimbusJoseVersion = "9.15.2"
 
 plugins {
-    val kotlinVersion = "1.4.21"
+    val kotlinVersion = "1.6.0"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
     id("maven-publish")
@@ -33,11 +29,7 @@ repositories {
 }
 
 dependencies {
-    api(kotlin("stdlib-jdk8"))
-
-    snykImplementationDependencyOverrides.forEach { dependencyNotation ->
-        implementation(dependencyNotation)
-    }
+    api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0")
 
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializerVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
@@ -59,37 +51,38 @@ dependencies {
     api("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("ch.qos.logback:logback-core:$logbackVersion")
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
-    implementation("com.github.ben-manes.caffeine:caffeine:2.8.1")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
 
     api("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")
 
 
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
-    testImplementation("org.awaitility:awaitility:4.0.1")
+    testImplementation("org.awaitility:awaitility:4.1.1")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
         exclude(group = "junit")
     }
-    testImplementation("no.nav:kafka-embedded-env:$kafkaVersion") {
+    testImplementation("no.nav:kafka-embedded-env:2.8.0") {
         // Dont need schema-registry and it drags in a lot of vulnerable dependencies:
         exclude(group = "io.confluent", module = "kafka-schema-registry")
     }
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
-    testImplementation("io.mockk:mockk:1.10.0")
+    testImplementation("io.mockk:mockk:1.12.0")
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "17"
 }
 
 tasks.named<KotlinCompile>("compileTestKotlin") {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "17"
 }
 
 tasks.withType<Test> {

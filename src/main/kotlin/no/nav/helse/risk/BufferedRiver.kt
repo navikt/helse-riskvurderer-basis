@@ -51,13 +51,20 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
     private fun isCompleteMessageSet(msgs: List<JsonObject>) =
         isCompleteMessageSetAccordingToInterests(msgs, interessertI)
 
+    private var healthy = true
+
     fun tearDown() {
-        kafkaConsumer.close()
+        try {
+            kafkaConsumer.close()
+        } catch (ex: ConcurrentModificationException) {
+            log.warn("ConcurrentModificationException trying to close kafkaConsumer", ex)
+            healthy = false
+        }
     }
 
     fun isHealthy() = aggregator.isHealty().also {
         if (!it) log.error("WindowBufferEmitter is not healthy!")
-    }
+    } && healthy
 
     suspend fun start() {
         val mangeTilEn: Boolean = interessertI.size > 1

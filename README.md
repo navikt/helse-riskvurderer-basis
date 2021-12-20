@@ -29,8 +29,10 @@ En OppslagsApp fungerer typisk slik:
      kjøre, men vil typisk gå på en Exception, og oppslaget vil feile (og oppslagsAppen vil ikke svare, som igjen typisk fører til
      at en `VurderingsApp` igjen feiler p.g.a. manglende data)
    - Hvis det kun trengs én melding - typisk da `RiskNeed`-meldingen - så trengs egentlig ikke window-funksjonaliteten og oppslagsappen kan implementeres som en [EnTilEnOppslagsApp](src/main/kotlin/no/nav/helse/risk/EnTilEnOppslagsApp.kt)
- - Benytt så dataene fra RiskNeed (samt fra ev. ekstra oppslagsresultater) og benytt dette til å gjøre oppslaget.
+ - Benytt så dataene fra RiskNeed (samt fra ev. ekstra oppslagsresultater) til å gjøre det riktige oppslaget.
    - Ankommede meldinger sendes som en `List<JsonObject>` inn til _oppslagsfunksjonen_ som igjen returnerer et `JsonElement` som er resultatet.
+     - Denne _oppslagsfunksjonen_ er da det en spesifikk implementasjon/instans av en OppslagsApp består av, og sendes inn som parameteren `oppslagstjeneste` 
+       i [OppslagsApp](src/main/kotlin/no/nav/helse/risk/OppslagsApp.kt) sin constructor. 
  - Send resultatet av oppslaget ut på `River` i en melding med `type=oppslagsresultat`, `infotype=<som-definert-i-OppslagsApp-constructor>`,
    `vedtaksperiodeId=<samme-som-i-innkommende-meldinger>` og `data=<oppslagsresultatet-i-json-format>`
 
@@ -40,7 +42,9 @@ En VurderingsApp fungerer typisk slik:
    en melding med f.eks. `type=oppslagsresultat` og `infotype=oppslagstype1`, og typisk også _flere_ oppslagsresultater enn bare ett.
    - Akkurat på samme måte som for en `OppslagsApp`, men typisk kreves det ett eller flere oppslagsresultater i tillegg til et `RiskNeed`
    - Venter _maks-så-og-så-mange-sekunder_ på at "Interessene" ankommer, på samme måte som en `OppslagsApp`, og feiler typisk på samme måte dersom en forventet _Interesse_ uteblir.
- - Benytt så dataene fra RiskNeed og ev. oppslagsresultater til å gjøre _vurderingen_ (send ankommede meldinger som en `List<JsonObject>` inn til _vurderingsfunksjonen_)
+ - Benytt så dataene fra RiskNeed og ev. oppslagsresultater til å gjøre _vurderingen_ 
+   (send ankommede meldinger som en `List<JsonObject>` inn til _vurderingsfunksjonen_ 
+   (d.v.s. til implementasjonen av vurderingstjenesten som er angitt som parameteren `vurderer` i [VurderingsApp](src/main/kotlin/no/nav/helse/risk/VurderingsApp.kt) sin constructor))
    - VurderingsAppen benytter `VurderingBuilder` til å lage en `Vurdering` (se: [VurderingsApp.kt](src/main/kotlin/no/nav/helse/risk/VurderingsApp.kt)) som returneres av _vurderingsfunksjonen_.
  - Send resultatet av vurderingen ut på `River` i en melding med `type=vurdering`, `infotype=<kafkaClientId-som-definert-i-VurderingsApp-constructor>` 
    og ellers med felter som angitt i `Vurderingsmelding` (se [Meldinger.kt](src/main/kotlin/no/nav/helse/risk/Meldinger.kt)).
@@ -51,3 +55,54 @@ i et samspill mellom appene [Sigmund](https://github.com/navikt/helse-sigmund) o
 (Se disse for nærmere beskrivelse av denne funksjonaliteten. Det eneste i `helse-riskvurderer-basis` som har med dette å gjøre er at 
 meldingstypen `RiskNeed` er definert i denne modulen (i [Meldinger.kt](src/main/kotlin/no/nav/helse/risk/Meldinger.kt)), med feltene `isRetry` og `retryCount`,
 selv om OppslagsApper og VurderingsApper normalt ikke har (og normalt ikke bør ha) noe som helst forhold til dette.)
+
+
+### Diverse kjernefunksjonalitet:
+
+
+#### "WindowBufferEmitter" + "BufferedRiver":
+
+Som nevnt ovenfor samler Oppslags- og Vurderings-Apper opp relaterte meldinger (d.v.s. meldinger med samme `vedtaksperiodeId`) fra Kafka som ankommer innenfor et gitt tidsvindu (på "så-og-så-mange-sekunder").
+
+Kjernefunksjonaliteten for å gjøre dette er implementert i [WindowBufferEmitter](src/main/kotlin/no/nav/helse/buffer/WindowBufferEmitter.kt).
+Dette er grovt forklart rett og slett bare en in-memory buffer/map over ankommede meldinger+timestamp gruppert på en sesjonsId (egentlig på komboen sessionKey+kafkaKey).
+ - I [BufferedRiver](src/main/kotlin/no/nav/helse/risk/BufferedRiver.kt) er denne `sessionKey` = `vedtaksperiodeId`
+ - For at meldingen skal lagres i minne v.h.a. `BufferedRiver` så må meldingen i tillegg til å "ha ankommet" også svare til en såkalt [Interesse](src/main/kotlin/no/nav/helse/risk/Interesse.kt).
+ - Hovedgrunnen til at også `kafkaKey` er en del av sesjonsId´en, er at kafkaKey ikke nødvendigvis må være det samme som sessionKey (i.e: som vedtaksperiodeId), _men_:
+   Den _må_ være felles innad i en sesjon, fordi en sesjon (i en Oppslags- eller Vurderings-App) resulterer i _én ny_ melding ut på Kafka-topicen som skal ha samme kafkaKey som de innkommede meldingene.
+
+En "sesjon" (i.e: en samling meldinger med samme sesjonsId) kan _"emittes"_ (d.v.s. sendes videre til oppslags- eller vurderings-funksjonen) av to forskjellige årsaker:
+ - Tidsvinduet er ute: Dette håndteres av en "scheduler" som løper gjennom sesjonene ved gitte intervaller for å sjekke om noen av de er utløpt,
+   og er per nå hardkodet til å kjøre hvert 5. sekund i `BufferedRiver` (altså i alle Oppslags- og Vurderings-apper) 
+   - I [WindowBufferEmitter](src/main/kotlin/no/nav/helse/buffer/WindowBufferEmitter.kt) styres dette v.h.a. parametrene `scheduleExpiryCheck` + `schedulerIntervalInSeconds`
+ - Sesjonen er "komplett": Det vil si: Alle angitte ["Interesser"](src/main/kotlin/no/nav/helse/risk/Interesse.kt) er tilstede. 
+   Hvorvidt dette skal skje angis v.h.a. `emitEarlyWhenAllInterestsPresent`=`true/false` i Oppslags- og Vurderings-appene 
+   (som da igjen setter parameteren `sessionEarlyExpireCondition` i [WindowBufferEmitter](src/main/kotlin/no/nav/helse/buffer/WindowBufferEmitter.kt)).
+ 
+Noen forskjeller fra Time-Windowing i Kafka Streams:
+ - Kafka Streams er "failsafe" (v.h.a. intermediate topics og/eller database-backing(?)), det er _ikke_ `WindowBufferEmitter`. D.v.s.: Meldinger som er buffret i minne når f.eks. appen restarter vil gå tapt.
+   Dette løses rett og slett bare ved å kjøre en `Retry` dersom en vurdering blir `ufullstendig` (som nevnt ovenfor).
+ - `WindowBufferEmitter` er enklere og - i og med skreddersydd - gir mer kontroll over når/hvordan en sesjon avsluttes
+   - i.e: `sessionEarlyExpireCondition` som nevnt ovenfor.
+   - Vindusutløp håndheves strengt av en scheduler i `WindowBufferEmitter`, mens det i Kafka Streams sjekkes timestamp kun når _neste_ melding på samme "sesjon" ankommer(?),
+     og sesjoner kan bli kuttet både lenge før og lenge etter angitt ønsket vinduslengde, noe som ikke egner seg for "RiverApp´enes" formål.
+
+
+#### Kryptering av oppslagsdata:
+
+For å begrense avtrykkene av f.eks. eventuelle persondata som flyter mellom appene er det lagt på en mulighet for veldig enkel kryptering av `data`-feltet i `oppslagsresultat`-meldingene med statiske nøkler.
+Dette kan hjelpe til med å unngå f.eks. at oppslagsdata unødvendig flyter i klartekst gjennom en annen mikrotjeneste som _ikke trenger_ dataene, 
+men som lytter på samme kafka-topic, eller at oppslagsdataene er tilgjengelig i klartekst for Kafka-brokeren.
+
+Nøkler som skal benyttes til å kryptere/dekryptere innholdet i `data`-feltet angis v.h.a. constructor-parametrene `encryptionJWK` (kun `OppslagsApp`) 
+og `decryptionJWKS` (både `OppslagsApp` og `VurderingsApp`).
+
+For å generere en statisk AES-256 nøkkel for en oppslagsapp kan man benytte [JWKUtil](src/test/kotlin/no/nav/helse/crypto/JWKUtil.kt):
+ - Bytt ut `oppslagsdata` i `val base = "oppslagsdata"` med en identifikator for dataene, f.eks. "my-special-data"
+ - Kjør `JWKUtil.main()` for å generere kubectl-kommandoer for å legge inn nøkkelen som en k8s-secret samt koden som må inn i 
+   NAIS-yaml og i Kotlin i "sender" (en OppslagsApp) og "receiver" (en VurderingsApp eller en annen OppslagsApp).
+
+
+#### Caching av oppslagsdata:
+
+(....)

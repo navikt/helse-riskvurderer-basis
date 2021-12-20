@@ -34,7 +34,7 @@ fun main() {
     val createJWKSCommand = "  kubectl create secret generic $base-receive --from-literal=${base}_jwks='$jwksString'"
     println(createJWKSCommand)
     println("Read JWK:")
-    println("kubectl get secret oppslagsdata-send -o yaml")
+    println("kubectl get secret $base-send -o yaml")
     println("echo '<base64stuff>' | base64 --decode")
     println("Update JWKS:")
     println("!NB!TODO: You might want to include _old_ JWKS-keys also, in the new JWKS, and update JWKS _before_ JWK")

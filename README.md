@@ -57,7 +57,7 @@ meldingstypen `RiskNeed` er definert i denne modulen (i [Meldinger.kt](src/main/
 selv om OppslagsApper og VurderingsApper normalt ikke har (og normalt ikke bør ha) noe som helst forhold til dette.)
 
 
-### Diverse kjernefunksjonalitet:
+### Diverse kjerne- og "convenience"-funksjonalitet:
 
 
 #### "WindowBufferEmitter" + "BufferedRiver":
@@ -114,8 +114,8 @@ en "utvidet vurdering" (iterasjon 2)), så må i prinsippet akkurat samme dataop
 For da å slippe å potensielt måtte gjøre akkurat samme oppslag flere ganger rett etterhverandre gjør derfor de fleste av oppslagstjenestene en kortvarig caching
 av oppslagsresultatene i minnet (på pod´en/app-instansen).
 
-Til dette benyttes ["InMemoryLookupCache"](src/main/kotlin/no/nav/helse/risk/cache/InMemoryLookupCache.kt) for å "wrappe" en oppslagsfunksjon hvorpå
-resultatet (med mindre det er `null`) caches med oppslagsfunksjonsparametrene som nøkkel/referanse (For eksempel, se ["InMemoryLookupCacheTest"](src/test/kotlin/no/nav/helse/risk/cache/InMemoryLookupCacheTest.kt)).
+Til dette benyttes [InMemoryLookupCache](src/main/kotlin/no/nav/helse/risk/cache/InMemoryLookupCache.kt) for å "wrappe" en oppslagsfunksjon hvorpå
+resultatet (med mindre det er `null`) caches med oppslagsfunksjonsparametrene som nøkkel/referanse (For eksempel, se [InMemoryLookupCacheTest](src/test/kotlin/no/nav/helse/risk/cache/InMemoryLookupCacheTest.kt)).
 
 - Returdataene fra oppslagsfunksjonen må være serialiserbare, og `InMemoryLookupCache` sin _constructor_ må få angitt en `serializer: KSerializer<RET>` hvor `RET` er oppslagsdataenes `type`. 
   - At dataene serialiseres _kan_ man tenke seg at kunne vært benyttet til å gjøre cachingen i en form for database, selv om det per nå ikke har vært noe behov for dette. 
@@ -123,4 +123,30 @@ resultatet (med mindre det er `null`) caches med oppslagsfunksjonsparametrene so
     på tilfeldige data generert ved oppstart av appen, og delvis på input-parametrene til oppslagsfunksjonen (Tanken er at dette vil kunne bidra til å redusere
     mengden data som vil være lett tilgjengelig samtidig ved f.eks. en minnedump).
 
-(....)
+
+#### Logging:
+
+- Sanity.getSecureLogger():
+
+Logging av parametre/data som kan være personidentifiserende er vanlig å logge til den tilgangsbegrensede "tjenesteloggindeksen". 
+Dette krever at man kaller `getLogger()` med et loggernavn som er konfigurert på riktig måte i `logback.xml`.
+
+For å enklere å _huske_ på dette for hver mikrotjeneste som opprettes så er konvensjonen i "risk-appene" at man henter "sikkerLogger"-instansen ved å kalle
+`Sanity.getSecureLogger()` (definert i  [Sanity.kt](src/main/kotlin/no/nav/helse/risk/Sanity.kt)), 
+som også gjør et forsøk på å verifisere at sikkerLogg-instansen er satt opp riktig, og kaster en Exception hvis ikke.
+
+Siden denne verifiseringen gjerne feiler for oppsettet som gjelder for Unit-tester så må Unit-tester som kjører kode som igjen kaller `Sanity.getSecureLogger()`
+legge inn denne kodesnutten i test-klassene for å skru av denne verifiseringen: `init { Sanity.setSkipSanityChecksForProduction() }`
+
+ - IdMasker():
+
+Hvis det er behov for å logge json-strukturer/oppslagsdata, men hvor kanskje ikke spesifikt person/bedrift-identifiserende informasjon er nødvendig for feilsøkingen,
+så kan man filtrere vekk typisk direkte-identifiserende felter ved å kjøre json-strukturen gjennom `IdMasker().mask()`-funksjonen før de logges, hvor `IdMasker` er en
+prekonfigurert versjon av [Masker](src/main/kotlin/no/nav/helse/privacy/Masker.kt). Verdien i typiske ident-felter vil da byttes ut med en verdi som er en
+hash over den egentlige verdien og noen tilfeldige data som ble generert ved oppstart av appen, slik at maskeringen blir konsistent innenfor app-instansens levetid
+(det vil si: samme ID-verdi vil da nødvendigvis bli byttet ut med samme erstatnings-verdi i hele datasettet som eventuelt logges).
+
+Dersom `IdMasker` _ikke_ maskerer felter som _skulle_ vært maskert, eller hvis den _maskerer_ felter som _ikke_ skulle vært maskert, 
+så kan dette justeres v.h.a. parametrene `fieldNames` (som skal maskeres) og `primitiveFieldNamesExcludedFromMasking` (som ikke skal maskeres).
+
+

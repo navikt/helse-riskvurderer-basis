@@ -111,8 +111,8 @@ og siden oppslagsdata heller ikke blir mellomlagret i noen database, så blir de
 (f.eks fordi vurderingsforespørselen feilet (teknisk) og vi må kjøre en `Retry`, eller fordi "grunnvurderingen" (iterasjon 1) taler for at det skal kjøres
 en "utvidet vurdering" (iterasjon 2)), så må i prinsippet akkurat samme dataoppslag (potensielt mot ekstern tjeneste) også gjøres på nytt.
 
-For å slippe å potensielt måtte gjøre akkurat samme oppslag flere ganger rett etterhverandre gjør derfor de fleste av oppslagstjenestene en kortvarig caching
-av oppslagsresultatene i minne (på pod´en/app-instansen).
+For da å slippe å potensielt måtte gjøre akkurat samme oppslag flere ganger rett etterhverandre gjør derfor de fleste av oppslagstjenestene en kortvarig caching
+av oppslagsresultatene i minnet (på pod´en/app-instansen).
 
 Til dette benyttes ["InMemoryLookupCache"](src/main/kotlin/no/nav/helse/risk/cache/InMemoryLookupCache.kt) for å "wrappe" en oppslagsfunksjon hvorpå
 resultatet (med mindre det er `null`) caches med oppslagsfunksjonsparametrene som nøkkel/referanse (For eksempel, se ["InMemoryLookupCacheTest"](src/test/kotlin/no/nav/helse/risk/cache/InMemoryLookupCacheTest.kt)).

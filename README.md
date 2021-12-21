@@ -105,4 +105,22 @@ For å generere en statisk AES-256 nøkkel for en oppslagsapp kan man benytte [J
 
 #### Caching av oppslagsdata:
 
+Siden en vurderingsforespørsel mot riskmodulen er avhengig av at hver del skjer innenfor visse tidsvinduer 
+(fordi - som beskrevet over - hver mikrotjeneste venter "så-og-så-mange-sekunder" på at dateene den trenger blir tilgjengelig på Kafka),
+og siden oppslagsdata heller ikke blir mellomlagret i noen database, så blir det slik at om de samme oppslagsdataene trengs på nytt igjen like etterpå
+(f.eks fordi vurderingsforespørselen feilet (teknisk) og vi må kjøre en `Retry`, eller fordi "grunnvurderingen" (iterasjon 1) taler for at det skal kjøres
+en "utvidet vurdering" (iterasjon 2)), så må i prinsippet akkurat samme dataoppslag (potensielt mot ekstern tjeneste) også gjøres på nytt.
+
+For å slippe å potensielt måtte gjøre akkurat samme oppslag flere ganger rett etterhverandre gjør derfor de fleste av oppslagstjenestene en kortvarig caching
+av oppslagsresultatene i minne (på pod´en/app-instansen).
+
+Til dette benyttes ["InMemoryLookupCache"](src/main/kotlin/no/nav/helse/risk/cache/InMemoryLookupCache.kt) for å "wrappe" en oppslagsfunksjon hvorpå
+resultatet (med mindre det er `null`) caches med oppslagsfunksjonsparametrene som nøkkel/referanse (For eksempel, se ["InMemoryLookupCacheTest"](src/test/kotlin/no/nav/helse/risk/cache/InMemoryLookupCacheTest.kt)).
+
+- Returdataene fra oppslagsfunksjonen må være serialiserbare, og `InMemoryLookupCache` sin _constructor_ må få angitt en `serializer: KSerializer<RET>` hvor `RET` er oppslagsdataenes `type`. 
+  - At dataene serialiseres _kan_ man tenke seg at kunne vært benyttet til å gjøre cachingen i en form for database, selv om det per nå ikke har vært noe behov for dette. 
+  - Det faktum _at_ dataene serialiseres utnyttes dog per nå til å obfuskere cache-verdiene i minnet ved at de AES-krypteres med en nøkkel som er basert delvis
+    på tilfeldige data generert ved oppstart av appen, og delvis på input-parametrene til oppslagsfunksjonen (Tanken er at dette vil kunne bidra til å redusere
+    mengden data som vil være lett tilgjengelig samtidig ved f.eks. en minnedump).
+
 (....)

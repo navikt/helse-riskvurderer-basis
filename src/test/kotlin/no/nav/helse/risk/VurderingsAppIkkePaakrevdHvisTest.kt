@@ -74,7 +74,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
                 val vurdering = json.decodeFromJsonElement(Vurderingsmelding.serializer(), producedMessages.first())
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
                 assertEquals("$orgnr/$trengerIkkeEkstrainfo", vurdering.begrunnelser().first())
-                assertEquals(mapOf("ekstrainfo" to "{}"), vurdering.metadata)
+                assertEquals(mapOf("ekstrainfo" to "{}") + baseMetaData, vurdering.metadata)
             },
             atLeastNumberOfMessages = 1
         )
@@ -100,7 +100,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
                 val vurdering = json.decodeFromJsonElement(Vurderingsmelding.serializer(), producedMessages.first())
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
                 assertEquals("$orgnr/whatever", vurdering.begrunnelser().first())
-                assertEquals(mapOf("ekstrainfo" to "{\"hei\":\"på deg\"}"), vurdering.metadata)
+                assertEquals(mapOf("ekstrainfo" to "{\"hei\":\"på deg\"}") + baseMetaData, vurdering.metadata)
             },
             atLeastNumberOfMessages = 1
         )
@@ -126,7 +126,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
                 val vurdering = json.decodeFromJsonElement(Vurderingsmelding.serializer(), producedMessages.first())
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
                 assertEquals("$orgnr/$trengerIkkeEkstrainfo", vurdering.begrunnelser().first())
-                assertEquals(mapOf("ekstrainfo" to "{\"er\":\"her allikevel\"}"), vurdering.metadata)
+                assertEquals(mapOf("ekstrainfo" to "{\"er\":\"her allikevel\"}") + baseMetaData, vurdering.metadata)
             },
             atLeastNumberOfMessages = 1
         )
@@ -152,7 +152,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
                 val vurdering = json.decodeFromJsonElement(Vurderingsmelding.serializer(), producedMessages.first())
                 assertEquals(vedtaksperiodeid, vurdering.vedtaksperiodeId)
                 assertEquals("$orgnr/$trengerIkkeEkstrainfo", vurdering.begrunnelser().first())
-                assertEquals(mapOf("ekstrainfo" to "{}"), vurdering.metadata)
+                assertEquals(mapOf("ekstrainfo" to "{}") + baseMetaData, vurdering.metadata)
             },
             atLeastNumberOfMessages = 1
         )

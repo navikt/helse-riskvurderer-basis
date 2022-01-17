@@ -27,6 +27,12 @@ import java.util.concurrent.Future
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+val baseMetaData = mapOf(
+    "podname" to "unknownHost",
+    "appname" to "unknownApp",
+    "imagename" to "unknownImage",
+)
+
 @FlowPreview
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class VurderingsAppTest {
@@ -120,7 +126,7 @@ class VurderingsAppTest {
                         assertTrue(kreverManuellBehandling)
                     }
                 }
-                assertTrue(vurdering.metadata!!.isEmpty())
+                assertEquals(baseMetaData, vurdering.metadata)
             }
         )
     }

@@ -28,6 +28,17 @@ private val isKafkaCloud:Boolean = systemEnvOrDefault("KAFKA_CLOUD_RIVER", "fals
 
 fun riskRiverTopic(): String = if (isKafkaCloud) "risk.helse-risk-river" else "helse-risk-river-v1"
 
+object AppEnvironment {
+    fun podname(): String = systemEnvOrDefault("HOSTNAME", "unknownHost")
+    fun appname(): String = systemEnvOrDefault("NAIS_APP_NAME", "unknownApp")
+    fun imagename(): String = systemEnvOrDefault("NAIS_APP_IMAGE", "unknownImage")
+    fun appInstanceInfo() : Map<String, String> = mapOf(
+        "podname" to podname(),
+        "appname" to appname(),
+        "imagename" to imagename()
+    )
+}
+
 internal class RiverEnvironment(
     private val kafkaClientId: String
 ) {

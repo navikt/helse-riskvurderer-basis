@@ -23,8 +23,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.*
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 val baseMetaData = mapOf(
@@ -127,6 +129,62 @@ class VurderingsAppTest {
                     }
                 }
                 assertEquals(baseMetaData, vurdering.metadata)
+            }
+        )
+    }
+
+    @Test
+    fun `subsumsjoner blir med i vurderingen`() {
+        val subsumsjon1 = buildJsonObject {
+            put("@id", UUID.randomUUID().toString())
+            put("@versjon", "0.9.0")
+            put("@event_name", "subsumsjon")
+            put("@kilde", "tullevurderer-1")
+            put("eit_felt", buildJsonArray { add(1); add(2); add(3) })
+        }
+        val subsumsjon2 = buildJsonObject {
+            put("@id", UUID.randomUUID().toString())
+            put("@versjon", "0.9.5")
+            put("@event_name", "subsumsjon")
+            put("@kilde", "tullevurderer-1")
+            put("eit_anna_felt", "Ein anna verdi")
+        }
+        val subsumsjon3 = buildJsonObject {
+            put("@id", UUID.randomUUID().toString())
+            put("@versjon", "1.0.0")
+            put("@event_name", "subsumsjon")
+            put("@kilde", "tullevurderer-1")
+            put("eit_tredje_felt", "noe helt annet")
+        }
+        testMedVurdererOgAssertions(
+            vurderer = { meldinger ->
+                meldinger.finnRiskNeed()!!
+                meldinger.finnOppslagsresultat("testdata")!!.jsonObject
+                VurderingBuilder().apply {
+                    nySjekk(vekt = 10) {
+                        leggVedSubsumsjon(subsumsjon1)
+                        this@apply.leggVedSubsumsjon(subsumsjon2)
+                        passert("all good")
+                    }
+                    leggVedSubsumsjon(subsumsjon3)
+                }.build(10)
+            },
+            assertOnProducedMessages = { producedMessages ->
+                assertEquals(1, producedMessages.size)
+                val vurderingsmelding:Vurderingsmelding = json.decodeFromJsonElement(Vurderingsmelding.serializer(), producedMessages.first())
+                assertEquals(vedtaksperiodeid, vurderingsmelding.vedtaksperiodeId)
+                vurderingsmelding.sjekkresultater.apply {
+                    assertEquals(1, size)
+                    first().apply {
+                        assertEquals("all good", begrunnelse)
+                        assertEquals(0, score)
+                        assertEquals(10, vekt)
+                        assertFalse(kreverManuellBehandling)
+                    }
+                }
+                println(vurderingsmelding.subsumsjoner)
+                assertEquals(setOf(subsumsjon1, subsumsjon2, subsumsjon3), vurderingsmelding.subsumsjoner!!.toSet())
+                assertEquals(baseMetaData, vurderingsmelding.metadata)
             }
         )
     }

@@ -31,7 +31,8 @@ internal class VurderingProducer(
                 begrunnelser = vurdering.begrunnelser,
                 begrunnelserSomAleneKreverManuellBehandling = vurdering.begrunnelserSomAleneKreverManuellBehandling,
                 passerteSjekker = vurdering.passerteSjekker,
-                metadata = vurdering.metadata + AppEnvironment.appInstanceInfo()
+                metadata = vurdering.metadata + AppEnvironment.appInstanceInfo(),
+                subsumsjoner = vurdering.subsumsjoner
             )).jsonObject
         } catch (ex: Exception) {
             log.error(

@@ -138,21 +138,21 @@ class VurderingsAppTest {
         val subsumsjon1 = buildJsonObject {
             put("id", UUID.randomUUID().toString())
             put("versjon", "0.9.0")
-            put("event_name", "subsumsjon")
+            put("eventName", "subsumsjon")
             put("kilde", "tullevurderer-1")
             put("eit_felt", buildJsonArray { add(1); add(2); add(3) })
         }
         val subsumsjon2 = buildJsonObject {
             put("id", UUID.randomUUID().toString())
             put("versjon", "0.9.5")
-            put("event_name", "subsumsjon")
+            put("eventName", "subsumsjon")
             put("kilde", "tullevurderer-1")
             put("eit_anna_felt", "Ein anna verdi")
         }
         val subsumsjon3 = buildJsonObject {
             put("id", UUID.randomUUID().toString())
             put("versjon", "1.0.0")
-            put("event_name", "subsumsjon")
+            put("eventName", "subsumsjon")
             put("kilde", "tullevurderer-1")
             put("eit_tredje_felt", "noe helt annet")
         }

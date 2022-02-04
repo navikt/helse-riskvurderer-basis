@@ -114,16 +114,16 @@ class VurderingBuilder {
 
     @Serializable
     private data class SubsumsjonHeaderFields(
-        val `@id`: String,
-        val `@versjon`: String,
-        val `@event_name`: String,
-        val `@kilde`: String,
+            val id: String,
+            val versjon: String,
+            val event_name: String,
+            val kilde: String,
     ) {
         init {
-            try { requireNotNull(UUID.fromString(`@id`)) } catch (ex: Exception) {
+            try { requireNotNull(UUID.fromString(id)) } catch (ex: Exception) {
                 throw IllegalArgumentException("Klarte ikke parse @id som UUID", ex)
             }
-            require(`@event_name` == "subsumsjon", { "@event_name må være 'subsumsjon'" })
+            require(event_name == "subsumsjon", { "@event_name må være 'subsumsjon'" })
         }
     }
 

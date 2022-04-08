@@ -80,7 +80,8 @@ class VurderingBuilder {
             score: Int,
             kreverManuellBehandling: Boolean = false,
             ytterligereKategorier: List<String> = emptyList(),
-            variabler: List<String> = emptyList()
+            variabler: List<String> = emptyList(),
+            grunnlag: SjekkresultatGrunnlag? = null,
         ): Sjekkresultat {
             if (finalized) throw IllegalStateException("Resultat er allerede generert")
             return Sjekkresultat(
@@ -90,7 +91,8 @@ class VurderingBuilder {
                 vekt = vekt,
                 score = score,
                 kreverManuellBehandling = kreverManuellBehandling,
-                kategorier = (kategorier + ytterligereKategorier).toSet().toList()
+                kategorier = (kategorier + ytterligereKategorier).toSet().toList(),
+                grunnlag = grunnlag
             ).also { finalized = true }
         }
 
@@ -98,13 +100,15 @@ class VurderingBuilder {
             tekst: TekstMedVariabler,
             score: Int,
             kreverManuellBehandling: Boolean = false,
-            ytterligereKategorier: List<String> = emptyList()
+            ytterligereKategorier: List<String> = emptyList(),
+            grunnlag: SjekkresultatGrunnlag? = null,
         ): Sjekkresultat = resultat(
             tekst = tekst.toString(),
             variabler = tekst.vars.map { it.toString() },
             score = score,
             kreverManuellBehandling = kreverManuellBehandling,
-            ytterligereKategorier = ytterligereKategorier)
+            ytterligereKategorier = ytterligereKategorier,
+            grunnlag = grunnlag)
     }
 
     fun leggVedMetadata(key: String, value: String): VurderingBuilder {

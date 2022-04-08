@@ -1,5 +1,9 @@
 package no.nav.helse.risk
 
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -7,13 +11,16 @@ import org.junit.jupiter.api.Test
 class VurderingBuilderTest {
 
     @Test
-    fun variabler() {
+    fun `variabler og grunnlag`() {
         val noentall = listOf(1, 2, 3)
         val vurdering = VurderingBuilder()
         vurdering.nySjekk(vekt = 4, id = "SJEKK-1") {
             resultat(
                 tekst = tekst("To forskjellige verdier ({}% og {}%) 5% 6% opp (7%): {}", 3000, 4.54, noentall),
-                score = 1
+                score = 1,
+                grunnlag = SjekkresultatGrunnlag(versjon = 1, data = buildJsonObject {
+                    put("tall", buildJsonArray { noentall.forEach { this.add(it) } })
+                })
             )
         }
         vurdering.build().apply {
@@ -26,7 +33,10 @@ class VurderingBuilderTest {
                         variabler = listOf("3000", "4.54", "[1, 2, 3]"),
                         score = 1,
                         vekt = 4,
-                        kreverManuellBehandling = false
+                        kreverManuellBehandling = false,
+                        grunnlag = SjekkresultatGrunnlag(versjon = 1, data = JsonRisk.parseToJsonElement("""
+                            { "tall" : [1, 2, 3] }
+                        """).jsonObject)
                     )
                 ), this.sjekkresultat
             )

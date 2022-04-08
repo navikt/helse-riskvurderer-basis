@@ -95,6 +95,12 @@ fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
 
 
 @Serializable
+data class SjekkresultatGrunnlag(
+    val versjon: Int,
+    val data: JsonObject
+)
+
+@Serializable
 data class Sjekkresultat(
     val id: String,
     val begrunnelse: String,
@@ -102,7 +108,8 @@ data class Sjekkresultat(
     val score: Int,
     val vekt: Int,
     val kreverManuellBehandling: Boolean = false,
-    val kategorier: List<String> = emptyList()
+    val kategorier: List<String> = emptyList(),
+    val grunnlag: SjekkresultatGrunnlag? = null
 )
 
 @Serializable

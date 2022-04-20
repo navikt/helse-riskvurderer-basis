@@ -1,14 +1,15 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val junitJupiterVersion = "5.8.1"
-val ktorVersion = "1.6.5"
+val junitJupiterVersion = "5.8.2"
+val ktorVersion = "1.6.8"
 val micrometerVersion = "1.3.20"
 val kafkaVersion = "2.8.1"
 val slf4jVersion = "1.7.32"
-val logbackVersion = "1.2.7"
-val logstashEncoderVersion = "7.0"
-val serializerVersion = "1.3.1"
+val logbackVersion = "1.2.11"
+val logstashEncoderVersion = "7.0.1"
+val serializerVersion = "1.3.2"
 val nimbusJoseVersion = "9.15.2"
+val jacksonDatabindVersionOverride = "2.13.2.2"
 
 plugins {
     val kotlinVersion = "1.6.0"
@@ -31,6 +32,8 @@ repositories {
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0")
 
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersionOverride")
+
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializerVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
@@ -50,8 +53,9 @@ dependencies {
     api("org.slf4j:slf4j-api:$slf4jVersion")
     api("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("ch.qos.logback:logback-core:$logbackVersion")
+
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
-    implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.0.6")
 
     api("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")
 
@@ -60,16 +64,16 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
-    testImplementation("org.awaitility:awaitility:4.1.1")
+    testImplementation("org.awaitility:awaitility:4.2.0")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
         exclude(group = "junit")
     }
-    testImplementation("no.nav:kafka-embedded-env:2.8.0") {
+    testImplementation("no.nav:kafka-embedded-env:2.8.1") {
         // Dont need schema-registry and it drags in a lot of vulnerable dependencies:
         exclude(group = "io.confluent", module = "kafka-schema-registry")
     }
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
-    testImplementation("io.mockk:mockk:1.12.0")
+    testImplementation("io.mockk:mockk:1.12.3")
 }
 
 java {

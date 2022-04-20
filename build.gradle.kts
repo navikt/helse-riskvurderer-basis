@@ -4,12 +4,11 @@ val junitJupiterVersion = "5.8.2"
 val ktorVersion = "1.6.8"
 val micrometerVersion = "1.3.20"
 val kafkaVersion = "2.8.1"
-val slf4jVersion = "1.7.32"
+val slf4jVersion = "1.7.36"
 val logbackVersion = "1.2.11"
-val logstashEncoderVersion = "7.0.1"
+val logstashEncoderVersion = "7.1.1"
 val serializerVersion = "1.3.2"
 val nimbusJoseVersion = "9.15.2"
-val jacksonDatabindVersionOverride = "2.13.2.2"
 
 plugins {
     val kotlinVersion = "1.6.0"
@@ -32,10 +31,10 @@ repositories {
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0")
 
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersionOverride")
-
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializerVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
+
+    api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     api("io.ktor:ktor-server-netty:$ktorVersion")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core") {
@@ -54,7 +53,6 @@ dependencies {
     api("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("ch.qos.logback:logback-core:$logbackVersion")
 
-    api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
     implementation("com.github.ben-manes.caffeine:caffeine:3.0.6")
 
     api("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")

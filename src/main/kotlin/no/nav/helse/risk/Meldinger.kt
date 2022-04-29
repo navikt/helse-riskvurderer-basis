@@ -26,6 +26,8 @@ const val dataKey = "data"
 @Serializable
 data class RiskNeed(
     val vedtaksperiodeId: String,
+    val vedtaksperiodeGruppeId: String? = null,
+    val tilknyttedeVedtaksperiodeIder: List<String>? = null,
     val organisasjonsnummer: String,
     val fnr: String,
     val behovOpprettet: String,

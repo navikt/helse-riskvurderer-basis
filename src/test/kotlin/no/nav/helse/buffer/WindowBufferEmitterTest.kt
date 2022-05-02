@@ -6,11 +6,11 @@ import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import java.io.StringWriter
 import java.time.Clock
 import kotlin.test.assertEquals
@@ -199,6 +199,74 @@ class WindowBufferEmitterTest {
             WindowBufferEmitterSessionId("s2", "k1").hashCode()
         )
     }
+
+    @Test
+    fun `en ekstra WindowBufferEmitter går bra hvis metricsNamePostfix settes`() {
+        fun lagOgSendVurdering(emitted: WindowBufferEmittable) {
+        }
+        WindowBufferEmitter(20, ::lagOgSendVurdering, CollectorRegistry.defaultRegistry)
+        WindowBufferEmitter(20, ::lagOgSendVurdering, CollectorRegistry.defaultRegistry, metricsNamePostfix = "abc")
+    }
+
+    @Test
+    fun `metricsNamePostfix kan ikke være for langt eller inneholde annet enn a-z`() {
+        fun lagOgSendVurdering(emitted: WindowBufferEmittable) {
+        }
+
+        assertThrows<IllegalArgumentException> {
+            WindowBufferEmitter(
+                20, ::lagOgSendVurdering, CollectorRegistry.defaultRegistry,
+                sessionEarlyExpireCondition = { true },
+                metricsNamePostfix = "_123"
+            ).store(sessionKey = "1", value = buildJsonObject {  }, kafkaKey = "1", timestamp = 0)
+        }
+        assertDoesNotThrow {
+            WindowBufferEmitter(
+                20, ::lagOgSendVurdering, CollectorRegistry.defaultRegistry,
+                sessionEarlyExpireCondition = { true },
+                metricsNamePostfix = "abcdefghij"
+            ).store(sessionKey = "1", value = buildJsonObject {  }, kafkaKey = "1", timestamp = 0)
+        }
+        assertThrows<IllegalArgumentException> {
+            WindowBufferEmitter(
+                20, ::lagOgSendVurdering, CollectorRegistry.defaultRegistry,
+                sessionEarlyExpireCondition = { true },
+                metricsNamePostfix = "abcdefghijl"
+            ).store(sessionKey = "1", value = buildJsonObject {  }, kafkaKey = "1", timestamp = 0)
+        }
+    }
+
+    @Test
+    fun `metrics-navn postfix skal kunne angis`() {
+        fun lagOgSendVurdering(emitted: WindowBufferEmittable) {
+        }
+
+        WindowBufferEmitter(
+            20, ::lagOgSendVurdering, CollectorRegistry.defaultRegistry,
+            sessionEarlyExpireCondition = { true },
+        ).also {
+            it.store(sessionKey = "1", value = buildJsonObject {  }, kafkaKey = "1", timestamp = 0)
+            it.store(sessionKey = "2", value = buildJsonObject {  }, kafkaKey = "1", timestamp = 0)
+        }
+
+        WindowBufferEmitter(
+            20, ::lagOgSendVurdering, CollectorRegistry.defaultRegistry,
+            sessionEarlyExpireCondition = { true },
+            metricsNamePostfix = "test"
+        ).also {
+            it.store(sessionKey = "1", value = buildJsonObject {  }, kafkaKey = "1", timestamp = 0)
+        }
+
+        assertEquals(2.0, CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted", arrayOf("state"), arrayOf("complete")))
+        assertEquals(1.0, CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_test", arrayOf("state"), arrayOf("complete")))
+
+        assertNotNull(CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_time_left_secs_summary_sum"))
+        assertNotNull(CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_time_left_secs_summary_test_sum"))
+
+        assertNotNull(CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_after_secs_summary_sum"))
+        assertNotNull(CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_after_secs_summary_test_sum"))
+    }
+
 
     private fun metricsString(): String {
         val writer = StringWriter()

@@ -125,9 +125,10 @@ class WindowBufferEmitter(private val windowSizeInSeconds: Long,
                           private val clock: Clock = Clock.systemDefaultZone(),
                           private val scheduleExpiryCheck: Boolean = true,
                           private val schedulerIntervalInSeconds: Long = windowSizeInSeconds,
-                          sessionEarlyExpireCondition: ((List<JsonObject>) -> Boolean)? = null) {
+                          sessionEarlyExpireCondition: ((List<JsonObject>) -> Boolean)? = null,
+                          metricsNamePostfix: String? = null) {
 
-    private val metrics = WindowBufferEmitterMetrics(collectorRegistry)
+    private val metrics = WindowBufferEmitterMetrics(collectorRegistry, metricsNamePostfix = metricsNamePostfix)
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     @Volatile private var runningExpiryCheck = false
     val earlyExpiryEnabled: Boolean = sessionEarlyExpireCondition != null

@@ -86,7 +86,7 @@ class VurderingBuilder {
             if (finalized) throw IllegalStateException("Resultat er allerede generert")
             return Sjekkresultat(
                 id = id,
-                begrunnelse = tekst,
+                tekst = tekst,
                 variabler = variabler,
                 vekt = vekt,
                 score = score,
@@ -137,16 +137,16 @@ class VurderingBuilder {
     }
 
     private fun bakoverkompatibel_begrunnelser(): List<String> =
-        sjekkresultater.filter { it.score > 0 }.map { it.begrunnelse }
+        sjekkresultater.filter { it.score > 0 }.map { it.tekst() }
 
     private fun bakoverkompatibel_begrunnelserSomAleneKreverManuellBehandling(): List<String> =
-        sjekkresultater.filter { it.kreverManuellBehandling }.map { it.begrunnelse }
+        sjekkresultater.filter { it.kreverManuellBehandling }.map { it.tekst() }
 
     private fun bakoverkompatibel_score(): Int =
         minOf(10, sjekkresultater.map { it.score }.sum())
 
     private fun bakoverkompatibel_passerteSjekker(): List<String> =
-        sjekkresultater.filter { it.score == 0 && it.vekt != 0 }.map { it.begrunnelse }
+        sjekkresultater.filter { it.score == 0 && it.vekt != 0 }.map { it.tekst() }
 
 
     fun build(vekt: Int = 10): Vurdering {

@@ -82,6 +82,7 @@ class VurderingsAppTest {
                     listOf(
                         Sjekkresultat(
                             id = "1",
+                            tekst = "$orgnr/verdi-1",
                             begrunnelse = "$orgnr/verdi-1",
                             score = 6,
                             vekt = 10,
@@ -89,6 +90,7 @@ class VurderingsAppTest {
                         ),
                         Sjekkresultat(
                             id = "2",
+                            tekst = "Ellers greit",
                             begrunnelse = "Ellers greit",
                             score = 0,
                             vekt = 10,
@@ -122,7 +124,7 @@ class VurderingsAppTest {
                 vurdering.sjekkresultater.apply {
                     assertEquals(1, size)
                     first().apply {
-                        assertEquals("showstopper", begrunnelse)
+                        assertEquals("showstopper", tekst)
                         assertEquals(10, score)
                         assertEquals(10, vekt)
                         assertTrue(kreverManuellBehandling)
@@ -176,7 +178,7 @@ class VurderingsAppTest {
                 vurderingsmelding.sjekkresultater.apply {
                     assertEquals(1, size)
                     first().apply {
-                        assertEquals("all good", begrunnelse)
+                        assertEquals("all good", tekst)
                         assertEquals(0, score)
                         assertEquals(10, vekt)
                         assertFalse(kreverManuellBehandling)

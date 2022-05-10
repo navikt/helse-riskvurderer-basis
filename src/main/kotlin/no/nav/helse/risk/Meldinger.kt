@@ -105,14 +105,20 @@ data class SjekkresultatGrunnlag(
 @Serializable
 data class Sjekkresultat(
     val id: String,
-    val begrunnelse: String,
+    val tekst: String? = null,
+    @Deprecated("Bruk tekst i stedet") val begrunnelse: String? = tekst,
     val variabler: List<String> = emptyList(),
     val score: Int,
     val vekt: Int,
     val kreverManuellBehandling: Boolean = false,
     val kategorier: List<String> = emptyList(),
     val grunnlag: SjekkresultatGrunnlag? = null
-)
+){
+    init {
+        if (tekst == null && begrunnelse == null) throw IllegalArgumentException("Må ha tekst eller begrunnelse")
+    }
+    fun tekst(): String = tekst ?: begrunnelse!!
+}
 
 @Serializable
 data class Vurderingsmelding(
@@ -129,11 +135,11 @@ data class Vurderingsmelding(
     val subsumsjoner: List<JsonObject>? = null,
 ) {
     fun begrunnelser(): List<String> =
-        sjekkresultater.filter { it.score > 0 }.map { it.begrunnelse }
+        sjekkresultater.filter { it.score > 0 }.map { it.tekst() }
     fun begrunnelserSomAleneKreverManuellBehandling(): List<String> =
-        sjekkresultater.filter { it.kreverManuellBehandling }.map { it.begrunnelse }
+        sjekkresultater.filter { it.kreverManuellBehandling }.map { it.tekst() }
     fun passerteSjekker(): List<String> =
-        sjekkresultater.filter { it.score == 0 && it.vekt != 0 }.map { it.begrunnelse }
+        sjekkresultater.filter { it.score == 0 && it.vekt != 0 }.map { it.tekst() }
 
 }
 

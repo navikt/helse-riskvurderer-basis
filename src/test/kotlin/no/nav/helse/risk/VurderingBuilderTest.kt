@@ -29,6 +29,7 @@ class VurderingBuilderTest {
                 listOf(
                     Sjekkresultat(
                         id = "SJEKK-1",
+                        tekst = "To forskjellige verdier (3000% og 4.54%) 5% 6% opp (7%): [1, 2, 3]",
                         begrunnelse = "To forskjellige verdier (3000% og 4.54%) 5% 6% opp (7%): [1, 2, 3]",
                         variabler = listOf("3000", "4.54", "[1, 2, 3]"),
                         score = 1,
@@ -58,6 +59,7 @@ class VurderingBuilderTest {
                 listOf(
                     Sjekkresultat(
                         id = "SJEKK-1",
+                        tekst = "Helt grei verdi: 3000.",
                         begrunnelse = "Helt grei verdi: 3000.",
                         variabler = listOf("3000"),
                         score = 0,
@@ -84,6 +86,7 @@ class VurderingBuilderTest {
                 listOf(
                     Sjekkresultat(
                         id = "SJEKK-1",
+                        tekst = "FEIL-1",
                         begrunnelse = "FEIL-1",
                         score = 1,
                         vekt = 4,
@@ -91,6 +94,7 @@ class VurderingBuilderTest {
                     ),
                     Sjekkresultat(
                         id = "1",
+                        tekst = "noeErFeil",
                         begrunnelse = "noeErFeil",
                         score = 2,
                         vekt = 6,
@@ -98,6 +102,7 @@ class VurderingBuilderTest {
                     ),
                     Sjekkresultat(
                         id = "2",
+                        tekst = "endaMerErFeil",
                         begrunnelse = "endaMerErFeil",
                         score = 4,
                         vekt = 7,
@@ -125,6 +130,7 @@ class VurderingBuilderTest {
                 listOf(
                     Sjekkresultat(
                         id = "1",
+                        tekst = "ser greit ut",
                         begrunnelse = "ser greit ut",
                         score = 0,
                         vekt = 4,
@@ -132,6 +138,7 @@ class VurderingBuilderTest {
                     ),
                     Sjekkresultat(
                         id = "2",
+                        tekst = "np",
                         begrunnelse = "np",
                         score = 0,
                         vekt = 5,
@@ -139,6 +146,7 @@ class VurderingBuilderTest {
                     ),
                     Sjekkresultat(
                         id = "3",
+                        tekst = "Sjekk 3 ikke relevant",
                         begrunnelse = "Sjekk 3 ikke relevant",
                         score = 0,
                         vekt = 0,
@@ -146,6 +154,7 @@ class VurderingBuilderTest {
                     ),
                     Sjekkresultat(
                         id = "4",
+                        tekst = "Sjekk 4 er ikke aktuell",
                         begrunnelse = "Sjekk 4 er ikke aktuell",
                         score = 0,
                         vekt = 0,
@@ -173,6 +182,7 @@ class VurderingBuilderTest {
                 listOf(
                     Sjekkresultat(
                         id = "1",
+                        tekst = "noeErFeil",
                         begrunnelse = "noeErFeil",
                         score = 1,
                         vekt = 5,
@@ -181,6 +191,7 @@ class VurderingBuilderTest {
                     ),
                     Sjekkresultat(
                         id = "2",
+                        tekst = "Noe er ALvorlig feil",
                         begrunnelse = "Noe er ALvorlig feil",
                         score = 10,
                         vekt = 5,
@@ -211,6 +222,7 @@ class VurderingBuilderTest {
                 listOf(
                     Sjekkresultat(
                         id = "1",
+                        tekst = "Ingen data",
                         begrunnelse = "Ingen data",
                         score = 0,
                         vekt = 0,
@@ -227,6 +239,7 @@ class VurderingBuilderTest {
                 listOf(
                     Sjekkresultat(
                         id = "1",
+                        tekst = "Kun ett element",
                         begrunnelse = "Kun ett element",
                         score = 0,
                         vekt = 5,
@@ -243,6 +256,7 @@ class VurderingBuilderTest {
                 listOf(
                     Sjekkresultat(
                         id = "1",
+                        tekst = "3 elementer",
                         begrunnelse = "3 elementer",
                         score = 3,
                         vekt = 5,
@@ -262,6 +276,7 @@ class VurderingBuilderTest {
                 kotlin.test.assertEquals(
                     Sjekkresultat(
                         id = "entest",
+                        tekst = "jauda",
                         begrunnelse = "jauda",
                         variabler = listOf(),
                         score = 10,
@@ -279,6 +294,7 @@ class VurderingBuilderTest {
                 kotlin.test.assertEquals(
                     Sjekkresultat(
                         id = "annentest",
+                        tekst = "all good",
                         begrunnelse = "all good",
                         variabler = listOf(),
                         score = 0,
@@ -296,6 +312,7 @@ class VurderingBuilderTest {
                 kotlin.test.assertEquals(
                     Sjekkresultat(
                         id = "tredjetest",
+                        tekst = "nothing to check",
                         begrunnelse = "nothing to check",
                         variabler = listOf(),
                         score = 0,

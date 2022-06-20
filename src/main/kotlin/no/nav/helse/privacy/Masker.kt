@@ -4,7 +4,7 @@ import kotlinx.serialization.json.*
 import java.security.MessageDigest
 import java.security.SecureRandom
 
-class IdMasker(fieldNames: List<String> = listOf("fnr", "identifikator", "virksomhet", "opplysningspliktig"),
+class IdMasker(fieldNames: List<String> = listOf("hashedId", "fnr", "identifikator", "virksomhet", "opplysningspliktig"),
                primitiveFieldNamesExcludedFromMasking: Set<String> = emptySet()
 ) : Masker(
     replaceByKey = mapOf(

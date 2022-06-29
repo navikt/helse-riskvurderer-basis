@@ -18,6 +18,7 @@ enum class Meldingstype {
 }
 
 const val vedtaksperiodeIdKey = "vedtaksperiodeId"
+const val riskNeedIdKey = "riskNeedId"
 const val typeKey = "type"
 const val infotypeKey = "infotype"
 const val iterasjonKey = "iterasjon"
@@ -28,6 +29,7 @@ data class RiskNeed(
     val vedtaksperiodeId: String,
     val vedtaksperiodeGruppeId: String? = null,
     val tilknyttedeVedtaksperiodeIder: List<String>? = null,
+    val riskNeedId: String? = null,
     val organisasjonsnummer: String,
     val fnr: String,
     val behovOpprettet: String,
@@ -85,6 +87,14 @@ fun <T>List<JsonObject>.finnPaakrevdOppslagsresultat(oppslagstype: Oppslagtype<T
         ?:error("Mangler oppslagsresultat med infotype=${oppslagstype.infotype}")
 
 
+internal fun JsonObject.riskNeedId() : String? = this[riskNeedIdKey]?.jsonPrimitive?.contentOrNull
+internal fun JsonObject.meldingType() : String? = this[typeKey]?.jsonPrimitive?.contentOrNull
+internal fun JsonObject.meldingInfotype() : String? = this[infotypeKey]?.jsonPrimitive?.contentOrNull
+internal fun JsonObject.meldingTypeBeskrivelse() : String =
+    meldingType() + meldingInfotype().let {
+        if (it != null) "/$it" else ""
+    }
+
 fun List<JsonObject>.finnUnikVedtaksperiodeId() : String =
     this.let { meldinger ->
         meldinger.first()[vedtaksperiodeIdKey]!!.jsonPrimitive.content.apply {
@@ -125,6 +135,7 @@ data class Vurderingsmelding(
     val type: String = Meldingstype.vurdering.name,
     val infotype: String,
     val vedtaksperiodeId: String,
+    val riskNeedId: String? = null,
     @Deprecated("Bruk sjekkresultater i stedet") val score: Int? = null,
     @Deprecated("Bruk sjekkresultater i stedet") val vekt: Int? = null,
     @Deprecated("Bruk sjekkresultater i stedet") val begrunnelser: List<String>? = null, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)

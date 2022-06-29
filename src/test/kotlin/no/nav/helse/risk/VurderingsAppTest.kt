@@ -50,6 +50,7 @@ class VurderingsAppTest {
 
     val fnr = "01017000000"
     val vedtaksperiodeid = "33745ddf-1362-443d-8c9f-7667325e8dc6"
+    val riskNeedId = "0000-9999-8888-7777"
     val orgnr = "123456789"
 
     @BeforeEach
@@ -78,6 +79,7 @@ class VurderingsAppTest {
                 assertEquals(1, vurdering.passerteSjekker().size)
                 assertEquals("Ellers greit", vurdering.passerteSjekker().first())
                 assertTrue(vurdering.begrunnelserSomAleneKreverManuellBehandling().isEmpty())
+                assertEquals(riskNeedId, vurdering.riskNeedId)
                 Assertions.assertEquals(
                     listOf(
                         Sjekkresultat(
@@ -205,6 +207,7 @@ class VurderingsAppTest {
                 put("type", "RiskNeed")
                 put("iterasjon", 1)
                 put("fnr", fnr)
+                put("riskNeedId", riskNeedId)
                 put("organisasjonsnummer", orgnr)
                 put("vedtaksperiodeId", vedtaksperiodeid)
                 put("behovOpprettet", behovOpprettet.toString())

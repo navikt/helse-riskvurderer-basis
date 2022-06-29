@@ -25,6 +25,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @FlowPreview
@@ -66,6 +67,7 @@ class OppslagsAppTest {
                 put("iterasjon", 1)
                 put("fnr", fnr)
                 put("organisasjonsnummer", orgnr)
+                put("riskNeedId", "RISK-NEED-ID-001")
                 put("vedtaksperiodeId", "111")
                 put("behovOpprettet", behovOpprettet.toString())
             },
@@ -85,6 +87,7 @@ class OppslagsAppTest {
                 put("iterasjon", 2)
                 put("fnr", fnr)
                 put("organisasjonsnummer", orgnr)
+                put("riskNeedId", "RISK-NEED-ID-002")
                 put("vedtaksperiodeId", "222")
                 put("behovOpprettet", behovOpprettet.toString())
             },
@@ -105,6 +108,7 @@ class OppslagsAppTest {
                 put("fnr", fnr)
                 put("organisasjonsnummer", orgnr)
                 put("vedtaksperiodeId", "333")
+                //put("riskNeedId", "RISK-NEED-ID-003")
                 put("behovOpprettet", behovOpprettet.toString())
             },
 
@@ -133,7 +137,7 @@ class OppslagsAppTest {
                     }
                 },
                 windowTimeInSeconds = 1,
-                disableWebEndpoints = true
+                disableWebEndpoints = true,
             )
         )
         Awaitility.await()
@@ -145,7 +149,7 @@ class OppslagsAppTest {
         assertEquals(1, periodeTilMeldinger.size)
 
         Awaitility.await()
-            .atMost(Duration.ofSeconds(8))
+            .atMost(Duration.ofSeconds(10))
             .pollDelay(Duration.ofMillis(100))
             .untilAsserted {
                 Assertions.assertTrue(periodeTilMeldinger.size >= 2)
@@ -179,16 +183,179 @@ class OppslagsAppTest {
 
         JSON.decodeFromJsonElement(Oppslagsmelding.serializer(), answers.first()).apply {
             assertEquals("222", this.vedtaksperiodeId)
+            assertEquals("RISK-NEED-ID-002", this.riskNeedId, "skal arve RiskNeedId fra RiskNeed-meldinga")
             assertEquals("222", this.data.jsonObject["felt1"]!!.jsonPrimitive.content)
             assertEquals(true, this.data.jsonObject["har_kobling"]!!.jsonPrimitive.boolean)
         }
 
         JSON.decodeFromJsonElement(Oppslagsmelding.serializer(), answers[1]).apply {
             assertEquals("333", this.vedtaksperiodeId)
+            assertNull(this.riskNeedId, "var ikke noe riskNeedId på RiskNeed-meldinga, så ingenting å arve")
             assertEquals("333", this.data.jsonObject["felt1"]!!.jsonPrimitive.content)
             assertEquals(false, this.data.jsonObject["har_kobling"]!!.jsonPrimitive.boolean)
         }
     }
+
+    @Test
+    fun `OppslagsApp med aggregering på riskNeedId - 3 scenarier`() {
+        val periodeTilMeldinger = mutableMapOf<String, List<JsonObject>>()
+
+        val innkommendeMeldinger = listOf(
+            /* "RISK-NEED-ID-001" skal ignoreres siden:
+                default OppslagsApp har ignoreIfNotPresent = interessertI.filter { it.type == typeRiskNeed }
+                og vår oppslagsapp krever: Interesse.riskNeedMedMinimum(2)
+            */
+            buildJsonObject {
+                put("type", "RiskNeed")
+                put("iterasjon", 1)
+                put("fnr", fnr)
+                put("organisasjonsnummer", orgnr)
+                put("riskNeedId", "RISK-NEED-ID-001")
+                put("vedtaksperiodeId", "222")
+                put("behovOpprettet", behovOpprettet.toString())
+            },
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "kobling")
+                put("riskNeedId", "RISK-NEED-ID-001")
+                put("vedtaksperiodeId", "222")
+                put("behovOpprettet", behovOpprettet.toString())
+                put("data", buildJsonObject {
+                    put("key", "data_value")
+                })
+            },
+
+            // "RISK-NEED-ID-002" emittes "early" siden den er komplett:
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "kobling")
+                put("riskNeedId", "RISK-NEED-ID-002-EARLIER-ATTEMPT")
+                put("vedtaksperiodeId", "222")
+                put("behovOpprettet", behovOpprettet.toString())
+                put("data", buildJsonObject {
+                    put("key", "WRONG_DATA_VALUE_BECAUSE_riskNeedId_DOES_NOT_MATCH")
+                })
+            },
+            buildJsonObject {
+                put("type", "RiskNeed")
+                put("iterasjon", 2)
+                put("fnr", fnr)
+                put("organisasjonsnummer", orgnr)
+                put("riskNeedId", "RISK-NEED-ID-002")
+                put("vedtaksperiodeId", "222")
+                put("behovOpprettet", behovOpprettet.toString())
+            },
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "kobling")
+                put("riskNeedId", "RISK-NEED-ID-002")
+                put("vedtaksperiodeId", "222")
+                put("behovOpprettet", behovOpprettet.toString())
+                put("data", buildJsonObject {
+                    put("key", "data_value")
+                })
+            },
+
+            // "NEED-ID-003" er IKKE komplett men har påkrevd RiskNeed(2) og emittes av schedulern etter 5 sek.
+            buildJsonObject {
+                put("type", "RiskNeed")
+                put("iterasjon", 2)
+                put("fnr", fnr)
+                put("organisasjonsnummer", orgnr)
+                put("vedtaksperiodeId", "222")
+                put("riskNeedId", "RISK-NEED-ID-003")
+                put("behovOpprettet", behovOpprettet.toString())
+            },
+
+            buildJsonObject {
+                put("something", "else")
+            }
+        )
+
+        fun RiskNeed.periodeOgId() : String = this.vedtaksperiodeId + "/" + this.riskNeedId
+
+        startOppslagsApp(
+            innkommendeMeldinger = innkommendeMeldinger,
+            app = OppslagsApp(
+                kafkaClientId = "whatever",
+                infotype = "oppslag2",
+                interessertI = listOf(
+                    Interesse.riskNeedMedMinimum(2),
+                    Interesse.oppslagsresultat("kobling")
+                ),
+                oppslagstjeneste = { meldinger ->
+                    val riskNeed = meldinger.finnRiskNeed()!!
+                    periodeTilMeldinger[riskNeed.periodeOgId()] = meldinger
+                    println(meldinger.toString())
+                    val kobling = meldinger.finnOppslagsresultat("kobling")
+                    buildJsonObject {
+                        put("felt1", riskNeed.vedtaksperiodeId)
+                        put("har_kobling", (kobling != null))
+                        put("kobling-key", kobling?.jsonObject?.get("key")?.jsonPrimitive?.contentOrNull)
+                    }
+                },
+                windowTimeInSeconds = 1,
+                disableWebEndpoints = true,
+                sessionAggregationFieldName = riskNeedIdKey,
+            )
+        )
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(4))
+            .pollDelay(Duration.ofMillis(100))
+            .untilAsserted {
+                Assertions.assertTrue(periodeTilMeldinger.size >= 1)
+            }
+        assertEquals(1, periodeTilMeldinger.size)
+
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(10))
+            .pollDelay(Duration.ofMillis(100))
+            .untilAsserted {
+                Assertions.assertTrue(periodeTilMeldinger.size >= 2)
+            }
+        //Thread.sleep(6000) // Because BufferedRiver says schedulerIntervalInSeconds = 5
+        assertEquals(2, periodeTilMeldinger.size)
+
+        periodeTilMeldinger["222/RISK-NEED-ID-002"].apply {
+            assertEquals(2, this!!.size)
+            val innkommende002 =
+                innkommendeMeldinger.filter { it["riskNeedId"]?.jsonPrimitive?.contentOrNull == "RISK-NEED-ID-002" }
+            assertEquals(innkommende002.size, this.size)
+            innkommende002.forEach { innkommende ->
+                assertTrue(this.contains(innkommende))
+            }
+        }
+
+        periodeTilMeldinger["222/RISK-NEED-ID-003"].apply {
+            assertEquals(1, this!!.size)
+            val innkommende003 =
+                innkommendeMeldinger.filter { it["riskNeedId"]?.jsonPrimitive?.contentOrNull == "RISK-NEED-ID-003" }
+            assertEquals(innkommende003.size, this.size)
+            innkommende003.forEach { innkommende ->
+                assertTrue(this.contains(innkommende))
+            }
+        }
+
+        val answers = producedMessages.map { it.value() }
+
+        assertEquals(2, answers.size)
+
+        JSON.decodeFromJsonElement(Oppslagsmelding.serializer(), answers.first()).apply {
+            assertEquals("222", this.vedtaksperiodeId)
+            assertEquals("RISK-NEED-ID-002", this.riskNeedId, "skal arve RiskNeedId fra RiskNeed-meldinga")
+            assertEquals("222", this.data.jsonObject["felt1"]!!.jsonPrimitive.content)
+            assertEquals(true, this.data.jsonObject["har_kobling"]!!.jsonPrimitive.boolean)
+            assertEquals("data_value", this.data.jsonObject["kobling-key"]!!.jsonPrimitive.content)
+        }
+
+        JSON.decodeFromJsonElement(Oppslagsmelding.serializer(), answers[1]).apply {
+            assertEquals("222", this.vedtaksperiodeId)
+            assertEquals("RISK-NEED-ID-003", this.riskNeedId, "skal arve RiskNeedId fra RiskNeed-meldinga")
+            assertEquals("222", this.data.jsonObject["felt1"]!!.jsonPrimitive.content)
+            assertEquals(false, this.data.jsonObject["har_kobling"]!!.jsonPrimitive.boolean)
+        }
+    }
+
 
     private fun ventPaaProduserteMeldinger(minimumAntall: Int = 1) {
         Awaitility.await()

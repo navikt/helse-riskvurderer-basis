@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.Duration
+import java.time.LocalDateTime
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
@@ -61,7 +62,8 @@ internal class RiverTest {
         bufferedRiver = BufferedRiver(KafkaProducer<String, JsonObject>(producerConfig),
             KafkaConsumer<String, JsonObject>(consumerConfig), interesser, emptyList(),
             VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering,
-            CollectorRegistry.defaultRegistry)
+            CollectorRegistry.defaultRegistry,
+            sessionAggregationFieldName = RiverApp.SESSION_AGGREGATION_FIELD_NAME_DEFAULT)
         GlobalScope.launch {
             bufferedRiver!!.start()
         }
@@ -97,7 +99,17 @@ internal class RiverTest {
 
     private fun `relevante meldinger aggregeres og sendes gjennom vurderer-funksjon for aa generere en vurdering`() {
         KafkaProducer<String, JsonObject>(producerConfig).use { producer ->
-            producer.sendJson("""{"data" : {"nummer":1}, "vedtaksperiodeId":"periode1", "type": "RiskNeed", "personid":123}""")
+            producer.sendJson("""
+                {"data" : {"nummer":1}, 
+                 "vedtaksperiodeId":"periode1",
+                 "riskNeedId":"1111-2222-RISK-NEED",
+                 "type": "RiskNeed", 
+                 "fnr":"123",
+                 "organisasjonsnummer":"999",
+                 "behovOpprettet":"${LocalDateTime.now()}",
+                 "iterasjon": 1
+                 }
+                """.trimIndent())
             producer.sendJson("""{"data" : {"nummer":2}, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
             producer.sendJson("""{"data" : {"nummer":6}, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
 

@@ -21,7 +21,8 @@ open class OppslagsApp(
     launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
     additionalHealthCheck: (() -> Boolean)? = null,
     skipMessagesOlderThanSeconds: Long = -1,
-    disableWebEndpoints: Boolean = false
+    disableWebEndpoints: Boolean = false,
+    sessionAggregationFieldName: String = SESSION_AGGREGATION_FIELD_NAME_DEFAULT,
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertI = interessertI,
@@ -33,5 +34,6 @@ open class OppslagsApp(
     launchAlso = launchAlso,
     additionalHealthCheck = additionalHealthCheck,
     skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds,
-    disableWebEndpoints = disableWebEndpoints
+    disableWebEndpoints = disableWebEndpoints,
+    sessionAggregationFieldName = sessionAggregationFieldName,
 )

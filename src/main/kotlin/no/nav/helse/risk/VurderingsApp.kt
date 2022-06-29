@@ -175,7 +175,8 @@ open class VurderingsApp(
     collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
     launchAlso: List<suspend CoroutineScope.() -> Unit> = emptyList(),
     additionalHealthCheck: (() -> Boolean)? = null,
-    disableWebEndpoints: Boolean = false
+    disableWebEndpoints: Boolean = false,
+    sessionAggregationFieldName: String = SESSION_AGGREGATION_FIELD_NAME_DEFAULT,
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertI = interessertI,
@@ -190,5 +191,6 @@ open class VurderingsApp(
     collectorRegistry = collectorRegistry,
     launchAlso = launchAlso,
     additionalHealthCheck = additionalHealthCheck,
-    disableWebEndpoints = disableWebEndpoints
+    disableWebEndpoints = disableWebEndpoints,
+    sessionAggregationFieldName = sessionAggregationFieldName,
 )

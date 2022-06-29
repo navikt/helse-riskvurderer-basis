@@ -143,7 +143,7 @@ class RiverAppTest {
     ): AppSetup {
         val producer = mockk<KafkaProducer<String, JsonObject>>()
         val consumer = predefinedConsumer ?: mockk<KafkaConsumer<String, JsonObject>>()
-        val lagSvar: (List<JsonObject>, String) -> JsonObject = { _, _ -> defaultSvar }
+        val lagSvar: (List<JsonObject>, String, String?) -> JsonObject = { _, _, _ -> defaultSvar }
 
         val app = RiverApp(
             kafkaClientId = "testRiverApp",
@@ -156,7 +156,8 @@ class RiverAppTest {
             collectorRegistry = CollectorRegistry.defaultRegistry,
             additionalHealthCheck = additionalHealthCheck,
             launchAlso = launchAlso,
-            disableWebEndpoints = true
+            disableWebEndpoints = true,
+            sessionAggregationFieldName = RiverApp.SESSION_AGGREGATION_FIELD_NAME_DEFAULT,
         ).overrideKafkaEnvironment(
             KafkaRiverEnvironment(
                 kafkaConsumer = consumer,

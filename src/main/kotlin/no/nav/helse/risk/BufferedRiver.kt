@@ -30,11 +30,12 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
                                   private val kafkaConsumer: Consumer<String, JsonObject>,
                                   private val interessertI: List<Interesse>,
                                   private val skipEmitIfNotPresent: List<Interesse>,
-                                  private val answerer: (List<JsonObject>, String) -> JsonObject?,
+                                  private val answerer: (List<JsonObject>, String, String?) -> JsonObject?,
                                   collectorRegistry: CollectorRegistry,
                                   windowTimeInSeconds: Long = 5,
                                   emitEarlyWhenAllInterestsPresent: Boolean = true,
-                                  private val skipMessagesOlderThanSeconds: Long = -1
+                                  private val skipMessagesOlderThanSeconds: Long = -1,
+                                  private val sessionAggregationFieldName: String, // = vedtaksperiodeIdKey,
 ) {
     private val log: Logger = LoggerFactory.getLogger(BufferedRiver::class.java)
     private val metrics = BufferedRiverMetrics(collectorRegistry)
@@ -81,7 +82,9 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
                         skipMessagesOlderThanSeconds, timestamp, System.currentTimeMillis())
                 } else {
                     if (mangeTilEn) {
-                        aggregator.store(value["vedtaksperiodeId"]!!.jsonPrimitive.content, value, key, timestamp) // NB: KEY bør vare samme som innkommende åkke som (RiskNeed?++?),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+                        if (!value.containsKey(sessionAggregationFieldName))
+                            throw IllegalArgumentException("Melding (${value.meldingTypeBeskrivelse()}) mangler felt $sessionAggregationFieldName")
+                        aggregator.store(value[sessionAggregationFieldName]!!.jsonPrimitive.content, value, key, timestamp)
                     } else {
                         lagOgSendSvar(WindowBufferEmittable(messages = listOf(value), kafkaKey = key))
                     }
@@ -96,14 +99,25 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
     private fun lagOgSendSvar(emitted: WindowBufferEmittable) {
         val answers = emitted.messages
         val vedtaksperiodeId = answers.finnUnikVedtaksperiodeId()
+        val riskNeedIdFraRiskNeed: String? = answers.finnRiskNeed()?.riskNeedId
 
         val ikkeTilfredsstilt:Interesse? = skipEmitIfNotPresent.find { paakrevdInteresse ->
             !paakrevdInteresse.tilfredsstillesAv(answers)
         }
         if (ikkeTilfredsstilt != null) {
-            log.debug("Mangler Interesse=$ikkeTilfredsstilt for vedtaksperiodeId=$vedtaksperiodeId. Ignorerer sesjon.")
+            val unikeRiskNeedId = answers.map { it.riskNeedId() }.toSet()
+            log.debug("Mangler Interesse=$ikkeTilfredsstilt for vedtaksperiodeId=$vedtaksperiodeId riskNeedId=$unikeRiskNeedId. Ignorerer sesjon.")
         } else {
-            answerer(answers, vedtaksperiodeId)?.also { svar ->
+            if (answers.size > 1 && (riskNeedIdFraRiskNeed != null)) {
+                val unikeRiskNeedId = answers.map { it.riskNeedId() }.toSet()
+                if (unikeRiskNeedId.size > 1) {
+                    val meldingerMedAvvikendeRiskNeedId =
+                        answers.filter { it.riskNeedId() != riskNeedIdFraRiskNeed }.map { it.meldingTypeBeskrivelse() to it.riskNeedId() }
+                    log.warn("Avvikende riskNeedId, forventet $riskNeedIdFraRiskNeed men har meldinger: $meldingerMedAvvikendeRiskNeedId")
+                }
+            }
+
+            answerer(answers, vedtaksperiodeId, riskNeedIdFraRiskNeed)?.also { svar ->
                 kafkaProducer.send(ProducerRecord(riskRiverTopic(), emitted.kafkaKey, svar))
             }
         }

@@ -22,15 +22,19 @@ open class RiverApp internal constructor(
     val kafkaClientId: String,
     val interessertI: List<Interesse>,
     val skipEmitIfNotPresent: List<Interesse>,
-    private val answerer: (List<JsonObject>, String) -> JsonObject?,
+    private val answerer: (List<JsonObject>, String, String?) -> JsonObject?,
     val windowTimeInSeconds: Long = 5,
     private val emitEarlyWhenAllInterestsPresent: Boolean = true,
     private val collectorRegistry: CollectorRegistry,
     private val launchAlso: List<suspend CoroutineScope.() -> Unit>,
     private val additionalHealthCheck: (() -> Boolean)?,
     private val skipMessagesOlderThanSeconds: Long = -1,
-    private val disableWebEndpoints: Boolean = false
+    private val disableWebEndpoints: Boolean = false,
+    private val sessionAggregationFieldName: String,
 ) {
+    companion object {
+        const val SESSION_AGGREGATION_FIELD_NAME_DEFAULT: String = vedtaksperiodeIdKey
+    }
 
     private val environment: RiverEnvironment = RiverEnvironment(kafkaClientId)
 
@@ -97,7 +101,8 @@ open class RiverApp internal constructor(
                     windowTimeInSeconds = windowTimeInSeconds,
                     emitEarlyWhenAllInterestsPresent = emitEarlyWhenAllInterestsPresent,
                     skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds,
-                    collectorRegistry = collectorRegistry
+                    collectorRegistry = collectorRegistry,
+                    sessionAggregationFieldName = sessionAggregationFieldName,
                 ).apply { this.start() }
             }
             launchAlso.forEach {

@@ -64,7 +64,8 @@ internal class RiverEnTilEnTest {
             KafkaProducer(producerConfig),
             KafkaConsumer(consumerConfig), interesser, emptyList(),
             VurderingProducer("testapp", this::vurderer, jwkSet)::lagVurdering,
-            CollectorRegistry.defaultRegistry
+            CollectorRegistry.defaultRegistry,
+            sessionAggregationFieldName = RiverApp.SESSION_AGGREGATION_FIELD_NAME_DEFAULT,
         )
         GlobalScope.launch {
             bufferedRiver!!.start()

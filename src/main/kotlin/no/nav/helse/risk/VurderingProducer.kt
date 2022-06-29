@@ -18,7 +18,7 @@ internal class VurderingProducer(
     private val decryptionJWKS: JWKSetHolder?
 ) {
 
-    fun lagVurdering(answers: List<JsonObject>, vedtaksperiodeId: String): JsonObject? {
+    fun lagVurdering(answers: List<JsonObject>, vedtaksperiodeId: String, riskNeedId: String?): JsonObject? {
         return try {
             log.info("Lager vurdering for vedtaksperiodeId=$vedtaksperiodeId")
             val vurdering = vurderer(answers.map { it.decryptIfEncrypted(decryptionJWKS) })
@@ -32,7 +32,8 @@ internal class VurderingProducer(
                 begrunnelserSomAleneKreverManuellBehandling = vurdering.begrunnelserSomAleneKreverManuellBehandling,
                 passerteSjekker = vurdering.passerteSjekker,
                 metadata = vurdering.metadata + AppEnvironment.appInstanceInfo(),
-                subsumsjoner = vurdering.subsumsjoner
+                subsumsjoner = vurdering.subsumsjoner,
+                riskNeedId = riskNeedId
             )).jsonObject
         } catch (ex: Exception) {
             log.error(

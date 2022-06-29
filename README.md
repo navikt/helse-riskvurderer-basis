@@ -15,7 +15,7 @@ samt - hva gjelder "Sigmund" - også *"kafka-time-windowing"*-funksjonaliteten i
 ### Oppslags- og VurderingsApper
 
 En OppslagsApp fungerer typisk slik:
- - Sitt og lytt på sp-risk-modulens interne kafka-topic `helse-risk-river` . . .
+ - Sitt og lytt på sp-risk-modulens interne kafka-topic `helse-risk-river` . . . .
    - Topicen er ofte referert til som bare `River` 
      (i kontrast til det som omtales som `Rapid` og som i riskmodulens verden alltid refererer til Sykepengevedtaksløsningens hoved-kafka-topic)
    - Kafkaconfigen er felles / *"by convention"*, og finnes i [RiverEnvironment](src/main/kotlin/no/nav/helse/risk/RiverEnvironment.kt).

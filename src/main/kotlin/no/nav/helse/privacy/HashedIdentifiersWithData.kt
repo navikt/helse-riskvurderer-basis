@@ -17,7 +17,8 @@ data class HashedIdentifiersWithData<T>(
     val algorithm: Algorithm,
     val iterationCount: Int,
     val saltHexified: String,
-    val identifiersAndData: List<HashedIdAndData<T>>
+    val identifiersAndData: List<HashedIdAndData<T>>,
+    val sharedHashedValue: String? = null,
 ) {
     companion object {
         enum class Algorithm {
@@ -32,39 +33,50 @@ data class HashedIdentifiersWithData<T>(
          * @param baseIterationCount iteration-count (computational cost) hvis kun ett element hashes.
          * Dette vil bli delt på antall elementer for å ha relativt stabil kost.
          * @param antattAntallSammenlikninger hvis antall elementer er mindre enn antattAntallSammenlikninger
+         * @param sharedValue eventuell felles verdi som både produsent og konsument kjenner til, og som konsumenten kan
+         * bruke i en 'health-check' for å verifisere at hashemetodene er i synk v.h.a. metoden sharedValueIs().
          * vil iterationCount i stedet bli delt på antattAntallSammenlikninger, for at eventuell sammenlikning
          * i annen tjeneste ikke skal bli uforholdsmessig tung og tidkrevende.
          */
         fun <T> fromIdAndDataPairs(
             idAndDataPairs: List<Pair<String, T>>,
             baseIterationCount: Int = 50000,
-            antattAntallSammenlikninger: Int = 5
+            antattAntallSammenlikninger: Int = 5,
+            sharedValue: String? = null,
         ): HashedIdentifiersWithData<T> {
             val algorithm = Algorithm.PBKDF2WithHmacSHA512
             val random = SecureRandom()
             val salt = ByteArray(16)
             random.nextBytes(salt)
-            if (idAndDataPairs.isEmpty()) {
-                return HashedIdentifiersWithData(
-                    algorithm = algorithm, iterationCount = baseIterationCount, saltHexified = salt.toHexString(),
-                    identifiersAndData = emptyList()
-                )
-            }
             val iterationCount = maxOf(
                 1,
                 baseIterationCount / maxOf(idAndDataPairs.size, antattAntallSammenlikninger)
             )
+
+            fun hashId(id:String) : String {
+                val spec: KeySpec = PBEKeySpec(id.toCharArray(), salt, iterationCount, 128)
+                val factory = SecretKeyFactory.getInstance(algorithm.toString())
+                return factory.generateSecret(spec).encoded.toHexString()
+            }
+
+            val sharedHashedValue = sharedValue?.let { hashId(it) }
+
+            if (idAndDataPairs.isEmpty()) {
+                return HashedIdentifiersWithData(
+                    algorithm = algorithm, iterationCount = iterationCount, saltHexified = salt.toHexString(),
+                    identifiersAndData = emptyList(),
+                    sharedHashedValue = sharedHashedValue
+                )
+            }
 
             return HashedIdentifiersWithData(
                 algorithm = algorithm,
                 iterationCount = iterationCount,
                 saltHexified = salt.toHexString(),
                 identifiersAndData = idAndDataPairs.map { (id, data) ->
-                    val spec: KeySpec = PBEKeySpec(id.toCharArray(), salt, iterationCount, 128)
-                    val factory = SecretKeyFactory.getInstance(algorithm.toString())
-                    val idHash = factory.generateSecret(spec).encoded
-                    HashedIdAndData(idHash.toHexString(), data)
-                }
+                    HashedIdAndData(hashId(id), data)
+                },
+                sharedHashedValue = sharedHashedValue
             )
         }
 
@@ -77,14 +89,27 @@ data class HashedIdentifiersWithData<T>(
         }
     }
 
+    private fun doHashId(id:String) : String {
+        val spec: KeySpec = PBEKeySpec(id.toCharArray(), saltHexified.decodeHex(), iterationCount, 128)
+        val factory = SecretKeyFactory.getInstance(algorithm.toString())
+        return factory.generateSecret(spec).encoded.toHexString()
+    }
+
     /**
      * Finn alle verdier hvor hashedId tilsvarer angitt klartekst id
      */
     fun findAllById(id: String): List<T> {
         if (identifiersAndData.isEmpty()) return emptyList()
-        val spec: KeySpec = PBEKeySpec(id.toCharArray(), saltHexified.decodeHex(), iterationCount, 128)
-        val factory = SecretKeyFactory.getInstance(algorithm.toString())
-        val idHash = factory.generateSecret(spec).encoded.toHexString()
+        val idHash = doHashId(id)
         return identifiersAndData.filter { it.hashedId == idHash }.map { it.data }
+    }
+
+    /**
+     * Sjekk om angitt 'sharedValue' er samme 'sharedValue' som ble brukt ved opprettelsen av HashedIdentifiersWithData-objektet.
+     * Dersom sharedValue ved opprettelsen ble satt til null returnerer metoden uansett false.
+     */
+    fun sharedValueIs(sharedValue: String) : Boolean {
+        if (sharedHashedValue == null) return false
+        return doHashId(sharedValue) == sharedHashedValue
     }
 }

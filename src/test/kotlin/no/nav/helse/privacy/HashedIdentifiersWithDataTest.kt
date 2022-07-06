@@ -7,10 +7,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import no.nav.helse.risk.JsonRisk
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class HashedIdentifiersWithDataTest {
 
@@ -24,16 +21,16 @@ class HashedIdentifiersWithDataTest {
             "440000000" to buildJsonObject { put("info", JsonPrimitive(4)) },
             "220000000" to buildJsonObject { put("info", JsonPrimitive(5)) },
         )
-        val hashed = HashedIdentifiersWithData.fromIdAndDataPairs(idAndData)
+        val sharedValue = "EnVerdiSomBådeProdusentenOgKonsumentenKjennerTil"
+        val hashed = HashedIdentifiersWithData.fromIdAndDataPairs(idAndData, sharedValue = sharedValue)
         assertEquals(8333, hashed.iterationCount, "default 50000 delt på 6 elementer skal bli 8333")
 
         val somJsonString = JsonRisk.encodeToString(HashedIdentifiersWithData.serializer(JsonObject.serializer()), hashed)
 
-        println(somJsonString)
-
         idAndData.forEach {
             assertFalse(somJsonString.contains(it.first), "Idene skal ikke finnes i klartekst")
         }
+        assertFalse(somJsonString.contains(sharedValue), "sharedValue skal ikke finnes i klartekst")
 
         assertEquals(
             listOf(
@@ -47,16 +44,24 @@ class HashedIdentifiersWithDataTest {
             hashed.findAllById("000000000")
         )
         assertEquals(emptyList(), hashed.findAllById("990000000"))
+        assertTrue(hashed.sharedValueIs(sharedValue))
+        assertFalse(hashed.sharedValueIs("Feil Verdi"))
     }
 
     @Test
     fun `tom liste`() {
         val idAndData = emptyList<Pair<String, JsonObject>>()
-        val hashed = HashedIdentifiersWithData.fromIdAndDataPairs(idAndData)
-        assertEquals(
-            emptyList(),
-            hashed.findAllById("220000000")
-        )
+        val sharedValue = "SomeSharedValue_123"
+        HashedIdentifiersWithData.fromIdAndDataPairs(idAndData, sharedValue = sharedValue).apply {
+            assertEquals(emptyList(), findAllById("220000000"))
+            assertTrue(sharedValueIs(sharedValue))
+            assertEquals(10000, iterationCount, "default 50000 delt på default 5 antattAntallSammenlikninger blir 10000")
+        }
+        HashedIdentifiersWithData.fromIdAndDataPairs(idAndData).apply {
+            assertEquals(emptyList(), findAllById("220000000"))
+            assertFalse(sharedValueIs(sharedValue))
+            assertEquals(10000, iterationCount, "default 50000 delt på default 5 antattAntallSammenlikninger blir 10000")
+        }
     }
 
     @Test
@@ -75,7 +80,7 @@ class HashedIdentifiersWithDataTest {
         val idAndData = listOf(
             "000000000" to NoeData(tekst = "hei", tall = 42),
         )
-        val hashed = HashedIdentifiersWithData.fromIdAndDataPairs(idAndData)
+        val hashed = HashedIdentifiersWithData.fromIdAndDataPairs(idAndData, sharedValue = "SOME_SHARED_VALUE")
         val hashedId = hashed.identifiersAndData.first().hashedId
 
         val enRespons = EnRespons(etFelt = "enVerdi", idsAndData = hashed)
@@ -89,10 +94,11 @@ class HashedIdentifiersWithDataTest {
         assertFalse(somStringMaskert.contains(hashedId), "hashedId skal maskeres")
 
         val hashedIdMaskert = sha1(IdMasker.hashingsalt + hashedId).substring(0, 32) + "(32)"
+        val hashedSharedValueMaskert = sha1(IdMasker.hashingsalt + hashed.sharedHashedValue!!).substring(0, 32) + "(32)"
 
         assertEquals(
             """{"etFelt":"enVerdi","idsAndData":{"algorithm":"PBKDF2WithHmacSHA512","iterationCount":10000,""" +
-                    """"saltHexified":"${hashed.saltHexified}","identifiersAndData":[{"hashedId":"$hashedIdMaskert","data":{"tekst":"hei","tall":42}}]}}""",
+                    """"saltHexified":"${hashed.saltHexified}","identifiersAndData":[{"hashedId":"$hashedIdMaskert","data":{"tekst":"hei","tall":42}}],"sharedHashedValue":"$hashedSharedValueMaskert"}}""",
             somStringMaskert
         )
     }
@@ -130,6 +136,23 @@ class HashedIdentifiersWithDataTest {
         )
         val hashed = HashedIdentifiersWithData.fromIdAndDataPairs(idAndData)
         assertEquals(10000, hashed.iterationCount, "default 50000 delt på default 5 antattAntallSammenlikninger blir 10000")
+    }
+
+    @Test
+    fun `JSON uten sharedHashedValue skal kunne deserialiseres`() {
+        @Serializable
+        data class NoeData(
+            val tekst: String,
+            val tall: Int,
+        )
+        val hashedIdsWithDataAsJsonWithoutSharedHashedValue = """
+            {"algorithm":"PBKDF2WithHmacSHA512","iterationCount":10000,"saltHexified":"0b18e281c42b67921988d56c3082d1e8","identifiersAndData":[{"hashedId":"3a033c7a39f8588efe866703c67cc963","data":{"tekst":"en","tall":1}},{"hashedId":"22b5682fe9f4acfe4e1af15b36b6ec92","data":{"tekst":"to","tall":2}}]}
+        """.trimIndent()
+        val hashed = JsonRisk.decodeFromString(HashedIdentifiersWithData.serializer(NoeData.serializer()), hashedIdsWithDataAsJsonWithoutSharedHashedValue)
+
+        assertNull(hashed.sharedHashedValue)
+
+        assertEquals(listOf(NoeData(tekst = "to", tall = 2)), hashed.findAllById("220000000"))
     }
 
 }

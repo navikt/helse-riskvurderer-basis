@@ -33,10 +33,10 @@ data class HashedIdentifiersWithData<T>(
          * @param baseIterationCount iteration-count (computational cost) hvis kun ett element hashes.
          * Dette vil bli delt på antall elementer for å ha relativt stabil kost.
          * @param antattAntallSammenlikninger hvis antall elementer er mindre enn antattAntallSammenlikninger
-         * @param sharedValue eventuell felles verdi som både produsent og konsument kjenner til, og som konsumenten kan
-         * bruke i en 'health-check' for å verifisere at hashemetodene er i synk v.h.a. metoden sharedValueIs().
          * vil iterationCount i stedet bli delt på antattAntallSammenlikninger, for at eventuell sammenlikning
          * i annen tjeneste ikke skal bli uforholdsmessig tung og tidkrevende.
+         * @param sharedValue eventuell felles verdi som både produsent og konsument kjenner til, og som konsumenten kan
+         * bruke i en 'health-check' for å verifisere at hashemetodene er i synk v.h.a. metoden sharedValueIs().
          */
         fun <T> fromIdAndDataPairs(
             idAndDataPairs: List<Pair<String, T>>,

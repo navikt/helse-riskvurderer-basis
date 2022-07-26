@@ -20,6 +20,7 @@ class MockConsumer<K, V>(
     override fun subscribe(topics: MutableCollection<String>?, callback: ConsumerRebalanceListener?) {}
     override fun subscribe(pattern: Pattern?, callback: ConsumerRebalanceListener?) {}
     override fun subscribe(pattern: Pattern?) {}
+    @Deprecated("Deprecated in Java")
     override fun poll(timeout: Long): ConsumerRecords<K, V> = mockPoll()
     override fun poll(timeout: Duration?): ConsumerRecords<K, V> = mockPoll()
     private fun mockPoll(): ConsumerRecords<K, V> = pollFunction()
@@ -32,6 +33,7 @@ class MockConsumer<K, V>(
         TODO("Not yet implemented")
     }
 
+    @Deprecated("Deprecated in Java")
     override fun close(timeout: Long, unit: TimeUnit?) {
         TODO("Not yet implemented")
     }
@@ -108,10 +110,12 @@ class MockConsumer<K, V>(
         TODO("Not yet implemented")
     }
 
+    @Deprecated("Deprecated in Java")
     override fun committed(partition: TopicPartition?): OffsetAndMetadata {
         TODO("Not yet implemented")
     }
 
+    @Deprecated("Deprecated in Java")
     override fun committed(partition: TopicPartition?, timeout: Duration?): OffsetAndMetadata {
         TODO("Not yet implemented")
     }

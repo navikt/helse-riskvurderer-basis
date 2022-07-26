@@ -1,20 +1,24 @@
 package no.nav.helse.risk
 
-import io.ktor.application.*
 import io.ktor.http.*
-import io.ktor.metrics.micrometer.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.server.application.*
 import io.ktor.server.engine.*
+import io.ktor.server.metrics.micrometer.*
 import io.ktor.server.netty.*
-import io.micrometer.core.instrument.*
-import io.micrometer.core.instrument.binder.jvm.*
-import io.micrometer.core.instrument.binder.system.*
-import io.micrometer.prometheus.*
-import io.prometheus.client.*
-import io.prometheus.client.exporter.common.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.micrometer.core.instrument.Clock
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics
+import io.micrometer.prometheus.PrometheusConfig
+import io.micrometer.prometheus.PrometheusMeterRegistry
+import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.exporter.common.TextFormat
 import java.io.StringWriter
-import java.util.concurrent.*
+import java.util.concurrent.TimeUnit
 
 fun webserver(collectorRegistry: CollectorRegistry,
               isReady: () -> Boolean, isAlive: () -> Boolean) {

@@ -1,17 +1,17 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val junitJupiterVersion = "5.8.2"
-val ktorVersion = "1.6.8"
+val ktorVersion = "2.0.3"
 val micrometerVersion = "1.3.20"
 val kafkaVersion = "2.8.1"
 val slf4jVersion = "1.7.36"
 val logbackVersion = "1.2.11"
 val logstashEncoderVersion = "7.1.1"
-val serializerVersion = "1.3.2"
+val serializerVersion = "1.3.3"
 val nimbusJoseVersion = "9.15.2"
 
 plugins {
-    val kotlinVersion = "1.6.0"
+    val kotlinVersion = "1.7.10"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
     id("maven-publish")
@@ -29,7 +29,7 @@ repositories {
 }
 
 dependencies {
-    api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0")
+    api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10")
 
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializerVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
@@ -41,7 +41,7 @@ dependencies {
         isTransitive = true
     }
 
-    implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
+    implementation("io.ktor:ktor-server-metrics-micrometer:$ktorVersion")
     api("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
     api("io.prometheus:simpleclient") {
         isTransitive = true
@@ -71,7 +71,7 @@ dependencies {
         exclude(group = "io.confluent", module = "kafka-schema-registry")
     }
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
-    testImplementation("io.mockk:mockk:1.12.3")
+    testImplementation("io.mockk:mockk:1.12.4")
 }
 
 java {

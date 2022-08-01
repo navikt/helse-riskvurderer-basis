@@ -39,6 +39,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
 
     val fnr = "01017000000"
     val vedtaksperiodeid = "33745ddf-1362-443d-8c9f-7667325e8dc6"
+    val riskNeedId = "111-222-333-444-555"
     val orgnr = "123456789"
 
     @BeforeEach
@@ -90,6 +91,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
                     put("type", "oppslagsresultat")
                     put("infotype", "ekstrainfo")
                     put("vedtaksperiodeId", vedtaksperiodeid)
+                    put("riskNeedId", riskNeedId)
                     put("data", buildJsonObject {
                         put("hei", "på deg")
                     })
@@ -115,6 +117,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
                     put("type", "oppslagsresultat")
                     put("infotype", "ekstrainfo")
                     put("vedtaksperiodeId", vedtaksperiodeid)
+                    put("riskNeedId", riskNeedId)
                     put("data", buildJsonObject {
                         put("er", "her allikevel")
                     })
@@ -142,6 +145,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
                     put("type", "oppslagsresultat")
                     put("infotype", "ekstrainfo")
                     put("vedtaksperiodeId", vedtaksperiodeid)
+                    put("riskNeedId", riskNeedId)
                     put("data", buildJsonObject {
                         put("er", "her allikevel")
                     })
@@ -163,6 +167,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
         put("type", "oppslagsresultat")
         put("infotype", "testdata")
         put("vedtaksperiodeId", vedtaksperiodeid)
+        put("riskNeedId", riskNeedId)
         put("data", buildJsonObject {
             put("felt-1", felt1)
             put("c", buildJsonArray { add(1); add(2); add(3) })
@@ -176,6 +181,7 @@ class VurderingsAppIkkePaakrevdHvisTest {
         put("fnr", fnr)
         put("organisasjonsnummer", orgnr)
         put("vedtaksperiodeId", vedtaksperiodeid)
+        put("riskNeedId", riskNeedId)
         put("behovOpprettet", behovOpprettet.toString())
     }
 

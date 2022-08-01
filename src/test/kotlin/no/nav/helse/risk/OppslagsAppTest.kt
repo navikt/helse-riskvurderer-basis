@@ -25,7 +25,6 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @FlowPreview
@@ -74,6 +73,7 @@ class OppslagsAppTest {
             buildJsonObject {
                 put("type", "oppslagsresultat")
                 put("infotype", "kobling")
+                put("riskNeedId", "RISK-NEED-ID-001")
                 put("vedtaksperiodeId", "111")
                 put("behovOpprettet", behovOpprettet.toString())
                 put("data", buildJsonObject {
@@ -95,6 +95,7 @@ class OppslagsAppTest {
                 put("type", "oppslagsresultat")
                 put("infotype", "kobling")
                 put("vedtaksperiodeId", "222")
+                put("riskNeedId", "RISK-NEED-ID-002")
                 put("behovOpprettet", behovOpprettet.toString())
                 put("data", buildJsonObject {
                     put("key", "data_value")
@@ -108,6 +109,7 @@ class OppslagsAppTest {
                 put("fnr", fnr)
                 put("organisasjonsnummer", orgnr)
                 put("vedtaksperiodeId", "333")
+                put("riskNeedId", "RISK-NEED-ID-003")
                 //put("riskNeedId", "RISK-NEED-ID-003")
                 put("behovOpprettet", behovOpprettet.toString())
             },
@@ -190,7 +192,7 @@ class OppslagsAppTest {
 
         JSON.decodeFromJsonElement(Oppslagsmelding.serializer(), answers[1]).apply {
             assertEquals("333", this.vedtaksperiodeId)
-            assertNull(this.riskNeedId, "var ikke noe riskNeedId på RiskNeed-meldinga, så ingenting å arve")
+            assertEquals("RISK-NEED-ID-003", this.riskNeedId, "skal arve RiskNeedId fra RiskNeed-meldinga")
             assertEquals("333", this.data.jsonObject["felt1"]!!.jsonPrimitive.content)
             assertEquals(false, this.data.jsonObject["har_kobling"]!!.jsonPrimitive.boolean)
         }

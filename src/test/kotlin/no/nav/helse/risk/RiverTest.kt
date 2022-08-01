@@ -110,13 +110,13 @@ internal class RiverTest {
                  "iterasjon": 1
                  }
                 """.trimIndent())
-            producer.sendJson("""{"data" : {"nummer":2}, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
-            producer.sendJson("""{"data" : {"nummer":6}, "vedtaksperiodeId":"periode1", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
+            producer.sendJson("""{"data" : {"nummer":2}, "vedtaksperiodeId":"periode1","riskNeedId":"1111-2222-RISK-NEED", "type": "oppslagsresultat", "infotype":"orginfo", "info":"firma1"}""")
+            producer.sendJson("""{"data" : {"nummer":6}, "vedtaksperiodeId":"periode1","riskNeedId":"1111-2222-RISK-NEED", "type": "oppslagsresultat", "infotype":"noeannet", "info":"annet1"}""")
 
-            producer.sendJson("""{"data" : "${buildJsonObject { put("nummer", 3) }.encryptAsJWE(jwk1)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv1", "type": "oppslagsresultat", "info":"firma1"}""")
-            producer.sendJson("""{"data" : "${buildJsonObject { put("nummer", 1) }.encryptAsJWE(jwk2)}", "vedtaksperiodeId":"periode1", "infotype":"sensitiv2", "type": "oppslagsresultat", "info":"firma1"}""")
+            producer.sendJson("""{"data" : "${buildJsonObject { put("nummer", 3) }.encryptAsJWE(jwk1)}", "vedtaksperiodeId":"periode1","riskNeedId":"1111-2222-RISK-NEED", "infotype":"sensitiv1", "type": "oppslagsresultat", "info":"firma1"}""")
+            producer.sendJson("""{"data" : "${buildJsonObject { put("nummer", 1) }.encryptAsJWE(jwk2)}", "vedtaksperiodeId":"periode1","riskNeedId":"1111-2222-RISK-NEED", "infotype":"sensitiv2", "type": "oppslagsresultat", "info":"firma1"}""")
 
-            val payload3 = """{"vedtaksperiodeId":"periode2", "svarPå": "etBehov", "vekt":5, "score": 3}"""
+            val payload3 = """{"vedtaksperiodeId":"periode2","riskNeedId":"PERIODE2-RISK-NEED", "svarPå": "etBehov", "vekt":5, "score": 3}"""
             producer.send(ProducerRecord(riskRiverTopic(), json.decodeFromString(JsonObject.serializer(), payload3)))
         }
 

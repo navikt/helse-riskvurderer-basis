@@ -33,7 +33,7 @@ open class RiverApp internal constructor(
     private val sessionAggregationFieldName: String,
 ) {
     companion object {
-        const val SESSION_AGGREGATION_FIELD_NAME_DEFAULT: String = vedtaksperiodeIdKey
+        const val SESSION_AGGREGATION_FIELD_NAME_DEFAULT: String = riskNeedIdKey
     }
 
     private val environment: RiverEnvironment = RiverEnvironment(kafkaClientId)

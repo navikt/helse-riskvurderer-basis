@@ -29,7 +29,7 @@ data class RiskNeed(
     val vedtaksperiodeId: String,
     val vedtaksperiodeGruppeId: String? = null,
     val tilknyttedeVedtaksperiodeIder: List<String>? = null,
-    val riskNeedId: String? = null,
+    val riskNeedId: String,
     val organisasjonsnummer: String,
     val fnr: String,
     val behovOpprettet: String,

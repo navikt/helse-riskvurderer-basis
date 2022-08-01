@@ -26,6 +26,7 @@ class MeldingerTest {
     val riskNeed = buildJsonObject {
         put("type", "RiskNeed")
         put("vedtaksperiodeId", "1")
+        put("riskNeedId", "rid1")
         put("organisasjonsnummer", "123456789")
         put("fnr", "01010100000")
         put("behovOpprettet", LocalDateTime.now().toString())
@@ -34,6 +35,7 @@ class MeldingerTest {
     val testoppslag = buildJsonObject {
         put("type", "oppslagsresultat")
         put("infotype", "testoppslag")
+        put("riskNeedId", "rid1")
         put("data", buildJsonObject {
             put("a", "b")
             put("fornavn", "Ola")
@@ -176,6 +178,7 @@ class MeldingerTest {
         buildJsonObject {
             put("type", "RiskNeed")
             put("vedtaksperiodeId", "1")
+            put("riskNeedId", "rid1")
             put("organisasjonsnummer", "123456789")
             put("fnr", "01010100000")
             put("behovOpprettet", LocalDateTime.now().toString())
@@ -191,6 +194,7 @@ class MeldingerTest {
         buildJsonObject {
             put("type", "RiskNeed")
             put("vedtaksperiodeId", "1")
+            put("riskNeedId", "rid1")
             put("organisasjonsnummer", "123456789")
             put("fnr", "01010100000")
             put("behovOpprettet", LocalDateTime.now().toString())
@@ -205,6 +209,7 @@ class MeldingerTest {
         buildJsonObject {
             put("type", "RiskNeed")
             put("vedtaksperiodeId", "1")
+            put("riskNeedId", "rid1")
             put("organisasjonsnummer", "123456789")
             put("fnr", "01010100000")
             put("behovOpprettet", LocalDateTime.now().toString())
@@ -220,6 +225,7 @@ class MeldingerTest {
         buildJsonObject {
             put("type", "RiskNeed")
             put("vedtaksperiodeId", "1")
+            put("riskNeedId", "rid1")
             put("organisasjonsnummer", "123456789")
             put("fnr", "01010100000")
             put("behovOpprettet", LocalDateTime.now().toString())

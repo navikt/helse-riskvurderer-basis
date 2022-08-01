@@ -217,6 +217,7 @@ class VurderingsAppTest {
             buildJsonObject {
                 put("type", "oppslagsresultat")
                 put("infotype", "testdata")
+                put("riskNeedId", riskNeedId)
                 put("vedtaksperiodeId", vedtaksperiodeid)
                 put("data", buildJsonObject {
                     put("felt-1", "verdi-1")

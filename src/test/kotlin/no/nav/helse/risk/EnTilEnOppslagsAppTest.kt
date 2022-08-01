@@ -64,6 +64,7 @@ class EnTilEnOppslagsAppTest {
                     put("fnr", fnr)
                     put("organisasjonsnummer", orgnr)
                     put("vedtaksperiodeId", "p1")
+                    put("riskNeedId", "r1")
                     put("behovOpprettet", behovOpprettet.toString())
                 }
             ),
@@ -95,6 +96,7 @@ class EnTilEnOppslagsAppTest {
                     put("fnr", fnr)
                     put("organisasjonsnummer", orgnr)
                     put("vedtaksperiodeId", "p2")
+                    put("riskNeedId", "r2")
                     put("behovOpprettet", behovOpprettet.toString())
                 }
             ),
@@ -126,6 +128,7 @@ class EnTilEnOppslagsAppTest {
                     put("fnr", fnr)
                     put("organisasjonsnummer", orgnr)
                     put("vedtaksperiodeId", "iter-1")
+                    put("riskNeedId", "rid-iter-1")
                     put("behovOpprettet", behovOpprettet.toString())
                 },
                 buildJsonObject {
@@ -134,6 +137,7 @@ class EnTilEnOppslagsAppTest {
                     put("fnr", fnr)
                     put("organisasjonsnummer", orgnr)
                     put("vedtaksperiodeId", "iter-2")
+                    put("riskNeedId", "rid-iter-2")
                     put("behovOpprettet", behovOpprettet.toString())
                 }
 

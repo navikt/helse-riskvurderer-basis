@@ -14,7 +14,8 @@ class VurderingTypeTest {
          fnr = "01010199999",
          organisasjonsnummer = "999888777",
          iterasjon = 1,
-         behovOpprettet = LocalDateTime.now().toString()
+         behovOpprettet = LocalDateTime.now().toString(),
+         riskNeedId = "RID" + vedtaksperiodeId
       )
 
    @Test

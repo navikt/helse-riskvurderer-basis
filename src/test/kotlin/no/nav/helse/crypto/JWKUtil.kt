@@ -3,6 +3,7 @@ package no.nav.helse.crypto
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.JWKSet
 import com.nimbusds.jose.util.Base64URL
+import com.nimbusds.jose.util.JSONObjectUtils
 import javax.crypto.KeyGenerator
 
 
@@ -25,9 +26,9 @@ fun main() {
     val base = "oppslagsdata"
     val jwk = lagEnJWK("$base-key-001")
     val jwks = JWKSet(jwk)
-    val jwkString = jwk.toJSONObject().toString()
-    val jwksString = jwks.toJSONObject(false).toString()
-    println("Create JWK: (If copy/paste: remember: export HISTCONTROL=ignorespace  ..and keep the leading space)")
+    val jwkString = jwk.toJSONString()
+    val jwksString = JSONObjectUtils.toJSONString(jwks.toJSONObject(false))
+    println("Create JWK: (If copy/paste: remember: setopt HIST_IGNORE_SPACE / export HISTCONTROL=ignorespace  ..and keep the leading space)")
     val createJWKCommand = "  kubectl create secret generic $base-send --from-literal=${base}_jwk='$jwkString'"
     println(createJWKCommand)
     println("Create JWKS:")
@@ -35,7 +36,7 @@ fun main() {
     println(createJWKSCommand)
     println("Read JWK:")
     println("kubectl get secret $base-send -o yaml")
-    println("echo '<base64stuff>' | base64 --decode")
+    println("  echo '<base64stuff>' | base64 --decode")
     println("Update JWKS:")
     println("!NB!TODO: You might want to include _old_ JWKS-keys also, in the new JWKS, and update JWKS _before_ JWK")
     println("Force Update JWK:")

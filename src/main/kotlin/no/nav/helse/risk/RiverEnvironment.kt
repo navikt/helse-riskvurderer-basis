@@ -5,28 +5,15 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.LoggerFactory
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.*
-
-data class ServiceUser(
-    val username: String,
-    val password: String
-) {
-    override fun toString() = "ServiceUser:$username"
-}
 
 private val log = LoggerFactory.getLogger(RiverEnvironment::class.java)
 
-private val isKafkaCloud:Boolean = systemEnvOrDefault("KAFKA_CLOUD_RIVER", "false") == "true"
-
-fun riskRiverTopic(): String = if (isKafkaCloud) "risk.helse-risk-river" else "helse-risk-river-v1"
+fun riskRiverTopic(): String = "risk.helse-risk-river"
 
 object AppEnvironment {
     fun podname(): String = systemEnvOrDefault("HOSTNAME", "unknownHost")
@@ -40,40 +27,17 @@ object AppEnvironment {
 }
 
 internal class RiverEnvironment(
-    private val kafkaClientId: String
+    internal val kafkaClientId: String
 ) {
-    val vaultBase = "/var/run/secrets/nais.io/kafkauser"
-    val vaultBasePath: Path = Paths.get(vaultBase)
-
-    private fun readServiceUserCredentials() = ServiceUser(
-        username = Files.readString(vaultBasePath.resolve("username")),
-        password = Files.readString(vaultBasePath.resolve("password"))
-    )
-
     fun createKafkaEnvironment() : KafkaRiverEnvironment =
-        if (isKafkaCloud) {
-            KafkaRiverEnvironment(
-                kafkaProducer = KafkaProducer(kafkaProducerConfig()),
-                kafkaConsumer = KafkaConsumer(kafkaConsumerConfig())
-            )
-        } else {
-            readServiceUserCredentials().let { kafkaUser ->
-                return KafkaRiverEnvironment(
-                    kafkaProducer = KafkaProducer(kafkaProducerConfig(kafkaUser)),
-                    kafkaConsumer = KafkaConsumer(kafkaConsumerConfig(kafkaUser))
-                )
-            }
-        }
+        KafkaRiverEnvironment(
+            kafkaProducer = KafkaProducer(kafkaProducerConfig()),
+            kafkaConsumer = KafkaConsumer(kafkaConsumerConfig())
+        )
 
-    private fun kafkaProducerConfig(serviceUser: ServiceUser? = null, brokers: String? = null) = Properties().apply {
-        if (isKafkaCloud) {
-            log.info("RIVER-PRODUCER: Using Kafka Cloud")
-            putAll(commonCloudKafkaConfig())
-        } else {
-            log.info("RIVER-PRODUCER: Using Kafka OnPrem")
-            requireNotNull(serviceUser)
-            putAll(commonOnPremKafkaConfig(serviceUser, brokers))
-        }
+    private fun kafkaProducerConfig() = Properties().apply {
+        log.info("RIVER-PRODUCER: Using Kafka Cloud")
+        putAll(commonCloudKafkaConfig())
 
         put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
         put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonObjectSerializer::class.java)
@@ -81,15 +45,9 @@ internal class RiverEnvironment(
         put(ProducerConfig.CLIENT_ID_CONFIG, "$kafkaClientId-producer")
     }
 
-    private fun kafkaConsumerConfig(serviceUser: ServiceUser? = null, brokers: String? = null) = Properties().apply {
-        if (isKafkaCloud) {
-            log.info("RIVER-CONSUMER: Using Kafka Cloud")
-            putAll(commonCloudKafkaConfig())
-        } else {
-            log.info("RIVER-CONSUMER: Using Kafka OnPrem")
-            requireNotNull(serviceUser)
-            putAll(commonOnPremKafkaConfig(serviceUser, brokers))
-        }
+    private fun kafkaConsumerConfig() = Properties().apply {
+        log.info("RIVER-CONSUMER: Using Kafka Cloud")
+        putAll(commonCloudKafkaConfig())
 
         put(ConsumerConfig.GROUP_ID_CONFIG, "$kafkaClientId-consumer")
         put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java)
@@ -97,16 +55,6 @@ internal class RiverEnvironment(
         put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1000")
         put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest")
         //put("default.deserialization.exception.handler", LogAndContinueExceptionHandler::class.java)
-    }
-
-    private fun commonOnPremKafkaConfig(serviceUser: ServiceUser, brokers: String?) = Properties().apply {
-        put("application.id", kafkaClientId)
-        put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, systemEnvOrDefault("KAFKA_SECURITY_PROTOCOL_CONFIG",
-            "SASL_SSL"))
-        put(SaslConfigs.SASL_MECHANISM, "PLAIN")
-        put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, brokers ?: systemEnv("KAFKA_BOOTSTRAP_SERVERS"))
-        put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required " +
-            "username=\"${serviceUser.username}\" password=\"${serviceUser.password}\";")
     }
 
     private fun commonCloudKafkaConfig() = Properties().apply {

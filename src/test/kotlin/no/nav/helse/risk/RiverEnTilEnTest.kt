@@ -154,33 +154,33 @@ internal class RiverEnTilEnTest {
         it[SaslConfigs.SASL_MECHANISM] = "PLAIN"
     }
     private val consumerConfig = kafkaConfig.kafkaConsumerConfig(
-        ServiceUser("", ""), kafka.brokersURL
+        kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "tulleconsumer"
     }
     private val testConsumerConfig = kafkaConfig.kafkaConsumerConfig(
-        ServiceUser("", ""), kafka.brokersURL
+        kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "testconsumer"
     }
     private val producerConfig = kafkaProducerConfig(
-        ServiceUser("", ""), kafka.brokersURL
+        kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ProducerConfig.CLIENT_ID_CONFIG] = "tulleproducer"
     }
 
-    fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
-        putAll(kafkaConfig.commonKafkaConfig(serviceUser, brokers))
+    fun kafkaProducerConfig(brokers: String) = Properties().apply {
+        putAll(kafkaConfig.commonKafkaConfig(brokers))
 
         put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
         put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonObjectSerializer::class.java)
         put(ProducerConfig.ACKS_CONFIG, "all")
-        put(ProducerConfig.CLIENT_ID_CONFIG, "$env.kafkaClientId-producer")
+        put(ProducerConfig.CLIENT_ID_CONFIG, "${env.kafkaClientId}-producer")
     }
 
 }

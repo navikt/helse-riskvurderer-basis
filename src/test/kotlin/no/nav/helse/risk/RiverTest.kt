@@ -169,49 +169,40 @@ internal class RiverTest {
         it[SaslConfigs.SASL_MECHANISM] = "PLAIN"
     }
     private val consumerConfig = kafkaConfig.kafkaConsumerConfig(
-        ServiceUser("", ""), kafka.brokersURL
+        kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "tulleconsumer"
     }
     private val testConsumerConfig = kafkaConfig.kafkaConsumerConfig(
-        ServiceUser("", ""), kafka.brokersURL
+        kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "testconsumer"
     }
     private val producerConfig = kafkaProducerConfig(
-        ServiceUser("", ""), kafka.brokersURL
+        kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ProducerConfig.CLIENT_ID_CONFIG] = "tulleproducer"
     }
 
-    fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
-        putAll(kafkaConfig.commonKafkaConfig(serviceUser, brokers))
+    fun kafkaProducerConfig(brokers: String) = Properties().apply {
+        putAll(kafkaConfig.commonKafkaConfig(brokers))
 
         put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
         put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonObjectSerializer::class.java)
         put(ProducerConfig.ACKS_CONFIG, "all")
-        put(ProducerConfig.CLIENT_ID_CONFIG, "$env.kafkaClientId-producer")
+        put(ProducerConfig.CLIENT_ID_CONFIG, "${env.kafkaClientId}-producer")
     }
 
 }
 
 class TestKafkaConfig(val kafkaClientId: String) {
-    fun kafkaProducerConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
-        putAll(commonKafkaConfig(serviceUser, brokers))
-
-        put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
-        put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonObjectSerializer::class.java)
-        put(ProducerConfig.ACKS_CONFIG, "all")
-        put(ProducerConfig.CLIENT_ID_CONFIG, "$kafkaClientId-producer")
-    }
-
-    fun kafkaConsumerConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
-        putAll(commonKafkaConfig(serviceUser, brokers))
+    fun kafkaConsumerConfig(brokers: String) = Properties().apply {
+        putAll(commonKafkaConfig(brokers))
 
         put(ConsumerConfig.GROUP_ID_CONFIG, "$kafkaClientId-consumer")
         put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java)
@@ -221,13 +212,13 @@ class TestKafkaConfig(val kafkaClientId: String) {
         //put("default.deserialization.exception.handler", LogAndContinueExceptionHandler::class.java)
     }
 
-    fun commonKafkaConfig(serviceUser: ServiceUser, brokers: String) = Properties().apply {
+    fun commonKafkaConfig(brokers: String) = Properties().apply {
         put("application.id", kafkaClientId)
         put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL")
         put(SaslConfigs.SASL_MECHANISM, "PLAIN")
         put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, brokers)
         put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required " +
-            "username=\"${serviceUser.username}\" password=\"${serviceUser.password}\";")
+            "username=\"\" password=\"\";")
     }
 }
 

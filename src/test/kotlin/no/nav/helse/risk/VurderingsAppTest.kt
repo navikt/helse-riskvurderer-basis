@@ -27,6 +27,7 @@ import java.util.*
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 val baseMetaData = mapOf(
@@ -138,6 +139,50 @@ class VurderingsAppTest {
     }
 
     @Test
+    fun `grunnlag blir ikke med i analyse`() {
+        testMedVurdererOgAssertions(
+            ekstraVedtaksperiodeIder = listOf("analyse:123"),
+            vurderer = { meldinger ->
+                meldinger.finnRiskNeed()!!
+                meldinger.finnOppslagsresultat("testdata")!!.jsonObject
+                VurderingBuilder().apply {
+                    nySjekk(vekt = 10) {
+                        resultat(
+                            tekst = "treff",
+                            score = 6,
+                            kreverManuellBehandling = false,
+                            grunnlag = SjekkresultatGrunnlag(
+                                versjon = 10,
+                                data = buildJsonObject {
+                                    put("ligger_til_grunn", "noe_greier")
+                                }
+                            )
+                        )
+                    }
+                }.build(10)
+            },
+            assertOnProducedMessages = { producedMessages ->
+                producedMessages.map { json.decodeFromJsonElement(Vurderingsmelding.serializer(), it) }.apply {
+                    println(this)
+                    assertEquals(2, size)
+                    find { it.vedtaksperiodeId == vedtaksperiodeid }!!.apply {
+                        assertEquals(1, sjekkresultater.size)
+                        assertEquals(buildJsonObject {
+                            put("ligger_til_grunn", "noe_greier")
+                        }, sjekkresultater.first().grunnlag!!.data)
+                    }
+                    find { it.vedtaksperiodeId == "analyse:123" }!!.apply {
+                        assertEquals(1, sjekkresultater.size)
+                        assertNull(sjekkresultater.first().grunnlag, "grunnlag skal ikke legges ved i analyse")
+                    }
+                }
+            }
+        )
+    }
+
+
+
+    @Test
     fun `subsumsjoner blir med i vurderingen`() {
         val subsumsjon1 = buildJsonObject {
             put("id", UUID.randomUUID().toString())
@@ -195,35 +240,44 @@ class VurderingsAppTest {
 
     fun testMedVurdererOgAssertions(
         vurderer: (List<JsonObject>) -> Vurdering,
-        assertOnProducedMessages: (List<JsonObject>) -> Unit
+        assertOnProducedMessages: (List<JsonObject>) -> Unit,
+        ekstraVedtaksperiodeIder: List<String> = emptyList()
     ) {
         val producer = mockk<KafkaProducer<String, JsonObject>>()
         val consumer = mockk<KafkaConsumer<String, JsonObject>>()
 
         val behovOpprettet = LocalDateTime.now()
-        val rec1 = ConsumerRecord(riskRiverTopic(), partition, 1,
-            "envedtaksperiodeid",
-            buildJsonObject {
-                put("type", "RiskNeed")
-                put("iterasjon", 1)
-                put("fnr", fnr)
-                put("riskNeedId", riskNeedId)
-                put("organisasjonsnummer", orgnr)
-                put("vedtaksperiodeId", vedtaksperiodeid)
-                put("behovOpprettet", behovOpprettet.toString())
-            })
-        val rec2 = ConsumerRecord(riskRiverTopic(), partition, 1,
-            "envedtaksperiodeid",
-            buildJsonObject {
-                put("type", "oppslagsresultat")
-                put("infotype", "testdata")
-                put("riskNeedId", riskNeedId)
-                put("vedtaksperiodeId", vedtaksperiodeid)
-                put("data", buildJsonObject {
-                    put("felt-1", "verdi-1")
-                    put("c", buildJsonArray {add(1); add(2); add(3) })
-                })
-            })
+
+
+        val vedtaksperiodeIder = listOf(vedtaksperiodeid) + ekstraVedtaksperiodeIder
+
+        val recs = vedtaksperiodeIder.flatMap { ønsketVedtaksperiodeId ->
+            listOf(
+                ConsumerRecord(riskRiverTopic(), partition, 1,
+                    "envedtaksperiodeid",
+                    buildJsonObject {
+                        put("type", "RiskNeed")
+                        put("iterasjon", 1)
+                        put("fnr", fnr)
+                        put("riskNeedId", riskNeedId)
+                        put("organisasjonsnummer", orgnr)
+                        put("vedtaksperiodeId", ønsketVedtaksperiodeId)
+                        put("behovOpprettet", behovOpprettet.toString())
+                    }),
+                ConsumerRecord(riskRiverTopic(), partition, 1,
+                    "envedtaksperiodeid",
+                    buildJsonObject {
+                        put("type", "oppslagsresultat")
+                        put("infotype", "testdata")
+                        put("riskNeedId", riskNeedId)
+                        put("vedtaksperiodeId", ønsketVedtaksperiodeId)
+                        put("data", buildJsonObject {
+                            put("felt-1", "verdi-1")
+                            put("c", buildJsonArray { add(1); add(2); add(3) })
+                        })
+                    })
+            )
+        }
 
         val app = VurderingsApp(
             kafkaClientId = "testvurderer",
@@ -244,9 +298,7 @@ class VurderingsAppTest {
 
         every { consumer.poll(Duration.ZERO) } returns ConsumerRecords(
             mapOf(
-                riverTopicPartition to listOf(
-                    rec1, rec2
-                )
+                riverTopicPartition to recs
             )
         ) andThenThrows Done()
 
@@ -261,7 +313,7 @@ class VurderingsAppTest {
             .atMost(Duration.ofSeconds(10))
             .pollDelay(Duration.ofMillis(200))
             .untilAsserted {
-                assertTrue(producedMessages.size > 0)
+                assertTrue(producedMessages.size >= vedtaksperiodeIder.size)
                 println(producedMessages.toString())
 
             }

@@ -25,7 +25,13 @@ internal class VurderingProducer(
             json.encodeToJsonElement(Vurderingsmelding.serializer(), Vurderingsmelding(
                 infotype = infotype,
                 vedtaksperiodeId = vedtaksperiodeId,
-                sjekkresultater = vurdering.sjekkresultat,
+                sjekkresultater = vurdering.sjekkresultat.let { sjekkresultater ->
+                    if (VurderingType.vurderingstypeForventetFor(vedtaksperiodeId = vedtaksperiodeId) != VurderingType.PROD) {
+                        sjekkresultater.map { it.copy(grunnlag = null) }
+                    } else {
+                        sjekkresultater
+                    }
+                },
                 score = vurdering.score,
                 vekt = vurdering.vekt,
                 begrunnelser = vurdering.begrunnelser,

@@ -11,5 +11,5 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           command: monitor
-          args: --configuration-attributes=usage:java-runtime --org=risk --project-name=${{ github.repository }} --remote-repo-url=https://github.com/${{ github.repository }}.git
+          args: --configuration-matching="^runtimeClasspath$|^compileClasspath$" --org=risk --project-name=${{ github.repository }} --remote-repo-url=https://github.com/${{ github.repository }}.git
 

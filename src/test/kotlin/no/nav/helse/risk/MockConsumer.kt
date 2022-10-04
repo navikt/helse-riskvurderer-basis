@@ -6,7 +6,7 @@ import org.apache.kafka.common.MetricName
 import org.apache.kafka.common.PartitionInfo
 import org.apache.kafka.common.TopicPartition
 import java.time.Duration
-import java.util.concurrent.TimeUnit
+import java.util.*
 import java.util.regex.Pattern
 
 class MockConsumer<K, V>(
@@ -30,11 +30,6 @@ class MockConsumer<K, V>(
     }
 
     override fun close() {
-        TODO("Not yet implemented")
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun close(timeout: Long, unit: TimeUnit?) {
         TODO("Not yet implemented")
     }
 
@@ -205,6 +200,10 @@ class MockConsumer<K, V>(
     }
 
     override fun enforceRebalance() {
+        TODO("Not yet implemented")
+    }
+
+    override fun currentLag(topicPartition: TopicPartition?): OptionalLong {
         TODO("Not yet implemented")
     }
 

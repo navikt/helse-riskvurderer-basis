@@ -43,10 +43,10 @@ internal class VurderingProducer(
             )).jsonObject
         } catch (ex: Exception) {
             log.error(
-                "feil under vurdering: {}, info.size()={} meldingsTyper={}, se secure log for detaljer",
+                "feil under vurdering for vedtaksperiodeId=$vedtaksperiodeId: {}, info.size()={} meldingsTyper={}, se secure log for detaljer",
                 ex::class.java.name, answers.size, answers.map { it.meldingsType() }.toString()
             )
-            secureLog.error("Feil under vurdering", ex)
+            secureLog.error("Feil under vurdering for vedtaksperiodeId=$vedtaksperiodeId", ex)
             if (secureLog.isDebugEnabled) {
                 secureLog.debug("Feil under vurdering med data: $answers")
             }

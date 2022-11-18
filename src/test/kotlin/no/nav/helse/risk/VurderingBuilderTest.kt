@@ -7,6 +7,7 @@ import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class VurderingBuilderTest {
 
@@ -202,6 +203,50 @@ class VurderingBuilderTest {
 
         }
     }
+
+
+    @Test
+    fun `negativ score skal funke for passert`() {
+        val vurdering = VurderingBuilder()
+        vurdering.nySjekk(id = "score0", vekt = 5) {
+            passert("OK med 0")
+        }
+        vurdering.nySjekk(id = "score-3", vekt = 5) {
+            passert(tekst = "OK med -3", score = -3)
+        }
+        vurdering.build(10).apply {
+            assertEquals(
+                listOf(
+                    Sjekkresultat(
+                        id = "score0",
+                        tekst = "OK med 0",
+                        score = 0,
+                        vekt = 5,
+                        kreverManuellBehandling = false,
+                    ),
+                    Sjekkresultat(
+                        id = "score-3",
+                        tekst = "OK med -3",
+                        score = -3,
+                        vekt = 5,
+                        kreverManuellBehandling = false,
+                    ),
+                ), this.sjekkresultat
+            )
+            assertEquals(
+                listOf("OK med 0", "OK med -3"),
+                passerteSjekker
+            )
+            assertTrue(begrunnelserSomAleneKreverManuellBehandling.isEmpty())
+            assertTrue(begrunnelser.isEmpty())
+        }
+        assertThrows<IllegalArgumentException>("positiv score er ugyldig") {
+            vurdering.nySjekk(id = "score1", vekt = 5) {
+                passert(tekst = "OK", score = 1)
+            }
+        }
+    }
+
 
 
     @Test

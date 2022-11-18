@@ -58,8 +58,18 @@ class VurderingBuilder {
         val kategorier: List<String> = emptyList()
     ) {
         private var finalized = false
-        fun passert(tekst: String) = resultat(tekst = tekst, score = 0, kreverManuellBehandling = false)
-        fun passert(tekst: TekstMedVariabler) = resultat(tekst = tekst, score = 0, kreverManuellBehandling = false)
+        private fun validerPassertScore(score: Int) {
+            require(score <= 0) { "Score ved passert sjekk må være mindre eller lik 0" }
+        }
+
+        fun passert(tekst: String, score:Int = 0): Sjekkresultat {
+            validerPassertScore(score)
+            return resultat(tekst = tekst, score = score, kreverManuellBehandling = false)
+        }
+        fun passert(tekst: TekstMedVariabler, score:Int = 0): Sjekkresultat {
+            validerPassertScore(score)
+            return resultat(tekst = tekst, score = score, kreverManuellBehandling = false)
+        }
         fun ikkeAktuell(tekst: String) = passert(tekst).copy(vekt = 0)
         fun kreverManuellBehandling(tekst: String) = resultat(tekst = tekst, score = 10, kreverManuellBehandling = true)
 
@@ -146,7 +156,7 @@ class VurderingBuilder {
         minOf(10, sjekkresultater.map { it.score }.sum())
 
     private fun bakoverkompatibel_passerteSjekker(): List<String> =
-        sjekkresultater.filter { it.score == 0 && it.vekt != 0 }.map { it.tekst() }
+        sjekkresultater.filter { it.score <= 0 && it.vekt != 0 }.map { it.tekst() }
 
 
     fun build(vekt: Int = 10): Vurdering {

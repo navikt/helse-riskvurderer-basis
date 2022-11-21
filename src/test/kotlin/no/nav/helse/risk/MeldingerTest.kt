@@ -2,10 +2,7 @@ package no.nav.helse.risk
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
 import no.nav.helse.privacy.IdMasker.Companion.hashingsalt
 import no.nav.helse.privacy.sha1
 import org.junit.jupiter.api.Test
@@ -13,6 +10,7 @@ import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -240,6 +238,44 @@ class MeldingerTest {
             assertEquals(buildJsonObject {
                 put("felt1", "verdi1")
             }, this.originalBehov)
+        }
+    }
+
+    @Test
+    fun tillegsbehov() {
+        fun needMedTillegsbehov(tilleggsbehov: List<String>?) = buildJsonObject {
+            put("type", "RiskNeed")
+            put("vedtaksperiodeId", "1")
+            put("riskNeedId", "rid1")
+            put("organisasjonsnummer", "123456789")
+            put("fnr", "01010100000")
+            put("behovOpprettet", LocalDateTime.now().toString())
+            put("iterasjon", 1)
+            put("isRetry", true)
+            put("retryCount", 2)
+            if (tilleggsbehov != null) {
+                put("tilleggsbehov", buildJsonArray {
+                    tilleggsbehov.forEach { add(JsonPrimitive(it)) }
+                })
+            }
+            put("originalBehov", buildJsonObject {
+                put("felt1", "verdi1")
+            })
+        }.jsonObject
+
+        needMedTillegsbehov(null).apply {
+            assertFalse(tilRiskNeed().harTilleggsbehov("BEHOV-1"))
+        }
+        needMedTillegsbehov(listOf("BEHOV-1")).apply {
+            assertTrue(tilRiskNeed().harTilleggsbehov("BEHOV-1"))
+        }
+        needMedTillegsbehov(listOf("BEHOV-2")).apply {
+            assertFalse(tilRiskNeed().harTilleggsbehov("BEHOV-1"))
+        }
+        needMedTillegsbehov(listOf("B1", "B2")).apply {
+            assertFalse(tilRiskNeed().harTilleggsbehov("BEHOV-1"))
+            assertTrue(tilRiskNeed().harTilleggsbehov("B1"))
+            assertTrue(tilRiskNeed().harTilleggsbehov("B2"))
         }
     }
 }

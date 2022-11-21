@@ -38,8 +38,12 @@ data class RiskNeed(
     val originalBehov: JsonObject? = null,
     val type: String = "RiskNeed",
     val isRetry: Boolean? = null,
-    val retryCount: Int? = null
+    val retryCount: Int? = null,
+    val tilleggsbehov: List<String>? = null,
 )
+
+fun RiskNeed.harTilleggsbehov(tilleggsbehov: String) : Boolean =
+    this.tilleggsbehov != null && this.tilleggsbehov.contains(tilleggsbehov)
 
 class Oppslagtype<T>(val infotype: String, val serializer: DeserializationStrategy<T>)
 

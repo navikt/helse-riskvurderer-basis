@@ -6,7 +6,7 @@ val micrometerVersion = "1.3.20"
 val kafkaVersion = "2.8.2"
 val slf4jVersion = "1.7.36"
 val logbackVersion = "1.2.11"
-val logstashEncoderVersion = "7.1.1"
+val logstashEncoderVersion = "7.4"
 val serializerVersion = "1.3.3"
 val nimbusJoseVersion = "9.15.2"
 
@@ -28,8 +28,6 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
-val jacksonDatabindOverriddenVersion = "2.13.4" // TODO: Bump til 2.14.0+ for å bli kvitt CVE-2022-42003 eller fjern hvis logstash-logback-encoder har oppdaterte deps
-
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10")
 
@@ -37,7 +35,6 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindOverriddenVersion")
 
     api("io.ktor:ktor-server-netty:$ktorVersion")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core") {

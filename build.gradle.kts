@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val junitJupiterVersion = "5.8.2"
-val ktorVersion = "2.1.2"
+val ktorVersion = "2.1.3"
 val micrometerVersion = "1.3.20"
 val kafkaVersion = "2.8.2"
 val slf4jVersion = "1.7.36"
@@ -28,6 +28,9 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
+val xerialSnappyOverriddenVersion = "1.1.10.2" // CVE-2023-34455++ TODO: Fjern når kafka-clients oppgraderes fra 2.8.2 (som drar inn 1.1.8.1)
+val nettyHandlerOverriddenVersion = "4.1.94.Final" // CVE-2023-34462 TODO: Fjern når ktor oppgraderes fra 2.1.3 ?
+
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10")
 
@@ -35,6 +38,10 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+
+    implementation("io.netty:netty-handler:$nettyHandlerOverriddenVersion").also {
+        if (ktorVersion != "2.1.3") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
+    }
 
     api("io.ktor:ktor-server-netty:$ktorVersion")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core") {
@@ -48,6 +55,9 @@ dependencies {
     }
 
     implementation("org.apache.kafka:kafka-clients:$kafkaVersion")
+    implementation("org.xerial.snappy:snappy-java:$xerialSnappyOverriddenVersion").also {
+        if (kafkaVersion != "2.8.2") throw RuntimeException("Slett xerialSnappyOverridden siden kafka oppgradert?")
+    }
 
     api("org.slf4j:slf4j-api:$slf4jVersion")
     api("ch.qos.logback:logback-classic:$logbackVersion")

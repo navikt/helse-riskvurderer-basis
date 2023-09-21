@@ -52,7 +52,7 @@ class VurderingBuilder {
         ikkeAktuell(tekst)
     }
 
-    inner class SjekkresultatBuilder internal constructor(
+    class SjekkresultatBuilder constructor(
         val vekt: Int,
         val id: String,
         val kategorier: List<String> = emptyList()

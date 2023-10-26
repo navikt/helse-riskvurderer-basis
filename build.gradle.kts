@@ -27,7 +27,7 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
-val xerialSnappyOverriddenVersion = "1.1.10.2" // CVE-2023-34455++ TODO: Fjern når kafka-clients oppgraderes fra 2.8.2 (som drar inn 1.1.8.1)
+val xerialSnappyOverriddenVersion = "1.1.10.4" // CVE-2023-34455++ TODO: Fjern når kafka-clients oppgraderes fra 2.8.2 (som drar inn 1.1.8.1)
 val nettyHandlerOverriddenVersion = "4.1.94.Final" // CVE-2023-34462 TODO: Fjern når ktor oppgraderes fra 2.1.3 ?
 
 dependencies {

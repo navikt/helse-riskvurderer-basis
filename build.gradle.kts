@@ -19,7 +19,6 @@ plugins {
 
 apply(plugin = "org.jetbrains.kotlin.jvm")
 
-
 group = "no.nav.helse.risk"
 version = properties["version"].let { if (it == null || it == "unspecified") "local-build" else it }
 

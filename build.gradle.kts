@@ -27,8 +27,8 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
-val xerialSnappyOverriddenVersion = "1.1.10.2" // CVE-2023-34455++ TODO: Fjern når kafka-clients oppgraderes fra 2.8.2 (som drar inn 1.1.8.1)
-val nettyHandlerOverriddenVersion = "4.1.94.Final" // CVE-2023-34462 TODO: Fjern når ktor oppgraderes fra 2.1.3 ?
+val xerialSnappyOverriddenVersion = "1.1.10.4" // CVE-2023-34455++ TODO: Fjern når kafka-clients oppgraderes fra 2.8.2 (som drar inn 1.1.8.1)
+val nettyHandlerOverriddenVersion = "4.1.100.Final" // CVE-2023-34462 TODO: Fjern når ktor oppgraderes fra 2.1.3 ?
 
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10")
@@ -39,6 +39,9 @@ dependencies {
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     implementation("io.netty:netty-handler:$nettyHandlerOverriddenVersion").also {
+        if (ktorVersion != "2.1.3") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
+    }
+    implementation("io.netty:netty-codec-http2:$nettyHandlerOverriddenVersion").also {
         if (ktorVersion != "2.1.3") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
     }
 

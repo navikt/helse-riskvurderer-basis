@@ -147,7 +147,6 @@ data class Vurderingsmelding(
     val sjekkresultater: List<Sjekkresultat>,
     @Deprecated("Bruk sjekkresultater i stedet") val passerteSjekker: List<String>? = null, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val metadata: Map<String,String>? = null,
-    val subsumsjoner: List<JsonObject>? = null,
 ) {
     fun begrunnelser(): List<String> =
         sjekkresultater.filter { it.score > 0 }.map { it.tekst() }

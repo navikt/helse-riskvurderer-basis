@@ -2,10 +2,8 @@ package no.nav.helse.risk
 
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import no.nav.helse.crypto.JWKSetHolder
-import java.util.*
 
 data class Vurdering(
     @Deprecated("Bruk sjekkresultat i stedet") val score: Int,
@@ -15,14 +13,12 @@ data class Vurdering(
     val sjekkresultat: List<Sjekkresultat>,
     val passerteSjekker: List<String>, // NB: vil bli deprecated (Bruk sjekkresultater i stedet)
     val metadata: Map<String, String>,
-    val subsumsjoner: List<JsonObject>
 )
 
 
 class VurderingBuilder {
     private val metadata = mutableMapOf<String, String>()
     private val sjekkresultater = mutableListOf<Sjekkresultat>()
-    private val subsumsjoner = mutableListOf<JsonObject>()
     private var sjekkIdCounter = 0
     private fun nySjekkId(): String = (++sjekkIdCounter).toString()
 
@@ -126,26 +122,6 @@ class VurderingBuilder {
         return this
     }
 
-    @Serializable
-    private data class SubsumsjonHeaderFields(
-            val id: String,
-            val versjon: String,
-            val eventName: String,
-            val kilde: String,
-    ) {
-        init {
-            try { requireNotNull(UUID.fromString(id)) } catch (ex: Exception) {
-                throw IllegalArgumentException("Klarte ikke parse @id som UUID", ex)
-            }
-            require(eventName == "subsumsjon", { "@event_name må være 'subsumsjon'" })
-        }
-    }
-
-    fun leggVedSubsumsjon(subsumsjon: JsonObject) {
-        requireNotNull(JsonRisk.decodeFromJsonElement(SubsumsjonHeaderFields.serializer(), subsumsjon))
-        subsumsjoner.add(subsumsjon)
-    }
-
     private fun bakoverkompatibel_begrunnelser(): List<String> =
         sjekkresultater.filter { it.score > 0 }.map { it.tekst() }
 
@@ -169,7 +145,6 @@ class VurderingBuilder {
             sjekkresultat = sjekkresultater,
             passerteSjekker = bakoverkompatibel_passerteSjekker(),
             metadata = metadata,
-            subsumsjoner = subsumsjoner
         )
     }
 }

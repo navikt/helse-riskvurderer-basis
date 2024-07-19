@@ -65,7 +65,7 @@ internal fun encryptAsJWE(content: ByteArray, jwk: JWK): String? {
        null as JWK?,
        CompressionAlgorithm.DEF,  // Compress before encryption, because encrypted data cannot be compressed
        null as Base64URL?, null as Base64URL?, null as Base64URL?, 0,
-       null as Base64URL?, null as Base64URL?, null as MutableMap<String, Any>?, null as Base64URL?)
+       null as Base64URL?, null as Base64URL?, null as String?, null as MutableMap<String, Any>?, null as Base64URL?)
    val jwe = JWEObject(header, Payload(content))
    jwe.encrypt(jweEncrypter)
    return jwe.serialize()

@@ -8,7 +8,7 @@ val slf4jVersion = "1.7.36"
 val logbackVersion = "1.3.12"
 val logstashEncoderVersion = "7.4"
 val serializerVersion = "1.3.3"
-val nimbusJoseVersion = "9.15.2"
+val nimbusJoseVersion = "9.40"
 
 plugins {
     val kotlinVersion = "1.7.10"
@@ -28,7 +28,7 @@ repositories {
 }
 
 val xerialSnappyOverriddenVersion = "1.1.10.4" // CVE-2023-34455++ TODO: Fjern når kafka-clients oppgraderes fra 2.8.2 (som drar inn 1.1.8.1)
-val nettyHandlerOverriddenVersion = "4.1.100.Final" // CVE-2023-34462 TODO: Fjern når ktor oppgraderes fra 2.1.3 ?
+val nettyHandlerOverriddenVersion = "4.1.108.Final" // CVE-2023-34462 TODO: Fjern når ktor oppgraderes fra 2.1.3 ?
 
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10")

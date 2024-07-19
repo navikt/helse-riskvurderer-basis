@@ -22,27 +22,22 @@ class VurderingTypeTest {
    fun `fastslå VurderingType utifra vedtaksperiodeId`() {
       riskneed("123").apply {
          assertEquals(VurderingType.PROD, this.vurderingstypeForventet())
-         assertFalse(this.vurderingstypeForventet().erStageEllerAnalyse())
+         assertFalse(this.vurderingstypeForventet().erAnalyse())
          assertFalse(this.erKunAnalyse())
       }
 
       riskneed("prana:123").apply {
          assertEquals(VurderingType.ANALYSE, this.vurderingstypeForventet())
-         assertTrue(this.vurderingstypeForventet().erStageEllerAnalyse())
+         assertTrue(this.vurderingstypeForventet().erAnalyse())
          assertTrue(this.erKunAnalyse())
       }
 
       riskneed("wHaTeVeR:123").apply {
          assertEquals(VurderingType.ANALYSE, this.vurderingstypeForventet())
-         assertTrue(this.vurderingstypeForventet().erStageEllerAnalyse())
+         assertTrue(this.vurderingstypeForventet().erAnalyse())
          assertTrue(this.erKunAnalyse())
       }
 
-      riskneed("stage:123").apply {
-         assertEquals(VurderingType.STAGE, this.vurderingstypeForventet())
-         assertTrue(this.vurderingstypeForventet().erStageEllerAnalyse())
-         assertFalse(this.erKunAnalyse())
-      }
    }
 
 }

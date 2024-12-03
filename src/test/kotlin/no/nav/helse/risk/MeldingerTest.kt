@@ -9,10 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class MeldingerTest {
     init {
@@ -131,6 +128,74 @@ class MeldingerTest {
     @Test
     fun finnRiskNeed() {
         assertEquals(jsonFlexible.decodeFromJsonElement(RiskNeed.serializer(), riskNeed), meldinger.finnRiskNeed())
+    }
+
+    @Test
+    fun tilleggsdata() {
+        val riskneedJson = buildJsonObject {
+            put("type", "RiskNeed")
+            put("vedtaksperiodeId", "1")
+            put("riskNeedId", "rid1")
+            put("organisasjonsnummer", "123456789")
+            put("fnr", "01010100000")
+            put("behovOpprettet", LocalDateTime.now().toString())
+            put("iterasjon", 1)
+            put("tilleggsdata", buildJsonObject {
+                put("data1", buildJsonObject {
+                    put("theKey", JsonPrimitive("theValue"))
+                    put("jaNei", JsonPrimitive(false))
+                })
+                put("data2", true)
+                put("unrecognizedData", "N/A")
+            }
+            )
+        }
+        val riskNeed = jsonFlexible.decodeFromJsonElement(RiskNeed.serializer(), riskneedJson)
+        assertNull(riskNeed.tilleggsdata?.get("notThere"))
+        assertEquals("theValue", riskNeed.tilleggsdata?.get("data1")?.jsonObject?.get("theKey")?.jsonPrimitive?.content)
+        assertEquals(false, riskNeed.tilleggsdata?.get("data1")?.jsonObject?.get("jaNei")?.jsonPrimitive?.booleanOrNull)
+        assertEquals(true, riskNeed.tilleggsdata?.get("data2")?.jsonPrimitive?.booleanOrNull)
+
+        @Serializable
+        data class Data1(
+            val theKey: String,
+            val jaNei: Boolean,
+        )
+        @Serializable
+        data class OurData(
+            val data1: Data1,
+            val data2: Boolean,
+        )
+
+        val tillegg = riskNeed.tilleggsdata(OurData.serializer())
+        assertNotNull(tillegg)
+        assertEquals("theValue", tillegg.data1.theKey)
+        assertEquals(false, tillegg.data1.jaNei)
+        assertEquals(true, tillegg.data2)
+
+        @Serializable
+        data class FeilTillegg(
+            val something: Int
+        )
+
+        assertNull(riskNeed.tilleggsdata(FeilTillegg.serializer()), "default is to return null instead of throwing exception")
+
+        assertThrows<SerializationException> {
+            riskNeed.tilleggsdata(FeilTillegg.serializer(), true)
+        }
+
+        @Serializable
+        data class OptionalTillegg(
+            val optionalString: String? = null,
+            val optionalInt: Int? = null,
+            val optionalBool: Boolean? = null,
+        )
+
+        val opt = riskNeed.tilleggsdata(OptionalTillegg.serializer())
+        assertNotNull(opt)
+        assertNull(opt.optionalString)
+        assertNull(opt.optionalInt)
+        assertNull(opt.optionalBool)
     }
 
     @Test
@@ -279,3 +344,4 @@ class MeldingerTest {
         }
     }
 }
+

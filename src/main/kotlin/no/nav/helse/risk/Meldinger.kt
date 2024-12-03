@@ -40,10 +40,33 @@ data class RiskNeed(
     val isRetry: Boolean? = null,
     val retryCount: Int? = null,
     val tilleggsbehov: List<String>? = null,
+    val tilleggsdata: JsonObject? = null,
 )
 
 fun RiskNeed.harTilleggsbehov(tilleggsbehov: String) : Boolean =
     this.tilleggsbehov != null && this.tilleggsbehov.contains(tilleggsbehov)
+
+fun <T> RiskNeed.tilleggsdata(serializer: DeserializationStrategy<T>,
+                              failOnDeserializationException: Boolean = false,
+                              silentFail: Boolean = false) : T? =
+    this.tilleggsdata?.let {
+        try {
+            JsonRisk.decodeFromJsonElement(serializer, it)
+        } catch (ex: SerializationException) {
+            if (failOnDeserializationException) {
+                throw ex
+            }
+            if (!silentFail) {
+                secureLog.warn(
+                    "SerializationException parsing tilleggsdata for vedtaksperiodeId = {}",
+                    this.vedtaksperiodeId,
+                    ex
+                )
+            }
+            null
+        }
+    }
+
 
 class Oppslagtype<T>(val infotype: String, val serializer: DeserializationStrategy<T>)
 

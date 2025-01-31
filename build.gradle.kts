@@ -3,9 +3,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 val junitJupiterVersion = "5.8.2"
 val ktorVersion = "2.1.3"
 val micrometerVersion = "1.3.20"
-val kafkaVersion = "2.8.2"
+val kafkaVersion = "3.7.2"
 val slf4jVersion = "1.7.36"
-val logbackVersion = "1.3.12"
+val logbackVersion = "1.3.15"
 val logstashEncoderVersion = "7.4"
 val serializerVersion = "1.3.3"
 val nimbusJoseVersion = "9.40"
@@ -27,7 +27,6 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
-val xerialSnappyOverriddenVersion = "1.1.10.4" // CVE-2023-34455++ TODO: Fjern når kafka-clients oppgraderes fra 2.8.2 (som drar inn 1.1.8.1)
 val nettyHandlerOverriddenVersion = "4.1.115.Final" // CVE-2023-34462 TODO: Fjern når ktor oppgraderes fra 2.1.3 ?
 
 dependencies {
@@ -57,9 +56,6 @@ dependencies {
     }
 
     implementation("org.apache.kafka:kafka-clients:$kafkaVersion")
-    implementation("org.xerial.snappy:snappy-java:$xerialSnappyOverriddenVersion").also {
-        if (kafkaVersion != "2.8.2") throw RuntimeException("Slett xerialSnappyOverridden siden kafka oppgradert?")
-    }
 
     api("org.slf4j:slf4j-api:$slf4jVersion")
     api("ch.qos.logback:logback-classic:$logbackVersion")
@@ -78,12 +74,10 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
         exclude(group = "junit")
     }
-    testImplementation("no.nav:kafka-embedded-env:2.8.2") {
-        // Dont need schema-registry and it drags in a lot of vulnerable dependencies:
-        exclude(group = "io.confluent", module = "kafka-schema-registry")
-    }
+
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("io.mockk:mockk:1.12.4")
+    testImplementation("org.testcontainers:kafka:1.20.4")
 }
 
 java {

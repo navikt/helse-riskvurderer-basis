@@ -1,10 +1,7 @@
 package no.nav.helse.risk
 
 import org.apache.kafka.clients.consumer.*
-import org.apache.kafka.common.Metric
-import org.apache.kafka.common.MetricName
-import org.apache.kafka.common.PartitionInfo
-import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.*
 import java.time.Duration
 import java.util.*
 import java.util.regex.Pattern
@@ -126,6 +123,10 @@ class MockConsumer<K, V>(
         TODO("Not yet implemented")
     }
 
+    override fun clientInstanceId(p0: Duration?): Uuid {
+        TODO("Not yet implemented")
+    }
+
     override fun metrics(): MutableMap<MetricName, out Metric> {
         TODO("Not yet implemented")
     }
@@ -200,6 +201,10 @@ class MockConsumer<K, V>(
     }
 
     override fun enforceRebalance() {
+        TODO("Not yet implemented")
+    }
+
+    override fun enforceRebalance(p0: String?) {
         TODO("Not yet implemented")
     }
 

@@ -5,12 +5,14 @@ import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
-import no.nav.common.KafkaEnvironment
 import no.nav.helse.crypto.encryptAsJWE
 import no.nav.helse.crypto.lagEnJWK
 import no.nav.helse.crypto.toJWKHolder
 import no.nav.helse.crypto.toJWKSetHolder
 import org.apache.kafka.clients.CommonClientConfigs
+import org.apache.kafka.clients.admin.AdminClient
+import org.apache.kafka.clients.admin.AdminClientConfig
+import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -26,6 +28,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
+import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.*
@@ -71,7 +76,7 @@ internal class RiverTest {
 
     @BeforeEach
     fun setup() {
-        kafka.start()
+        //kafka.start()
         testConsumer = KafkaConsumer<String, JsonObject>(testConsumerConfig).also {
             it.subscribe(listOf(riskRiverTopic()))
         }
@@ -150,40 +155,44 @@ internal class RiverTest {
         testConsumer.close()
         bufferedRiver?.tearDown()
         bufferedRiver = null
-        kafka.tearDown()
+        kafkaContainer.stop()
+        //kafka.tearDown()
     }
 
     private lateinit var testConsumer: KafkaConsumer<String, JsonObject>
 
-    private val kafka = KafkaEnvironment(
-        autoStart = false,
-        noOfBrokers = 1,
-        topicNames = listOf(riskRiverTopic()),
-        topicInfos = listOf(KafkaEnvironment.TopicInfo(riskRiverTopic())),
-        withSchemaRegistry = false,
-        withSecurity = false
-    )
+    val kafkaContainer =
+        KafkaContainer(
+            DockerImageName.parse("confluentinc/cp-kafka:7.4.3")
+        ).waitingFor(HostPortWaitStrategy())
+            .apply {
+                start()
+                val adminClient =
+                    AdminClient.create(mapOf(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to this.bootstrapServers))
+                val newTopics = listOf(NewTopic(riskRiverTopic(), 1, 1.toShort()))
+                adminClient.createTopics(newTopics)
+            }
 
     private val kafkaPropsToOverride = Properties().also {
         it[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = "PLAINTEXT"
         it[SaslConfigs.SASL_MECHANISM] = "PLAIN"
     }
     private val consumerConfig = kafkaConfig.kafkaConsumerConfig(
-        kafka.brokersURL
+        kafkaContainer.bootstrapServers //kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "tulleconsumer"
     }
     private val testConsumerConfig = kafkaConfig.kafkaConsumerConfig(
-        kafka.brokersURL
+        kafkaContainer.bootstrapServers //kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
         it[ConsumerConfig.GROUP_ID_CONFIG] = "testconsumer"
     }
     private val producerConfig = kafkaProducerConfig(
-        kafka.brokersURL
+        kafkaContainer.bootstrapServers //kafka.brokersURL
     ).also {
         it.putAll(kafkaPropsToOverride)
         it[ProducerConfig.CLIENT_ID_CONFIG] = "tulleproducer"

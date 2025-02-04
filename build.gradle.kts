@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val junitJupiterVersion = "5.8.2"
-val ktorVersion = "2.1.3"
+val ktorVersion = "2.3.13"
 val micrometerVersion = "1.3.20"
 val kafkaVersion = "3.7.2"
 val slf4jVersion = "1.7.36"
@@ -38,10 +38,10 @@ dependencies {
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     implementation("io.netty:netty-handler:$nettyHandlerOverriddenVersion").also {
-        if (ktorVersion != "2.1.3") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
+        if (ktorVersion != "2.3.13") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
     }
     implementation("io.netty:netty-codec-http2:$nettyHandlerOverriddenVersion").also {
-        if (ktorVersion != "2.1.3") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
+        if (ktorVersion != "2.3.13") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
     }
 
     api("io.ktor:ktor-server-netty:$ktorVersion")

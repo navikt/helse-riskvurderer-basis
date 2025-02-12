@@ -27,7 +27,7 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
-val nettyHandlerOverriddenVersion = "4.1.115.Final" // CVE-2023-34462 TODO: Fjern når ktor oppgraderes fra 2.1.3 ?
+val nettyHandlerOverriddenVersion = "4.1.118.Final" // CVE-2023-34462 TODO: Fjern når ktor oppgraderes fra 2.1.3 ?
 
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10")

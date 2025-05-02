@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 private val log: Logger = LoggerFactory.getLogger(Interesse::class.java)
 private val secureLog = Sanity.getSecureLogger()
 
-data class Interesse internal constructor(
+class Interesse internal constructor(
     val type: String,
     val infotype: String? = null,
     val iterasjonsMatcher: ((Int) -> Boolean)? = null,

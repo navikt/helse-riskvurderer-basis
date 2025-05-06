@@ -15,9 +15,9 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions/setup-java@v1
         with:
-          java-version: '17.x'
+          java-version: '21.x'
       - name: test and build
-        run: ./gradlew -Pversion="0.30.$(TZ="Europe/Oslo" date +%Y%m%d)-$(echo $GITHUB_RUN_NUMBER)-$(echo $GITHUB_SHA | cut -c 1-6)" build publish
+        run: ./gradlew -Pversion="0.31.$(TZ="Europe/Oslo" date +%Y%m%d)-$(echo $GITHUB_RUN_NUMBER)-$(echo $GITHUB_SHA | cut -c 1-6)" build publish
         env:
           ORG_GRADLE_PROJECT_githubUser: x-access-token
           ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}

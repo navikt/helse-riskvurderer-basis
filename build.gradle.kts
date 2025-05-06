@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 val junitJupiterVersion = "5.8.2"
 val ktorVersion = "3.1.2"
 val micrometerVersion = "1.3.20"
@@ -76,16 +74,14 @@ dependencies {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
-}
-
-tasks.named<KotlinCompile>("compileTestKotlin") {
-    kotlinOptions.jvmTarget = "17"
+tasks {
+    kotlin {
+        jvmToolchain(21)
+    }
 }
 
 tasks.withType<Test> {

@@ -17,7 +17,7 @@ jobs:
         with:
           java-version: '21.x'
       - name: test and build
-        run: ./gradlew -Pversion="0.31.$(TZ="Europe/Oslo" date +%Y%m%d)-$(echo $GITHUB_RUN_NUMBER)-$(echo $GITHUB_SHA | cut -c 1-6)" build publish
+        run: ./gradlew -Pversion="0.32.$(TZ="Europe/Oslo" date +%Y%m%d)-$(echo $GITHUB_RUN_NUMBER)-$(echo $GITHUB_SHA | cut -c 1-6)" build publish
         env:
           ORG_GRADLE_PROJECT_githubUser: x-access-token
           ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}

@@ -1,12 +1,12 @@
 val junitJupiterVersion = "5.8.2"
 val ktorVersion = "3.1.2"
 val micrometerVersion = "1.3.20"
-val kafkaVersion = "3.7.2"
+val kafkaVersion = "3.9.1"
 val slf4jVersion = "1.7.36"
 val logbackVersion = "1.3.15"
 val logstashEncoderVersion = "7.4"
 val serializerVersion = "1.8.1"
-val nimbusJoseVersion = "9.40"
+val nimbusJoseVersion = "10.3.1"
 val kotlinVersion = "2.1.20"
 
 plugins {

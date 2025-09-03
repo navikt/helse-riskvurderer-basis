@@ -26,6 +26,8 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
+val nettyHandlerOverriddenVersion = "4.1.124.Final"
+
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
 
@@ -33,6 +35,10 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+
+    implementation("io.netty:netty-codec-http2:$nettyHandlerOverriddenVersion").also {
+        if (ktorVersion != "3.1.2") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
+    }
 
     api("io.ktor:ktor-server-netty:$ktorVersion")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core") {

@@ -45,6 +45,7 @@ class OppslagsAppTest {
     @BeforeEach
     fun clearStuff() {
         CollectorRegistry.defaultRegistry.clear()
+        producedMessages.clear()
     }
 
     @BeforeEach

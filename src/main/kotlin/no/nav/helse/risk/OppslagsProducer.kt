@@ -42,6 +42,12 @@ internal class OppslagsProducer(
         return try {
             log.info("Gjør oppslag for vedtaksperiodeId=$vedtaksperiodeId basert på ${meldinger.size} melding(er)")
             val data = oppslagstjeneste(meldinger.map { it.decryptIfEncrypted(decryptionJWKS)} )
+
+            if (data == OppslagOverstyring.SKIP_ANSWER) {
+                log.info("Dropper å svare for vedtaksperiodeId=$vedtaksperiodeId, p.g.a. SKIP_ANSWER")
+                return OppslagOverstyring.SKIP_ANSWER
+            }
+
             if (encryptionJWK != null) {
                 log.info("Returnerer kryptert oppslagsresultat for vedtaksperiodeId=$vedtaksperiodeId med infotype=$infotype")
                 json.encodeToJsonElement(OppslagsmeldingKryptert.serializer(), OppslagsmeldingKryptert(

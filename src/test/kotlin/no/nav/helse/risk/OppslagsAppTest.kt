@@ -359,6 +359,111 @@ class OppslagsAppTest {
     }
 
 
+    @Test
+    fun `OppslagsApp som hopper over å svare vha SKIP_EMIT`() {
+        val periodeTilMeldinger = mutableMapOf<String, List<JsonObject>>()
+
+        val innkommendeMeldinger = listOf(
+
+            buildJsonObject {
+                put("type", "RiskNeed")
+                put("iterasjon", 2)
+                put("fnr", fnr)
+                put("organisasjonsnummer", "<SKIPTHIS>")
+                put("riskNeedId", "RISK-NEED-ID-003")
+                put("vedtaksperiodeId", "333")
+                put("behovOpprettet", behovOpprettet.toString())
+            },
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "kobling")
+                put("vedtaksperiodeId", "333")
+                put("riskNeedId", "RISK-NEED-ID-003")
+                put("behovOpprettet", behovOpprettet.toString())
+                put("data", buildJsonObject {
+                    put("key", "data_value")
+                })
+            },
+
+            buildJsonObject {
+                put("type", "RiskNeed")
+                put("iterasjon", 2)
+                put("fnr", fnr)
+                put("organisasjonsnummer", orgnr)
+                put("riskNeedId", "RISK-NEED-ID-002")
+                put("vedtaksperiodeId", "222")
+                put("behovOpprettet", behovOpprettet.toString())
+            },
+            buildJsonObject {
+                put("type", "oppslagsresultat")
+                put("infotype", "kobling")
+                put("vedtaksperiodeId", "222")
+                put("riskNeedId", "RISK-NEED-ID-002")
+                put("behovOpprettet", behovOpprettet.toString())
+                put("data", buildJsonObject {
+                    put("key", "data_value")
+                })
+            },
+
+        )
+
+        startOppslagsApp(
+            innkommendeMeldinger = innkommendeMeldinger,
+            app = OppslagsApp(
+                kafkaClientId = "whatever",
+                infotype = "oppslag2",
+                interessertI = listOf(
+                    Interesse.riskNeedMedMinimum(2),
+                    Interesse.oppslagsresultat("kobling")
+                ),
+                oppslagstjeneste = { meldinger ->
+                    val riskNeed = meldinger.finnRiskNeed()!!
+                    if (riskNeed.organisasjonsnummer == "<SKIPTHIS>") {
+                        OppslagOverstyring.SKIP_ANSWER
+                    } else {
+                        periodeTilMeldinger[riskNeed.vedtaksperiodeId] = meldinger
+                        println(meldinger.toString())
+                        val kobling = meldinger.finnOppslagsresultat("kobling")
+                        buildJsonObject {
+                            put("felt1", riskNeed.vedtaksperiodeId)
+                            put("har_kobling", (kobling != null))
+                        }
+                    }
+                },
+                windowTimeInSeconds = 1,
+                disableWebEndpoints = true,
+            )
+        )
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(4))
+            .pollDelay(Duration.ofMillis(100))
+            .untilAsserted {
+                Assertions.assertTrue(periodeTilMeldinger.size >= 1)
+            }
+        assertEquals(1, periodeTilMeldinger.size)
+
+        periodeTilMeldinger["222"].apply {
+            assertEquals(2, this!!.size)
+            val innkommende222 =
+                innkommendeMeldinger.filter { it["vedtaksperiodeId"]?.jsonPrimitive?.contentOrNull == "222" }
+            assertEquals(innkommende222.size, this.size)
+            innkommende222.forEach { innkommende ->
+                assertTrue(this.contains(innkommende))
+            }
+        }
+
+        val answers = producedMessages.map { it.value() }
+
+        assertEquals(1, answers.size)
+
+        JSON.decodeFromJsonElement(Oppslagsmelding.serializer(), answers.first()).apply {
+            assertEquals("222", this.vedtaksperiodeId)
+            assertEquals("RISK-NEED-ID-002", this.riskNeedId, "skal arve RiskNeedId fra RiskNeed-meldinga")
+            assertEquals("222", this.data.jsonObject["felt1"]!!.jsonPrimitive.content)
+            assertEquals(true, this.data.jsonObject["har_kobling"]!!.jsonPrimitive.boolean)
+        }
+    }
+
     private fun ventPaaProduserteMeldinger(minimumAntall: Int = 1) {
         Awaitility.await()
             .atMost(Duration.ofSeconds(5))

@@ -6,7 +6,9 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import no.nav.helse.buffer.WindowBufferEmittable
 import no.nav.helse.buffer.WindowBufferEmitter
 import org.apache.kafka.clients.consumer.Consumer
@@ -15,6 +17,13 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.Duration
+
+object OppslagOverstyring {
+    val SKIP_ANSWER = buildJsonObject {
+        put("type", "OppslagOverstyring")
+        put("code", "SKIP_ANSWER")
+    }
+}
 
 private class BufferedRiverMetrics(collectorRegistry: CollectorRegistry) {
     private val kafkaLagMs = Summary
@@ -118,7 +127,11 @@ internal open class BufferedRiver(private val kafkaProducer: Producer<String, Js
             }
 
             answerer(answers, vedtaksperiodeId, riskNeedIdFraRiskNeed)?.also { svar ->
-                kafkaProducer.send(ProducerRecord(riskRiverTopic(), emitted.kafkaKey, svar))
+                if (svar == OppslagOverstyring.SKIP_ANSWER) {
+                    log.info("Dropper å svare for vedtaksperiodeId=$vedtaksperiodeId, p.g.a. SKIP_ANSWER")
+                } else {
+                    kafkaProducer.send(ProducerRecord(riskRiverTopic(), emitted.kafkaKey, svar))
+                }
             }
         }
     }

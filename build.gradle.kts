@@ -26,7 +26,7 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
-val nettyHandlerOverriddenVersion = "4.1.124.Final"
+val nettyHandlerOverriddenVersion = "4.1.125.Final"
 
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")

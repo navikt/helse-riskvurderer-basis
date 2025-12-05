@@ -3,7 +3,7 @@ val ktorVersion = "3.1.2"
 val micrometerVersion = "1.3.20"
 val kafkaVersion = "3.9.1"
 val slf4jVersion = "1.7.36"
-val logbackVersion = "1.3.15"
+val logbackVersion = "1.3.16"
 val logstashEncoderVersion = "7.4"
 val serializerVersion = "1.8.1"
 val nimbusJoseVersion = "10.3.1"
@@ -51,7 +51,12 @@ dependencies {
         isTransitive = true
     }
 
-    implementation("org.apache.kafka:kafka-clients:$kafkaVersion")
+    implementation("at.yawk.lz4:lz4-java:1.8.1")
+    api("org.apache.kafka:kafka-clients:$kafkaVersion") {
+        exclude("org.lz4", "lz4-java")
+    }.also {
+        if (kafkaVersion != "3.9.1") throw RuntimeException("Fjern at.yawk.lz4 og exclude() siden Kafka oppgradert?")
+    }
 
     api("org.slf4j:slf4j-api:$slf4jVersion")
     api("ch.qos.logback:logback-classic:$logbackVersion")

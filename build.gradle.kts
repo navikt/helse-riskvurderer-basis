@@ -51,7 +51,7 @@ dependencies {
         isTransitive = true
     }
 
-    implementation("at.yawk.lz4:lz4-java:1.8.1")
+    implementation("at.yawk.lz4:lz4-java:1.10.1")
     api("org.apache.kafka:kafka-clients:$kafkaVersion") {
         exclude("org.lz4", "lz4-java")
     }.also {

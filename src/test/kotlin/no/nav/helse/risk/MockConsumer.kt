@@ -2,6 +2,7 @@ package no.nav.helse.risk
 
 import org.apache.kafka.clients.consumer.*
 import org.apache.kafka.common.*
+import org.apache.kafka.common.metrics.KafkaMetric
 import java.time.Duration
 import java.util.*
 import java.util.regex.Pattern
@@ -17,8 +18,19 @@ class MockConsumer<K, V>(
     override fun subscribe(topics: MutableCollection<String>?, callback: ConsumerRebalanceListener?) {}
     override fun subscribe(pattern: Pattern?, callback: ConsumerRebalanceListener?) {}
     override fun subscribe(pattern: Pattern?) {}
+
+    override fun subscribe(
+        pattern: SubscriptionPattern?,
+        callback: ConsumerRebalanceListener?
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun subscribe(pattern: SubscriptionPattern?) {
+        TODO("Not yet implemented")
+    }
+
     @Deprecated("Deprecated in Java")
-    override fun poll(timeout: Long): ConsumerRecords<K, V> = mockPoll()
     override fun poll(timeout: Duration?): ConsumerRecords<K, V> = mockPoll()
     private fun mockPoll(): ConsumerRecords<K, V> = pollFunction()
 
@@ -31,6 +43,10 @@ class MockConsumer<K, V>(
     }
 
     override fun close(timeout: Duration?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun close(option: CloseOptions?) {
         TODO("Not yet implemented")
     }
 
@@ -78,6 +94,14 @@ class MockConsumer<K, V>(
         TODO("Not yet implemented")
     }
 
+    override fun registerMetricForSubscription(metric: KafkaMetric?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun unregisterMetricFromSubscription(metric: KafkaMetric?) {
+        TODO("Not yet implemented")
+    }
+
     override fun seek(partition: TopicPartition?, offset: Long) {
         TODO("Not yet implemented")
     }
@@ -99,16 +123,6 @@ class MockConsumer<K, V>(
     }
 
     override fun position(partition: TopicPartition?, timeout: Duration?): Long {
-        TODO("Not yet implemented")
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun committed(partition: TopicPartition?): OffsetAndMetadata {
-        TODO("Not yet implemented")
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun committed(partition: TopicPartition?, timeout: Duration?): OffsetAndMetadata {
         TODO("Not yet implemented")
     }
 

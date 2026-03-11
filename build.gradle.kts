@@ -34,7 +34,7 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializerVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
-    implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersionOverride")) // Fordi jackson dras inn ab logstash-logback-encoder
+    api(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersionOverride")) // Fordi gammel jackson dras inn av logstash-logback-encoder
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     api("io.ktor:ktor-server-netty:$ktorVersion")

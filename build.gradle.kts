@@ -3,11 +3,13 @@ val ktorVersion = "3.4.0"
 val micrometerVersion = "1.3.20"
 val kafkaVersion = "4.1.1"
 val slf4jVersion = "1.7.36"
-val logbackVersion = "1.5.25"
+val logbackVersion = "1.5.32"
 val logstashEncoderVersion = "7.4"
 val serializerVersion = "1.8.1"
 val nimbusJoseVersion = "10.3.1"
 val kotlinVersion = "2.3.0"
+
+val jacksonVersionOverride = "2.21.1"
 
 plugins {
     val kotlinVersion = "2.3.0"
@@ -32,6 +34,7 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializerVersion")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
+    implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersionOverride")) // Fordi jackson dras inn ab logstash-logback-encoder
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     api("io.ktor:ktor-server-netty:$ktorVersion")

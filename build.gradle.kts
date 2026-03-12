@@ -1,5 +1,5 @@
 val junitJupiterVersion = "5.8.2"
-val ktorVersion = "3.4.0"
+val ktorVersion = "3.4.1"
 val micrometerVersion = "1.3.20"
 val kafkaVersion = "4.1.1"
 val slf4jVersion = "1.7.36"
@@ -37,12 +37,13 @@ dependencies {
     api(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersionOverride")) // Fordi gammel jackson dras inn av logstash-logback-encoder
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
-    api("io.ktor:ktor-server-netty:$ktorVersion")
+    api(platform("io.ktor:ktor-bom:$ktorVersion"))
+    api("io.ktor:ktor-server-netty")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core") {
         isTransitive = true
     }
 
-    implementation("io.ktor:ktor-server-metrics-micrometer:$ktorVersion")
+    implementation("io.ktor:ktor-server-metrics-micrometer")
     api("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
     api("io.prometheus:simpleclient") {
         isTransitive = true
@@ -69,7 +70,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
     testImplementation("org.awaitility:awaitility:4.2.0")
-    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion") {
+    testImplementation("io.ktor:ktor-server-test-host") {
         exclude(group = "junit")
     }
 

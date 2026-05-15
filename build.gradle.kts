@@ -28,6 +28,8 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
+val nettyHandlerOverriddenVersion = "4.2.13.Final"
+
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
 
@@ -36,6 +38,10 @@ dependencies {
 
     api(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersionOverride")) // Fordi gammel jackson dras inn av logstash-logback-encoder
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+
+    implementation(platform("io.netty:netty-bom:$nettyHandlerOverriddenVersion")).also {
+        if (ktorVersion != "3.4.3") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
+    }
 
     api(platform("io.ktor:ktor-bom:$ktorVersion"))
     api("io.ktor:ktor-server-netty")

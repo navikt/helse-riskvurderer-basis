@@ -9,7 +9,7 @@ val serializerVersion = "1.8.1"
 val nimbusJoseVersion = "10.3.1"
 val kotlinVersion = "2.3.0"
 
-val jacksonVersionOverride = "2.21.1"
+val jacksonVersionOverride = "2.21.4"
 
 plugins {
     val kotlinVersion = "2.3.0"

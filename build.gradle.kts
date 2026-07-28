@@ -1,11 +1,11 @@
 val junitJupiterVersion = "5.8.2"
-val ktorVersion = "3.4.3"
 val micrometerVersion = "1.3.20"
 val kafkaVersion = "4.1.2"
 val slf4jVersion = "1.7.36"
 val logbackVersion = "1.5.32"
 val logstashEncoderVersion = "7.4"
 val serializerVersion = "1.8.1"
+val coroutinesVersion = "1.10.2"
 val nimbusJoseVersion = "10.3.1"
 val kotlinVersion = "2.3.0"
 
@@ -28,8 +28,6 @@ repositories {
     maven("https://packages.confluent.io/maven/")
 }
 
-val nettyHandlerOverriddenVersion = "4.2.15.Final"
-
 dependencies {
     api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
 
@@ -39,17 +37,10 @@ dependencies {
     api(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersionOverride")) // Fordi gammel jackson dras inn av logstash-logback-encoder
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
-    implementation(platform("io.netty:netty-bom:$nettyHandlerOverriddenVersion")).also {
-        if (ktorVersion != "3.4.3") throw RuntimeException("Slett nettyHandlerOverriddenVersion siden KTOR oppgradert?")
-    }
-
-    api(platform("io.ktor:ktor-bom:$ktorVersion"))
-    api("io.ktor:ktor-server-netty")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core") {
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion") {
         isTransitive = true
     }
 
-    implementation("io.ktor:ktor-server-metrics-micrometer")
     api("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
     api("io.prometheus:simpleclient") {
         isTransitive = true
@@ -71,9 +62,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
     testImplementation("org.awaitility:awaitility:4.2.0")
-    testImplementation("io.ktor:ktor-server-test-host") {
-        exclude(group = "junit")
-    }
+    testImplementation("io.ktor:ktor-client-cio:3.4.3")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
 

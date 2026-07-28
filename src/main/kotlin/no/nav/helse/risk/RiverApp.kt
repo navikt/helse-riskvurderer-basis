@@ -31,7 +31,6 @@ open class RiverApp internal constructor(
     private val skipMessagesOlderThanSeconds: Long = -1,
     private val disableWebEndpoints: Boolean = false,
     private val sessionAggregationFieldName: String,
-    private val useLightweightWebEndpoints: Boolean = false,
 ) {
     companion object {
         const val SESSION_AGGREGATION_FIELD_NAME_DEFAULT: String = riskNeedIdKey
@@ -85,21 +84,12 @@ open class RiverApp internal constructor(
         GlobalScope.launch(applicationContext + exceptionHandler) {
             if (!disableWebEndpoints) {
                 launch {
-                    if (useLightweightWebEndpoints) {
-                        log.info("Using Lightweight Nais-Web-endpoints without Ktor/Netty")
-                        webserverLightweight(
-                            collectorRegistry = collectorRegistry,
-                            isAlive = ::isHealthy,
-                            isReady = ::isHealthy
-                        )
-                    } else {
-                        log.info("Using Ktor/Netty for Nais-Web-endpoints")
-                        webserver(
-                            collectorRegistry = collectorRegistry,
-                            isAlive = ::isHealthy,
-                            isReady = ::isHealthy
-                        )
-                    }
+                    log.info("Using Lightweight Nais-Web-endpoints without Ktor/Netty")
+                    webserverLightweight(
+                        collectorRegistry = collectorRegistry,
+                        isAlive = ::isHealthy,
+                        isReady = ::isHealthy
+                    )
                 }
             }
             launch {

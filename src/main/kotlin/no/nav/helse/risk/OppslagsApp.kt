@@ -23,6 +23,7 @@ open class OppslagsApp(
     skipMessagesOlderThanSeconds: Long = -1,
     disableWebEndpoints: Boolean = false,
     sessionAggregationFieldName: String = SESSION_AGGREGATION_FIELD_NAME_DEFAULT,
+    useLightweightWebEndpoints: Boolean = false,
 ) : RiverApp(
     kafkaClientId = kafkaClientId,
     interessertI = interessertI,
@@ -36,4 +37,5 @@ open class OppslagsApp(
     skipMessagesOlderThanSeconds = skipMessagesOlderThanSeconds,
     disableWebEndpoints = disableWebEndpoints,
     sessionAggregationFieldName = sessionAggregationFieldName,
+    useLightweightWebEndpoints = useLightweightWebEndpoints,
 )

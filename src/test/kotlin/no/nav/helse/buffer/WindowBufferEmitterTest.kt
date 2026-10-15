@@ -93,7 +93,7 @@ class WindowBufferEmitterTest {
 
         val metrics = metricsString()
         println(metrics)
-        assertTrue(metrics.contains("buffered_session_emitted{state=\"unconditional\",} 3.0"))
+        assertTrue(metrics.contains("buffered_session_emitted_total{state=\"unconditional\",} 3.0"))
     }
 
 
@@ -171,8 +171,8 @@ class WindowBufferEmitterTest {
 
         val metrics = metricsString()
         println(metrics)
-        assertTrue(metrics.contains("buffered_session_emitted{state=\"incomplete\",} 1.0"))
-        assertTrue(metrics.contains("buffered_session_emitted{state=\"complete\",} 1.0"))
+        assertTrue(metrics.contains("buffered_session_emitted_total{state=\"incomplete\",} 1.0"))
+        assertTrue(metrics.contains("buffered_session_emitted_total{state=\"complete\",} 1.0"))
         assertTrue(metrics.contains("buffered_session_emitted_after_secs_summary_count 1.0"))
         assertTrue(metrics.contains("buffered_session_emitted_after_secs_summary_sum 7.0")) // 10000 - 3000
         assertTrue(metrics.contains("buffered_session_emitted_time_left_secs_summary_count 1.0"))
@@ -257,8 +257,8 @@ class WindowBufferEmitterTest {
             it.store(sessionKey = "1", value = buildJsonObject {  }, kafkaKey = "1", timestamp = 0)
         }
 
-        assertEquals(2.0, CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted", arrayOf("state"), arrayOf("complete")))
-        assertEquals(1.0, CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_test", arrayOf("state"), arrayOf("complete")))
+        assertEquals(2.0, CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_total", arrayOf("state"), arrayOf("complete")))
+        assertEquals(1.0, CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_test_total", arrayOf("state"), arrayOf("complete")))
 
         assertNotNull(CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_time_left_secs_summary_sum"))
         assertNotNull(CollectorRegistry.defaultRegistry.getSampleValue("buffered_session_emitted_time_left_secs_summary_test_sum"))

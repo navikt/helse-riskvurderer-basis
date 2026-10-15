@@ -1,5 +1,5 @@
 val junitJupiterVersion = "5.8.2"
-val micrometerVersion = "1.3.20"
+val micrometerVersion = "1.9.17"
 val kafkaVersion = "4.1.2"
 val slf4jVersion = "1.7.36"
 val logbackVersion = "1.5.34"
@@ -9,7 +9,7 @@ val coroutinesVersion = "1.10.2"
 val nimbusJoseVersion = "10.3.1"
 val kotlinVersion = "2.3.0"
 
-val jacksonVersionOverride = "2.21.5"
+val jacksonVersionOverride = "2.21.6"
 
 plugins {
     val kotlinVersion = "2.3.0"
@@ -60,7 +60,7 @@ dependencies {
         if (kafkaVersion != "4.1.2") {
             throw RuntimeException("Fjern lz4-constraint, siden kafka-clients oppgradert?")
         } else {
-            implementation("at.yawk.lz4:lz4-java:1.11.1")
+            implementation("at.yawk.lz4:lz4-java:1.11.4")
         }
     }
 

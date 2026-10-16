@@ -1,5 +1,5 @@
 val junitJupiterVersion = "5.8.2"
-val micrometerVersion = "1.9.17"
+val prometheusSimpleclientVersion = "0.16.0"
 val kafkaVersion = "4.1.2"
 val slf4jVersion = "1.7.36"
 val logbackVersion = "1.5.34"
@@ -9,7 +9,7 @@ val coroutinesVersion = "1.10.2"
 val nimbusJoseVersion = "10.3.1"
 val kotlinVersion = "2.3.0"
 
-val jacksonVersionOverride = "2.21.6"
+val jacksonVersionOverride = "2.21.7"
 
 plugins {
     val kotlinVersion = "2.3.0"
@@ -41,10 +41,8 @@ dependencies {
         isTransitive = true
     }
 
-    api("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
-    api("io.prometheus:simpleclient") {
-        isTransitive = true
-    }
+    api("io.prometheus:simpleclient:$prometheusSimpleclientVersion")
+    api("io.prometheus:simpleclient_common:$prometheusSimpleclientVersion")
 
     api("org.apache.kafka:kafka-clients:$kafkaVersion")
 

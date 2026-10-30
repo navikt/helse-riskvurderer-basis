@@ -10,6 +10,7 @@ val nimbusJoseVersion = "10.10"
 val kotlinVersion = "2.4.21"
 
 val jacksonVersionOverride = "2.22.4"
+val jacksonVersion = "3.2.4"
 
 plugins {
     val kotlinVersion = "2.3.0"
@@ -35,6 +36,8 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializerVersion")
 
     api(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersionOverride")) // Fordi gammel jackson dras inn av logstash-logback-encoder
+    api("tools.jackson.core:jackson-core:$jacksonVersion")
+    api("tools.jackson.core:jackson-databind:$jacksonVersion")
     api("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion") {

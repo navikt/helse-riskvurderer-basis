@@ -2,24 +2,70 @@ name: build and publish
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: Hvilken del av versjonen som skal økes
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
   push:
     branches:
       - master
 
+permissions: {}
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: gradle/actions/wrapper-validation@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
-          java-version: '21.x'
+          java-version: '21'
+          cache: gradle
       - name: test and build
-        run: ./gradlew -Pversion="0.42.$(TZ="Europe/Oslo" date +%Y%m%d)-$GITHUB_RUN_NUMBER" build publish
+        run: ./gradlew build
+      # Neste versjon regnes ut fra siste vX.Y.Z-tag. Uten tag blir første versjon 1.0.0.
+      # Taggen pushes før publisering, slik at to kjøringer aldri publiserer samme versjon.
+      - name: tag next version
+        id: version
+        run: |
+          latest="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)"
+          if [ -z "$latest" ]; then
+            next="1.0.0"
+          else
+            IFS=. read -r major minor patch <<< "${latest#v}"
+            case "$BUMP" in
+              major) next="$((major + 1)).0.0" ;;
+              minor) next="${major}.$((minor + 1)).0" ;;
+              patch) next="${major}.${minor}.$((patch + 1))" ;;
+              *) echo "Ukjent bump: $BUMP" >&2; exit 1 ;;
+            esac
+          fi
+          echo "Forrige: ${latest:-ingen}, neste: $next"
+          git tag "v$next" "$GITHUB_SHA"
+          git push origin "v$next"
+          echo "version=$next" >> "$GITHUB_OUTPUT"
         env:
+          BUMP: ${{ inputs.bump || 'patch' }}
+      - name: publish
+        run: ./gradlew -Pversion="$VERSION" publish
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
           ORG_GRADLE_PROJECT_githubUser: x-access-token
           ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}

@@ -1,15 +1,15 @@
-val junitJupiterVersion = "5.8.2"
+val junitJupiterVersion = "6.1.3"
 val prometheusSimpleclientVersion = "0.16.0"
-val kafkaVersion = "4.1.2"
-val slf4jVersion = "1.7.36"
-val logbackVersion = "1.5.34"
-val logstashEncoderVersion = "7.4"
-val serializerVersion = "1.8.1"
-val coroutinesVersion = "1.10.2"
-val nimbusJoseVersion = "10.3.1"
-val kotlinVersion = "2.3.0"
+val kafkaVersion = "4.4.0"
+val slf4jVersion = "2.0.20"
+val logbackVersion = "1.6.5"
+val logstashEncoderVersion = "9.0"
+val serializerVersion = "1.12.0"
+val coroutinesVersion = "1.11.0"
+val nimbusJoseVersion = "10.10"
+val kotlinVersion = "2.4.21"
 
-val jacksonVersionOverride = "2.21.7"
+val jacksonVersionOverride = "2.22.4"
 
 plugins {
     val kotlinVersion = "2.3.0"
@@ -50,7 +50,7 @@ dependencies {
     api("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("ch.qos.logback:logback-core:$logbackVersion")
 
-    implementation("com.github.ben-manes.caffeine:caffeine:3.0.6")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.3.1")
 
     api("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")
 
@@ -58,7 +58,7 @@ dependencies {
         if (kafkaVersion != "4.1.2") {
             throw RuntimeException("Fjern lz4-constraint, siden kafka-clients oppgradert?")
         } else {
-            implementation("at.yawk.lz4:lz4-java:1.11.4")
+            implementation("at.yawk.lz4:lz4-java:1.12.1")
         }
     }
 
@@ -67,16 +67,16 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
-    testImplementation("org.awaitility:awaitility:4.2.0")
-    testImplementation("io.ktor:ktor-client-cio:3.4.3")
+    testImplementation("org.awaitility:awaitility:4.3.0")
+    testImplementation("io.ktor:ktor-client-cio:3.6.0")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
 
 
-    testImplementation("io.mockk:mockk:1.14.7")
+    testImplementation("io.mockk:mockk:1.14.11")
     testImplementation("org.testcontainers:kafka:1.21.4")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

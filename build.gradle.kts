@@ -58,6 +58,7 @@ dependencies {
     api("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")
 
     constraints {
+        api("org.xerial.snappy:snappy-java:1.1.10.12")
         if (kafkaVersion != "4.4.0") {
             throw RuntimeException("Fjern lz4-constraint, siden kafka-clients oppgradert?")
         } else {
@@ -151,4 +152,3 @@ publishing {
         }
     }
 }
-

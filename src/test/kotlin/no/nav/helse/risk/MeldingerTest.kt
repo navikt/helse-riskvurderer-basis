@@ -104,7 +104,7 @@ class MeldingerTest {
 
         logTap.messages().forEach {
             assertEquals(
-                """SerializationException: Field 'etternavn' is required for type with serial name 'no.nav.helse.risk.MeldingerTest.TestOppslag', but it was missing: {
+                """SerializationException: Field 'etternavn' is required for type with serial name 'no.nav.helse.risk.MeldingerTest.TestOppslag', but it was missing at path: $: {
     "a": "b",
     "fornavn": "Ola",
     "fnr-ident": "${sha1(hashingsalt + "01019012345").take(11)}(11)"

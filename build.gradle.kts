@@ -55,7 +55,7 @@ dependencies {
     api("com.nimbusds:nimbus-jose-jwt:$nimbusJoseVersion")
 
     constraints {
-        if (kafkaVersion != "4.1.2") {
+        if (kafkaVersion != "4.4.0") {
             throw RuntimeException("Fjern lz4-constraint, siden kafka-clients oppgradert?")
         } else {
             implementation("at.yawk.lz4:lz4-java:1.12.1")

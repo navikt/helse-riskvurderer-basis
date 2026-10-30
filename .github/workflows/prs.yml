@@ -1,0 +1,57 @@
+name: Bygg pull requests
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  build:
+    name: Compile and run tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: gradle/actions/wrapper-validation@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: test and build
+        run: ./gradlew build
+
+  # Merger minor/patch fra Dependabot etter grønt bygg. Major må merges manuelt.
+  # Merge med GITHUB_TOKEN trigger ikke push-workflows, derfor startes master.yml eksplisitt.
+  dependabot-auto-merge:
+    name: Auto-merge Dependabot (minor/patch)
+    needs: build
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge og start master.yml
+        if: contains(fromJSON('["version-update:semver-minor","version-update:semver-patch"]'), steps.metadata.outputs.update-type)
+        run: |
+          gh pr merge --rebase "$PR_URL"
+          gh workflow run "$WORKFLOW" --ref "$BASE_REF"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          WORKFLOW: master.yml

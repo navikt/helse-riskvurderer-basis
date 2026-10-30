@@ -74,7 +74,7 @@ dependencies {
 
 
     testImplementation("io.mockk:mockk:1.14.7")
-    testImplementation("org.testcontainers:kafka:1.20.4")
+    testImplementation("org.testcontainers:kafka:1.21.4")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

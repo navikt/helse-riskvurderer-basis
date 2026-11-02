@@ -2,7 +2,7 @@ val junitJupiterVersion = "6.1.3"
 val prometheusSimpleclientVersion = "0.16.0"
 val kafkaVersion = "4.4.0"
 val slf4jVersion = "2.0.20"
-val logbackVersion = "1.6.5"
+val logbackVersion = "1.6.6"
 val logstashEncoderVersion = "9.0"
 val serializerVersion = "1.12.0"
 val coroutinesVersion = "1.11.0"
@@ -62,7 +62,7 @@ dependencies {
             throw RuntimeException("Fjern lz4 og/eller snappy-constraint, siden kafka-clients oppgradert?")
         } else {
             implementation("at.yawk.lz4:lz4-java:1.12.1")
-            implementation("org.xerial.snappy:snappy-java:1.1.10.9")
+            implementation("org.xerial.snappy:snappy-java:1.1.10.12")
         }
     }
 

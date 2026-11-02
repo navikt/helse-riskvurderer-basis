@@ -1,7 +1,7 @@
 name: Gradle build
 description: >-
   Validerer Gradle-wrapperen, setter opp Java og kjører ./gradlew build.
-  Brukes av både prs.yml og master.yml, slik at endringer i byggoppsettet testes på PR før de når master.
+  Brukes av både prs.yml og main.yml, slik at endringer i byggoppsettet testes på PR før de når master.
   Krever at repoet er sjekket ut på forhånd.
 
 runs:

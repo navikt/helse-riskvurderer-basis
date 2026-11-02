@@ -2,7 +2,7 @@ name: Gradle dependency submission
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - "build.gradle.kts"
 

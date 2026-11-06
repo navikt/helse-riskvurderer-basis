@@ -72,7 +72,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
     testImplementation("org.awaitility:awaitility:4.3.0")
-    testImplementation("io.ktor:ktor-client-cio:3.6.0")
+    testImplementation("io.ktor:ktor-client-cio:3.6.1")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
 

@@ -61,7 +61,7 @@ dependencies {
         if (kafkaVersion != "4.4.0") {
             throw RuntimeException("Fjern lz4 og/eller snappy-constraint, siden kafka-clients oppgradert?")
         } else {
-            implementation("at.yawk.lz4:lz4-java:1.12.1")
+            implementation("at.yawk.lz4:lz4-java:1.13.0")
             implementation("org.xerial.snappy:snappy-java:1.1.10.12")
         }
     }

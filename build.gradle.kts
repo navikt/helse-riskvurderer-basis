@@ -9,8 +9,8 @@ val coroutinesVersion = "1.11.0"
 val nimbusJoseVersion = "10.10"
 val kotlinVersion = "2.4.21"
 
-val jacksonVersionOverride = "2.22.4"
-val jacksonVersion = "3.2.4"
+val jacksonVersionOverride = "2.23.0"
+val jacksonVersion = "3.3.0"
 
 plugins {
     val kotlinVersion = "2.3.0"
@@ -61,7 +61,7 @@ dependencies {
         if (kafkaVersion != "4.4.0") {
             throw RuntimeException("Fjern lz4 og/eller snappy-constraint, siden kafka-clients oppgradert?")
         } else {
-            implementation("at.yawk.lz4:lz4-java:1.13.0")
+            implementation("at.yawk.lz4:lz4-java:1.14.0")
             implementation("org.xerial.snappy:snappy-java:1.1.10.12")
         }
     }
@@ -77,7 +77,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
 
 
-    testImplementation("io.mockk:mockk:1.14.11")
+    testImplementation("io.mockk:mockk:1.14.12")
     testImplementation("org.testcontainers:kafka:1.21.4")
 
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
